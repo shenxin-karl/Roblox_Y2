@@ -1,0 +1,5 @@
+return {
+    GoodsData = {},
+    GemGoodsData = {},
+    GoodsItemData = {}
+}

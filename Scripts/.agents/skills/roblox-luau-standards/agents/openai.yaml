@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox Luau 规范"
+  short_description: "遵循项目 Luau 编码、模块加载与普通代码审查规范"
+  default_prompt: "使用 $roblox-luau-standards，按项目规范完成当前 Luau 编码或普通代码审查任务。"

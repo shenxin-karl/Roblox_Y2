@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox 项目本地化"
+  short_description: "翻译动态文案与脚本创建节点的固定文字，仅检查文件内 Key 和 Source 唯一"
+  default_prompt: "使用 $roblox-localization 补充动态文案及脚本创建节点的固定文字翻译；同文件 Key、Source 均不重复，跨文件允许重复，不修改 Generated 或生成配置。"

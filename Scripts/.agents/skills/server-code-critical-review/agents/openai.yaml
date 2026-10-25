@@ -1,0 +1,4 @@
+interface:
+  display_name: "服务端高风险审查"
+  short_description: "直接审查服务端身份权限、存档、支付及重复奖励等可证实的高危问题"
+  default_prompt: "使用 $server-code-critical-review，追踪当前服务端功能的边界与状态，只报告可证实的高风险问题。"

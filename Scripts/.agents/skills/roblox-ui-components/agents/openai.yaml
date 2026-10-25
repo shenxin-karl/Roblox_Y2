@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox UI 组件"
+  short_description: "按 UIEditor 展示类和客户端组件的约定接入界面、交互与生命周期"
+  default_prompt: "使用 $roblox-ui-components，先核对界面来源，再按现有组件模式实现当前 UI 与交互。"

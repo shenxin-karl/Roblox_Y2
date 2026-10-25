@@ -1,0 +1,35 @@
+# 构建产物与本地工具
+/Game/Build/
+/Game/Tools/.bin/
+
+# Studio 自动保存与锁文件；Places 中的正式源文件需要提交
+*.rbxl.lock
+*.rbxlx.lock
+*.rbxl.autosave
+*.rbxlx.autosave
+
+# 本地凭据
+.env
+.env.*
+!.env.example
+
+# 操作系统临时文件
+Thumbs.db
+.DS_Store
+AgentWorkspace/
+setting.local.json
+.studiogametoolkit/outputs/ai-image/
+.studiogametoolkit/image-to-model/
+.studiogametoolkit/outputs/image-to-model/
+!AgentWorkspace/
+AgentWorkspace/*
+!AgentWorkspace/Figma/
+AgentWorkspace/Figma/*
+!AgentWorkspace/Figma/Game-DESIGN.md
+!AgentWorkspace/FigmaEggy/
+AgentWorkspace/FigmaEggy/*
+!AgentWorkspace/FigmaEggy/Game-DESIGN.md
+/Run.bat
+/Build/FigmaRoblox/
+.studiogametoolkit/figma-roblox/
+Build/FigmaRoblox/

@@ -1,0 +1,23 @@
+# Office temporary files
+~$*
+
+# OS / editor metadata
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Local temp / backup files
+*.tmp
+*.temp
+*.bak
+
+# Simulator runtime output
+Simulator/logs/*
+!Simulator/logs/.gitkeep

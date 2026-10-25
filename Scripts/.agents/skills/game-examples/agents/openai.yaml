@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox Game Examples"
+  short_description: "Roblox_Y1 协议、玩家组件、原生界面与交互接入参考"
+  default_prompt: "使用 $game-examples，根据当前 Roblox 任务只读取最具体的接入参考，并核对现有源码、节点和生命周期。"

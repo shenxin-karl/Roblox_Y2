@@ -1,0 +1,6 @@
+interface:
+  display_name: "生成更新验收清单"
+  short_description: "手动生成或追加系统规则清单，统一公式、来源与验收框排版，只补未收录系统并保留状态"
+  default_prompt: "使用 $update-acceptance-checklist 按统一 Markdown 版式整理系统规则；若指定追加模式，只补充未收录系统，保留原文与验收状态，默认不列数值表，异常单独提醒。"
+policy:
+  allow_implicit_invocation: false
