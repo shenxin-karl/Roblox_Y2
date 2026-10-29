@@ -2,13 +2,14 @@
   "resourceCloudPrefix": "",
   "resourceCloudPrefixEnabled": false,
   "projectType": "RobloxStudio",
-  "mapId": "",
-  "mapName": "模板-未命名",
+  "mapId": "96094462418514",
+  "mapName": "锻刀模拟器",
   "robloxProjectName": "",
   "robloxOwnerType": "user",
   "robloxOwnerId": "",
   "robloxUniverseId": "",
   "robloxLocalizationTableId": "",
   "robloxGrantAfterUpload": false,
-  "imageModel": "gpt-image-2.5-flare"
+  "imageModel": "gpt-image-2.5-flare",
+  "meshyApiKey": "msy_gtZfjr3tLg2Vhyzyv1cISv0PjYtaLkW3ReKk"
 }

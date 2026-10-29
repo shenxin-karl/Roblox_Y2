@@ -1,0 +1,2342 @@
+{
+  "version": 9,
+  "guid": "48f5425a-a460-49ab-9ac4-0bcb31c236c7",
+  "rootNodeId": "studio-block-models-root",
+  "nodes": [
+    {
+      "id": "studio-block-models-root",
+      "name": "Root",
+      "parentId": null,
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "prefab-node-6c872085-eb64-4ad4-8dd3-6e6d6929860e",
+      "name": "基地1",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -78,
+          0.04,
+          114
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-bd2a59de-46d8-4ae6-b928-bd3f59c96247",
+      "name": "圆心主矿簇",
+      "parentId": "ai-node-2",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          0,
+          0.06,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "fb99b366-4e97-4411-ba70-f7d7f9b594c7"
+      }
+    },
+    {
+      "id": "prefab-node-6c505162-1e35-4ce8-b2e3-244ccbb3fedd",
+      "name": "外沿小矿簇1",
+      "parentId": "ai-node-2",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -22,
+          0.06,
+          -12
+        ],
+        "rotation": [
+          0,
+          10,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "6ca99238-3a8e-4dd3-9950-3136af799dbb"
+      }
+    },
+    {
+      "id": "prefab-node-50cd630b-13c4-486f-b7de-55aae61fb510",
+      "name": "公共大炉",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          226,
+          0.04,
+          0
+        ],
+        "rotation": [
+          0,
+          90,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "7caae747-06bd-47db-b3ad-7e248515c295"
+      }
+    },
+    {
+      "id": "prefab-node-dfe2d3e2-14e7-4f37-89c8-8b3589a84b60",
+      "name": "上排砧台1",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          150,
+          0.04,
+          -22
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa"
+      }
+    },
+    {
+      "id": "prefab-node-18937d65-496e-47ef-bfc3-760baee5656d",
+      "name": "幸运商人店面",
+      "parentId": "ai-node-4",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -200,
+          0.04,
+          0
+        ],
+        "rotation": [
+          0,
+          -90,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "01792f75-5ce5-434e-877b-d0716c63c1ea"
+      }
+    },
+    {
+      "id": "prefab-node-8eb962ef-9947-46d1-b979-79090471298e",
+      "name": "方冠树1",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -114,
+          0,
+          -156
+        ],
+        "rotation": [
+          0,
+          15,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-071110ae-ed48-47f2-969c-0c2cba955702",
+      "name": "小树1",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -126,
+          0,
+          156
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-e20b9113-d3fc-4b57-afcd-d033edd07fc2",
+      "name": "阶岩簇1",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -140,
+          0,
+          -158
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-a65cbb35-308c-42fc-8cfd-c3d1de3f0671",
+      "name": "低灌木1",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -148,
+          0,
+          151
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-a9977f81-36e1-4dfc-b32e-83e6ba56f880",
+      "name": "地形与道路",
+      "parentId": "studio-block-models-root",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "55fa5658-483c-414f-afac-fa5174f106e1"
+      }
+    },
+    {
+      "id": "ai-node-1",
+      "name": "八座基地",
+      "parentId": "studio-block-models-root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-2",
+      "name": "中央矿场",
+      "parentId": "studio-block-models-root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-3",
+      "name": "锻造庭院",
+      "parentId": "studio-block-models-root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-4",
+      "name": "幸运商人庭院",
+      "parentId": "studio-block-models-root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-5",
+      "name": "外围景观",
+      "parentId": "studio-block-models-root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "prefab-node-0e430e46-905e-4e5e-a181-ffcf839a8411",
+      "name": "基地2",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -26,
+          0.04,
+          114
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-1b5a0e10-1775-44b1-90cb-4e9fe3623b0d",
+      "name": "基地3",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          26,
+          0.04,
+          114
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-62031c6b-38a1-41d4-ab1e-f8682b0fa471",
+      "name": "基地4",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          78,
+          0.04,
+          114
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-f1dd6694-07e3-4536-8a83-e4257908d489",
+      "name": "基地5",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -78,
+          0.04,
+          -114
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-1e74641c-5f5c-4568-98e4-4a7ddcc9b12a",
+      "name": "基地6",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -26,
+          0.04,
+          -114
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-d0a29a80-6c14-4115-847d-45438d618935",
+      "name": "基地7",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          26,
+          0.04,
+          -114
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-29441902-c80b-48fe-bec4-92c5edf5a688",
+      "name": "基地8",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          78,
+          0.04,
+          -114
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-6a4b218e-2a77-4ec2-a308-d38ea764925d",
+      "name": "外沿小矿簇2",
+      "parentId": "ai-node-2",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          20,
+          0.06,
+          16
+        ],
+        "rotation": [
+          0,
+          -35,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "6ca99238-3a8e-4dd3-9950-3136af799dbb"
+      }
+    },
+    {
+      "id": "prefab-node-85dc511a-8af8-4db8-91a6-f3b038aac847",
+      "name": "外沿小矿簇3",
+      "parentId": "ai-node-2",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          14,
+          0.06,
+          -21
+        ],
+        "rotation": [
+          0,
+          30,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "6ca99238-3a8e-4dd3-9950-3136af799dbb"
+      }
+    },
+    {
+      "id": "prefab-node-5b87a2aa-341c-4ea2-a2f9-3330bdc77f03",
+      "name": "上排砧台2",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          164,
+          0.04,
+          -22
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa"
+      }
+    },
+    {
+      "id": "prefab-node-c22696d3-e788-4520-9f80-81b3039f3c60",
+      "name": "上排砧台3",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          178,
+          0.04,
+          -22
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa"
+      }
+    },
+    {
+      "id": "prefab-node-1dfa35df-4950-41d2-8026-139c853e7d3e",
+      "name": "上排砧台4",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          192,
+          0.04,
+          -22
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa"
+      }
+    },
+    {
+      "id": "prefab-node-7908052e-a42d-449c-889a-ff70c1a926fe",
+      "name": "下排砧台1",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          150,
+          0.04,
+          22
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa"
+      }
+    },
+    {
+      "id": "prefab-node-f391fcd0-80d0-4dc8-baf3-c2ae1bfe077e",
+      "name": "下排砧台2",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          164,
+          0.04,
+          22
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa"
+      }
+    },
+    {
+      "id": "prefab-node-d1f51eb6-b8d1-4fc4-9d07-695d50d75444",
+      "name": "下排砧台3",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          178,
+          0.04,
+          22
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa"
+      }
+    },
+    {
+      "id": "prefab-node-70ba3e05-872c-4fa9-9c8f-b7abd83c3b86",
+      "name": "下排砧台4",
+      "parentId": "ai-node-3",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          192,
+          0.04,
+          22
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa"
+      }
+    },
+    {
+      "id": "prefab-node-beaffb95-ba4f-4e41-a2f8-5d129adc5312",
+      "name": "方冠树2",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -102,
+          0,
+          -162
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-f6b97166-4200-4602-9581-578b0dbf10ba",
+      "name": "方冠树3",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -48,
+          0,
+          -160
+        ],
+        "rotation": [
+          0,
+          47,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-b2a1e889-c4ad-4016-83f3-890040e95112",
+      "name": "方冠树4",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -37,
+          0,
+          -154
+        ],
+        "rotation": [
+          0,
+          94,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-1830ae40-0b34-4fd3-b0c5-fbe237624969",
+      "name": "方冠树5",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          26,
+          0,
+          -161
+        ],
+        "rotation": [
+          0,
+          141,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-3645571f-f7bb-49c5-a6d9-6c82287716bf",
+      "name": "方冠树6",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          39,
+          0,
+          -156
+        ],
+        "rotation": [
+          0,
+          188,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-195e5e5d-e8a0-44d6-b880-d89d6df01971",
+      "name": "方冠树7",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          112,
+          0,
+          -157
+        ],
+        "rotation": [
+          0,
+          235,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-076da013-13c2-404f-8c7c-a89e586e0556",
+      "name": "方冠树8",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          124,
+          0,
+          -161
+        ],
+        "rotation": [
+          0,
+          282,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-91cb085f-e1cd-40f0-a953-e6e29606e38a",
+      "name": "方冠树9",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -173,
+          0,
+          -115
+        ],
+        "rotation": [
+          0,
+          329,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-fe99ffb6-54b4-4980-b35f-b08ccd591060",
+      "name": "方冠树10",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -181,
+          0,
+          -125
+        ],
+        "rotation": [
+          0,
+          16,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-94ad9f72-d4b5-4421-8891-254573ff630c",
+      "name": "方冠树11",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          172,
+          0,
+          -119
+        ],
+        "rotation": [
+          0,
+          63,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-9e82b698-0d8d-4caa-b7ff-abbd64f77519",
+      "name": "方冠树12",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          185,
+          0,
+          -110
+        ],
+        "rotation": [
+          0,
+          110,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-d2d97e3f-96fb-4a79-adf4-7d5cad92e29a",
+      "name": "方冠树13",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -241,
+          0,
+          -63
+        ],
+        "rotation": [
+          0,
+          157,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-548158f0-9b57-4d94-84a3-4ef5366a73c3",
+      "name": "方冠树14",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -247,
+          0,
+          -51
+        ],
+        "rotation": [
+          0,
+          204,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-911b2318-0789-436d-ad2b-7f5b7a8f9705",
+      "name": "方冠树15",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -244,
+          0,
+          75
+        ],
+        "rotation": [
+          0,
+          251,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-dd4566a8-d885-4cdf-93a5-8e8b3456dab6",
+      "name": "方冠树16",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -235,
+          0,
+          85
+        ],
+        "rotation": [
+          0,
+          298,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-d0beb069-1d04-435b-879a-a0f413ba12aa",
+      "name": "方冠树17",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          244,
+          0,
+          -72
+        ],
+        "rotation": [
+          0,
+          345,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-6652e052-3fa8-4af9-b144-e908d473afcc",
+      "name": "方冠树18",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          250,
+          0,
+          -60
+        ],
+        "rotation": [
+          0,
+          32,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-2c2a9468-1455-46d2-b129-38c404360b9f",
+      "name": "方冠树19",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          247,
+          0,
+          76
+        ],
+        "rotation": [
+          0,
+          79,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-67fe8c78-7c33-48d6-8a2c-ee86604d9e11",
+      "name": "方冠树20",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          238,
+          0,
+          88
+        ],
+        "rotation": [
+          0,
+          126,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d"
+      }
+    },
+    {
+      "id": "prefab-node-22dc7e0a-5328-45a5-b427-b10dbf63a4fe",
+      "name": "小树2",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -114,
+          0,
+          163
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-b6740a49-9dec-4b31-a9d4-8aa0e94ff104",
+      "name": "小树3",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -52,
+          0,
+          160
+        ],
+        "rotation": [
+          0,
+          37,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-027e764f-2bf6-4032-b589-42920a80b30c",
+      "name": "小树4",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          38,
+          0,
+          158
+        ],
+        "rotation": [
+          0,
+          74,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-ff0621e0-b229-4340-8e15-c435dcd776c4",
+      "name": "小树5",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          116,
+          0,
+          160
+        ],
+        "rotation": [
+          0,
+          111,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-b6878d46-758a-47fa-802a-405da4b7849a",
+      "name": "小树6",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          129,
+          0,
+          153
+        ],
+        "rotation": [
+          0,
+          148,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-9a5b2481-2113-4c26-af06-bf4fa1510b78",
+      "name": "小树7",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -175,
+          0,
+          112
+        ],
+        "rotation": [
+          0,
+          185,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-7146cb76-849f-4d72-990d-cc844a840ee6",
+      "name": "小树8",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -190,
+          0,
+          103
+        ],
+        "rotation": [
+          0,
+          222,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-9791e757-fc3f-46bb-b82f-8683a19a4219",
+      "name": "小树9",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          178,
+          0,
+          117
+        ],
+        "rotation": [
+          0,
+          259,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-1bb8d8db-338f-4239-a6c1-36842c1549d7",
+      "name": "小树10",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          190,
+          0,
+          108
+        ],
+        "rotation": [
+          0,
+          296,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-c1fbbca8-2ef4-42ee-9964-70e766c19551",
+      "name": "小树11",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -240,
+          0,
+          38
+        ],
+        "rotation": [
+          0,
+          333,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-de5cd82b-2666-42fe-8e2b-839d4183da35",
+      "name": "小树12",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          242,
+          0,
+          33
+        ],
+        "rotation": [
+          0,
+          370,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1"
+      }
+    },
+    {
+      "id": "prefab-node-1c108e50-aa28-4b76-abaf-3666be9cca6e",
+      "name": "阶岩簇2",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -12,
+          0,
+          -162
+        ],
+        "rotation": [
+          0,
+          10,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-b414e7b0-c283-4ac5-8491-2282a03d3181",
+      "name": "阶岩簇3",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          76,
+          0,
+          -162
+        ],
+        "rotation": [
+          0,
+          53,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-3f04ce8b-604f-48ec-9a27-cdeb46b7df07",
+      "name": "阶岩簇4",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          149,
+          0,
+          -147
+        ],
+        "rotation": [
+          0,
+          96,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-a264a9ca-7c44-4445-a329-24b8d9c12d1b",
+      "name": "阶岩簇5",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -207,
+          0,
+          -112
+        ],
+        "rotation": [
+          0,
+          139,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-66010814-3147-441c-b8b0-029b2ae41a34",
+      "name": "阶岩簇6",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -245,
+          0,
+          -87
+        ],
+        "rotation": [
+          0,
+          182,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-0dd0daea-d67b-4fe6-a7ef-543de31b9c31",
+      "name": "阶岩簇7",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          246,
+          0,
+          -96
+        ],
+        "rotation": [
+          0,
+          225,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-d16cb3fb-9748-4f9f-8464-3dc20b01350c",
+      "name": "阶岩簇8",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          247,
+          0,
+          112
+        ],
+        "rotation": [
+          0,
+          268,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-4350ffc8-9c9a-4d1c-9ecc-b46306cc8d0b",
+      "name": "阶岩簇9",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -241,
+          0,
+          116
+        ],
+        "rotation": [
+          0,
+          311,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde"
+      }
+    },
+    {
+      "id": "prefab-node-85dc99d0-5898-447c-b936-3878e7eab612",
+      "name": "低灌木2",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -92,
+          0,
+          157
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-1b2ab9e9-6baf-4ce9-b688-60f042409a79",
+      "name": "低灌木3",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -20,
+          0,
+          161
+        ],
+        "rotation": [
+          0,
+          29,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-b8495551-ac48-4fc4-8c2b-efa6392bdea6",
+      "name": "低灌木4",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          80,
+          0,
+          160
+        ],
+        "rotation": [
+          0,
+          58,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-6cf35ff1-65a7-49d9-a880-c05d230748a5",
+      "name": "低灌木5",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          148,
+          0,
+          150
+        ],
+        "rotation": [
+          0,
+          87,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-ebc7a1b5-ea1d-4267-bd6d-e34bc71a44fa",
+      "name": "低灌木6",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -234,
+          0,
+          62
+        ],
+        "rotation": [
+          0,
+          116,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-64b497fa-adb8-48e9-be2c-f5fb5679f2da",
+      "name": "低灌木7",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          234,
+          0,
+          56
+        ],
+        "rotation": [
+          0,
+          145,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-f66975da-044f-4b57-9136-54ce7850cff8",
+      "name": "低灌木8",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -225,
+          0,
+          -96
+        ],
+        "rotation": [
+          0,
+          174,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-2ee4cd83-8260-4484-afdb-288a08b57807",
+      "name": "低灌木9",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          225,
+          0,
+          -105
+        ],
+        "rotation": [
+          0,
+          203,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-72b8f81f-2e99-48de-8ed0-a500c13f4d37",
+      "name": "低灌木10",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -165,
+          0,
+          -151
+        ],
+        "rotation": [
+          0,
+          232,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-b29f59a6-3bc5-4ad2-b876-4a03154e5d5d",
+      "name": "低灌木11",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          159,
+          0,
+          -151
+        ],
+        "rotation": [
+          0,
+          261,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-c3eb0e64-2b9a-467e-bc8f-8e77cc64d416",
+      "name": "低灌木12",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -216,
+          0,
+          22
+        ],
+        "rotation": [
+          0,
+          290,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-06e17b96-5cd7-4d43-9f60-c072a6461a99",
+      "name": "低灌木13",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -215,
+          0,
+          -23
+        ],
+        "rotation": [
+          0,
+          319,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-3cb78d14-1f23-47c0-81ad-36744c51973c",
+      "name": "低灌木14",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          225,
+          0,
+          28
+        ],
+        "rotation": [
+          0,
+          348,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    },
+    {
+      "id": "prefab-node-a2bcf7fd-ac0f-42ce-a337-da9c958c027e",
+      "name": "低灌木15",
+      "parentId": "ai-node-5",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          225,
+          0,
+          -28
+        ],
+        "rotation": [
+          0,
+          377,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8"
+      }
+    }
+  ],
+  "prefabFolders": [],
+  "prefabs": [],
+  "externalPrefabAliases": [
+    {
+      "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d",
+      "name": "base"
+    },
+    {
+      "projectGuid": "679b3279-d3c5-40c1-9fbb-64f2970b14f5",
+      "name": "世界铺地"
+    },
+    {
+      "projectGuid": "e9f1b782-48a1-4d94-b7e6-e72f1df619fa",
+      "name": "中央矿场"
+    },
+    {
+      "projectGuid": "06b93788-a1a9-45cb-a57b-543e61883feb",
+      "name": "小矿簇"
+    },
+    {
+      "projectGuid": "dfa8ecb0-14bc-4467-933e-75bc3082bf54",
+      "name": "公共大炉"
+    },
+    {
+      "projectGuid": "fb99b366-4e97-4411-ba70-f7d7f9b594c7",
+      "name": "中央青蓝矿簇"
+    },
+    {
+      "projectGuid": "6ca99238-3a8e-4dd3-9950-3136af799dbb",
+      "name": "小矿簇"
+    },
+    {
+      "projectGuid": "7caae747-06bd-47db-b3ad-7e248515c295",
+      "name": "公共大炉"
+    },
+    {
+      "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa",
+      "name": "标准砧台"
+    },
+    {
+      "projectGuid": "01792f75-5ce5-434e-877b-d0716c63c1ea",
+      "name": "幸运商人店面"
+    },
+    {
+      "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d",
+      "name": "后景方冠树"
+    },
+    {
+      "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1",
+      "name": "前景小树"
+    },
+    {
+      "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde",
+      "name": "外围阶岩簇"
+    },
+    {
+      "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8",
+      "name": "低矮灌木石簇"
+    },
+    {
+      "projectGuid": "55fa5658-483c-414f-afac-fa5174f106e1",
+      "name": "营地铺地"
+    }
+  ]
+}

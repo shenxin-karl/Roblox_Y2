@@ -1,0 +1,971 @@
+{
+  "version": 9,
+  "guid": "8ed71c19-df93-41e4-acd6-b3a2d1a8a509",
+  "rootNodeId": "asset-root",
+  "nodes": [
+    {
+      "id": "asset-root",
+      "name": "StandardDisplay 资产根",
+      "parentId": null,
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-1",
+      "name": "StandardDisplay",
+      "parentId": "asset-root",
+      "type": "Group",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-2",
+      "name": "Base",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          0.10710000000000001,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          6,
+          0.21420000000000003,
+          6
+        ],
+        "color": "#293e60",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Studs",
+            "right": "Studs",
+            "front": "Studs",
+            "back": "Studs"
+          },
+          "faceTextures": {
+            "top": "checker",
+            "bottom": "solid",
+            "left": "checker",
+            "right": "checker",
+            "front": "checker",
+            "back": "checker"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-3",
+      "name": "Middle",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          1.0595249999999998,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.8,
+          1.69065,
+          4.8
+        ],
+        "color": "#334f78",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Studs",
+            "right": "Studs",
+            "front": "Studs",
+            "back": "Studs"
+          },
+          "faceTextures": {
+            "top": "checker",
+            "bottom": "solid",
+            "left": "checker",
+            "right": "checker",
+            "front": "checker",
+            "back": "checker"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-4",
+      "name": "DisplayTop",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          2.334416769792106,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          5,
+          0.24480000000000002,
+          5
+        ],
+        "color": "#48678b",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Studs",
+            "right": "Studs",
+            "front": "Studs",
+            "back": "Studs"
+          },
+          "faceTextures": {
+            "top": "checker",
+            "bottom": "solid",
+            "left": "checker",
+            "right": "checker",
+            "front": "checker",
+            "back": "checker"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-5",
+      "name": "RimFront",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          2.468291769792106,
+          -2.4
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.84,
+          0.022949999999999998,
+          0.045
+        ],
+        "color": "#91cbd3",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-6",
+      "name": "RimBack",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          2.468291769792106,
+          2.4
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.84,
+          0.022949999999999998,
+          0.045
+        ],
+        "color": "#91cbd3",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-7",
+      "name": "RimLeft",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -2.4,
+          2.468291769792106,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.045,
+          0.022949999999999998,
+          4.76
+        ],
+        "color": "#91cbd3",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-8",
+      "name": "RimRight",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          2.4,
+          2.468291769792106,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.045,
+          0.022949999999999998,
+          4.76
+        ],
+        "color": "#91cbd3",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-9",
+      "name": "ButtonPlate",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          0.04,
+          -5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          3.2,
+          0.08,
+          2.2
+        ],
+        "color": "#183e43",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-10",
+      "name": "GreenButton",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          0.18,
+          -5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          3,
+          0.2,
+          2
+        ],
+        "color": "#39ef62",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-11",
+      "name": "InformationSign",
+      "parentId": "ai-node-1",
+      "type": "Group",
+      "transform": {
+        "position": [
+          0,
+          1.49175,
+          -3.35
+        ],
+        "rotation": [
+          10,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-12",
+      "name": "Panel",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.6,
+          1.836,
+          0.22
+        ],
+        "color": "#293e55",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-13",
+      "name": "WritingFace",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          0,
+          -0.13
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.12,
+          1.4764499999999998,
+          0.035
+        ],
+        "color": "#23354a",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-14",
+      "name": "FrameTop",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          0.937125,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.7,
+          0.09179999999999999,
+          0.3
+        ],
+        "color": "#a9c3d3",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-15",
+      "name": "FrameBottom",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          -0.937125,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.7,
+          0.09179999999999999,
+          0.3
+        ],
+        "color": "#a9c3d3",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-16",
+      "name": "FrameLeft",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -2.29,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.12,
+          1.7824499999999999,
+          0.3
+        ],
+        "color": "#a9c3d3",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Studs",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-17",
+      "name": "FrameRight",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          2.29,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.12,
+          1.7824499999999999,
+          0.3
+        ],
+        "color": "#a9c3d3",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Studs",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-18",
+      "name": "CyanHeader",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          0.784125,
+          -0.16
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          3.7,
+          0.042075,
+          0.035
+        ],
+        "color": "#70c9c5",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-19",
+      "name": "SignFootLeft",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -1.65,
+          0.30600000000000005,
+          -3.35
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.24,
+          0.6120000000000001,
+          0.5
+        ],
+        "color": "#334f78",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-20",
+      "name": "SignFootRight",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          1.65,
+          0.30600000000000005,
+          -3.35
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.24,
+          0.6120000000000001,
+          0.5
+        ],
+        "color": "#334f78",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-21",
+      "name": "OverhangingLedge",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          1.9966499999999998,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          5.8,
+          0.18359999999999999,
+          5.8
+        ],
+        "color": "#3f5e85",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Studs",
+            "left": "Studs",
+            "right": "Studs",
+            "front": "Studs",
+            "back": "Studs"
+          },
+          "faceTextures": {
+            "top": "checker",
+            "bottom": "solid",
+            "left": "checker",
+            "right": "checker",
+            "front": "checker",
+            "back": "checker"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-22",
+      "name": "PaleInsetBand",
+      "parentId": "ai-node-1",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          2.1502333848960533,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          5.3,
+          0.123566769792106,
+          5.3
+        ],
+        "color": "#c1d7e4",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    }
+  ],
+  "prefabFolders": [],
+  "prefabs": [],
+  "externalPrefabAliases": []
+}

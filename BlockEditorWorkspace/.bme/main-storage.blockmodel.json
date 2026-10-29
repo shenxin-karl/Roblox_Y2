@@ -1,0 +1,33 @@
+{
+  "version": 9,
+  "guid": "679f5ec2-1810-4613-94ba-46a8d4865edc",
+  "rootNodeId": "main-storage-root",
+  "nodes": [
+    {
+      "id": "main-storage-root",
+      "name": "Root",
+      "parentId": null,
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  ],
+  "prefabFolders": [],
+  "prefabs": [],
+  "externalPrefabAliases": []
+}

@@ -1,0 +1,557 @@
+{
+  "version": 9,
+  "guid": "d0f63022-d9c4-4817-ac56-89804b77cf42",
+  "rootNodeId": "studio-block-models-root",
+  "nodes": [
+    {
+      "id": "studio-block-models-root",
+      "name": "Root",
+      "parentId": null,
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "prefab-node-6c872085-eb64-4ad4-8dd3-6e6d6929860e",
+      "name": "base1",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -93,
+          0.04,
+          125
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-bd2a59de-46d8-4ae6-b928-bd3f59c96247",
+      "name": "ore",
+      "parentId": "ai-node-2",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          0,
+          0.06,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "fb99b366-4e97-4411-ba70-f7d7f9b594c7"
+      }
+    },
+    {
+      "id": "prefab-node-6c505162-1e35-4ce8-b2e3-244ccbb3fedd",
+      "name": "ore1",
+      "parentId": "ai-node-2",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -22,
+          0.06,
+          -12
+        ],
+        "rotation": [
+          0,
+          10,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "6ca99238-3a8e-4dd3-9950-3136af799dbb"
+      }
+    },
+    {
+      "id": "prefab-node-18937d65-496e-47ef-bfc3-760baee5656d",
+      "name": "store",
+      "parentId": "ai-node-4",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -200,
+          0.04,
+          0
+        ],
+        "rotation": [
+          0,
+          -90,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "01792f75-5ce5-434e-877b-d0716c63c1ea"
+      }
+    },
+    {
+      "id": "prefab-node-a9977f81-36e1-4dfc-b32e-83e6ba56f880",
+      "name": "ground",
+      "parentId": "studio-block-models-root",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "55fa5658-483c-414f-afac-fa5174f106e1"
+      }
+    },
+    {
+      "id": "ai-node-1",
+      "name": "bases",
+      "parentId": "studio-block-models-root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-2",
+      "name": "mine",
+      "parentId": "studio-block-models-root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-4",
+      "name": "shop",
+      "parentId": "studio-block-models-root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "prefab-node-0e430e46-905e-4e5e-a181-ffcf839a8411",
+      "name": "base2",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -31,
+          0.04,
+          125
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-1b5a0e10-1775-44b1-90cb-4e9fe3623b0d",
+      "name": "base3",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          31,
+          0.04,
+          125
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-62031c6b-38a1-41d4-ab1e-f8682b0fa471",
+      "name": "base4",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          93,
+          0.04,
+          125
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-f1dd6694-07e3-4536-8a83-e4257908d489",
+      "name": "base5",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -93,
+          0.04,
+          -125
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-1e74641c-5f5c-4568-98e4-4a7ddcc9b12a",
+      "name": "base6",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -31,
+          0.04,
+          -125
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-d0a29a80-6c14-4115-847d-45438d618935",
+      "name": "base7",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          31,
+          0.04,
+          -125
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-29441902-c80b-48fe-bec4-92c5edf5a688",
+      "name": "base8",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          93,
+          0.04,
+          -125
+        ],
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+      }
+    },
+    {
+      "id": "prefab-node-6a4b218e-2a77-4ec2-a308-d38ea764925d",
+      "name": "ore2",
+      "parentId": "ai-node-2",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          20,
+          0.06,
+          16
+        ],
+        "rotation": [
+          0,
+          -35,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "6ca99238-3a8e-4dd3-9950-3136af799dbb"
+      }
+    },
+    {
+      "id": "prefab-node-85dc511a-8af8-4db8-91a6-f3b038aac847",
+      "name": "ore3",
+      "parentId": "ai-node-2",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          14,
+          0.06,
+          -21
+        ],
+        "rotation": [
+          0,
+          30,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "6ca99238-3a8e-4dd3-9950-3136af799dbb"
+      }
+    }
+  ],
+  "prefabFolders": [],
+  "prefabs": [],
+  "externalPrefabAliases": [
+    {
+      "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d",
+      "name": "base"
+    },
+    {
+      "projectGuid": "679b3279-d3c5-40c1-9fbb-64f2970b14f5",
+      "name": "世界铺地"
+    },
+    {
+      "projectGuid": "e9f1b782-48a1-4d94-b7e6-e72f1df619fa",
+      "name": "中央矿场"
+    },
+    {
+      "projectGuid": "06b93788-a1a9-45cb-a57b-543e61883feb",
+      "name": "小矿簇"
+    },
+    {
+      "projectGuid": "dfa8ecb0-14bc-4467-933e-75bc3082bf54",
+      "name": "公共大炉"
+    },
+    {
+      "projectGuid": "fb99b366-4e97-4411-ba70-f7d7f9b594c7",
+      "name": "中央青蓝矿簇"
+    },
+    {
+      "projectGuid": "6ca99238-3a8e-4dd3-9950-3136af799dbb",
+      "name": "小矿簇"
+    },
+    {
+      "projectGuid": "7caae747-06bd-47db-b3ad-7e248515c295",
+      "name": "公共大炉"
+    },
+    {
+      "projectGuid": "3c82e4fd-e749-4577-a6dd-b86a626605fa",
+      "name": "标准砧台"
+    },
+    {
+      "projectGuid": "01792f75-5ce5-434e-877b-d0716c63c1ea",
+      "name": "幸运商人店面"
+    },
+    {
+      "projectGuid": "e55bfeab-18f0-483c-9516-a8a085639d0d",
+      "name": "后景方冠树"
+    },
+    {
+      "projectGuid": "f4e59369-d984-4782-b71d-fc7b3606eff1",
+      "name": "前景小树"
+    },
+    {
+      "projectGuid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde",
+      "name": "外围阶岩簇"
+    },
+    {
+      "projectGuid": "a13be27d-dea3-4bb8-91d1-6ac2920a54d8",
+      "name": "低矮灌木石簇"
+    },
+    {
+      "projectGuid": "55fa5658-483c-414f-afac-fa5174f106e1",
+      "name": "营地铺地"
+    },
+    {
+      "projectGuid": "0876712f-b749-4288-9933-ec3f48e80b36",
+      "name": "野花草丛"
+    },
+    {
+      "projectGuid": "0bf39177-2f3f-4c72-89d8-e5da5a192291",
+      "name": "木柱营地灯"
+    },
+    {
+      "projectGuid": "798f84d8-8eda-43db-adc4-800ecb7cc570",
+      "name": "营地木长椅"
+    },
+    {
+      "projectGuid": "7454c941-063a-44ed-a9a4-b5878809124e",
+      "name": "木箱与木桶"
+    }
+  ]
+}

@@ -1,0 +1,658 @@
+{
+  "version": 9,
+  "guid": "c3a4e679-4c7c-4692-8f6c-bd135f3aacde",
+  "rootNodeId": "asset-root",
+  "nodes": [
+    {
+      "id": "asset-root",
+      "name": "外围阶岩簇 资产根",
+      "parentId": null,
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-121",
+      "name": "外围阶岩簇",
+      "parentId": "asset-root",
+      "type": "Group",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-122",
+      "name": "主阶岩",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -1,
+          2.75,
+          0
+        ],
+        "rotation": [
+          0,
+          12,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          10,
+          5.5,
+          8
+        ],
+        "color": "#707d7b",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-123",
+      "name": "高岩",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          2.4,
+          3.75,
+          1
+        ],
+        "rotation": [
+          0,
+          -18,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          6.5,
+          7.5,
+          6
+        ],
+        "color": "#929b90",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-124",
+      "name": "低岩",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -6,
+          1.5,
+          -1
+        ],
+        "rotation": [
+          0,
+          -12,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          6,
+          3,
+          5
+        ],
+        "color": "#859185",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-125",
+      "name": "石脚",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          6,
+          1.1,
+          -2
+        ],
+        "rotation": [
+          0,
+          23,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.5,
+          2.2,
+          4
+        ],
+        "color": "#63736e",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-126",
+      "name": "岩顶草",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          2.4,
+          7.65,
+          1
+        ],
+        "rotation": [
+          0,
+          -18,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          4.8,
+          0.4,
+          4
+        ],
+        "color": "#668b48",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-1",
+      "name": "苔藓下沿",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -2,
+          5.6,
+          -1.5
+        ],
+        "rotation": [
+          0,
+          12,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          6,
+          0.35,
+          3
+        ],
+        "color": "#6e934e",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-2",
+      "name": "苔藓低沿",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -6.3,
+          3.1,
+          -0.5
+        ],
+        "rotation": [
+          0,
+          -12,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          3.5,
+          0.3,
+          2.5
+        ],
+        "color": "#86a257",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-3",
+      "name": "散石一",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -7.5,
+          0.8,
+          3.5
+        ],
+        "rotation": [
+          0,
+          28,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          3.5,
+          1.6,
+          2.5
+        ],
+        "color": "#9aa28f",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-4",
+      "name": "散石二",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          5.5,
+          0.5,
+          -5
+        ],
+        "rotation": [
+          0,
+          -20,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          2.5,
+          1,
+          2
+        ],
+        "color": "#7a897c",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-5",
+      "name": "岩边草0",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -5,
+          0.9,
+          4.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.5,
+          1.8,
+          0.5
+        ],
+        "color": "#638b43",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-6",
+      "name": "岩边草1",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          -2.5,
+          1.15,
+          5.5
+        ],
+        "rotation": [
+          0,
+          22,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.5,
+          2.3,
+          0.5
+        ],
+        "color": "#638b43",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-7",
+      "name": "岩边草2",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          0,
+          1.4,
+          4.5
+        ],
+        "rotation": [
+          0,
+          44,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.5,
+          2.8,
+          0.5
+        ],
+        "color": "#638b43",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-8",
+      "name": "岩边草3",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          2.5,
+          0.9,
+          5.5
+        ],
+        "rotation": [
+          0,
+          66,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.5,
+          1.8,
+          0.5
+        ],
+        "color": "#638b43",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-9",
+      "name": "岩边草4",
+      "parentId": "ai-node-121",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          5,
+          1.15,
+          4.5
+        ],
+        "rotation": [
+          0,
+          88,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          0.5,
+          2.3,
+          0.5
+        ],
+        "color": "#638b43",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Studs",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    }
+  ],
+  "prefabFolders": [],
+  "prefabs": [],
+  "externalPrefabAliases": []
+}
