@@ -6,10 +6,24 @@ local Fields = _G.PlayerDataConfig
 local Manager = FX.Class("SPlayerObjectManagerClass", "FSPlayerObjectManagerClass")
 _G.SPlayerObjectManagerClass = Manager
 
---- GM 注册与鉴权沿用框架，只额外注册项目音量设置协议。
+--- GM 注册与鉴权沿用框架，项目协议只注册一次并转发给所属组件。
 function Manager:Ctor()
     Manager.Super.Ctor(self, "SPlayerObjectClass")
     self:RegSettingsMsg()
+    self:RegBaseMsg()
+end
+
+--- 回家请求只按引擎认证身份查找本人的组件，不接收目标玩家或坐标。
+function Manager:RegBaseMsg()
+    --- 未登录或尚未挂载基地组件的请求不进入传送流程。
+    --- @param userId number 引擎认证的请求者 ID。
+    FX.Network:RegClientMsgCallback("C2S_ReturnHome", function(userId)
+        local player = self:GetPlayerObject(userId)
+        local base = player and player:GetComponent("SBaseComp")
+        if base then
+            base:ReturnHome()
+        end
+    end)
 end
 
 --- 项目命令转发；框架已校验开发者身份，组件仍负责具体动作与会话校验。

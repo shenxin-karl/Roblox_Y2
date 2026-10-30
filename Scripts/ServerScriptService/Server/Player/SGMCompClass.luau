@@ -25,10 +25,13 @@ function Component:GetCompName()
     return "SGMComp"
 end
 
---- 只恢复已声明字段，保留框架档案中的支付回执去重记录。
+--- 只恢复已声明字段，保留当前基地分配与框架档案中的支付回执去重记录。
 function Component:ResetData()
     local player = self:GetPlayerObject()
     for fieldName, field in pairs(Fields) do
+        if field == Fields.BaseId then
+            continue
+        end
         if field.Type == "number" then
             player:SetNumber(field, field.DefVal)
         elseif field.Type == "boolean" then

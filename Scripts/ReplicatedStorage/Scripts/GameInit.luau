@@ -2,6 +2,7 @@
 local Configs = script.Parent:WaitForChild("Game"):WaitForChild("Configs")
 _G.ItemConfig = require(Configs:WaitForChild("ItemConfig"))
 _G.GoodsConfig = require(Configs:WaitForChild("GoodsConfig"))
+_G.GameConfig = require(Configs:WaitForChild("GameConfig"))
 
 local GameShared = script.Parent:WaitForChild("Game"):WaitForChild("Shared")
 _G.NetworkProtocol = require(GameShared:WaitForChild("NetworkProtocol"))

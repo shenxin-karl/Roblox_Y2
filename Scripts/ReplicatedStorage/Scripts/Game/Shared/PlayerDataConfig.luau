@@ -6,6 +6,10 @@ _G.PlayerKVEnum = {
     eActivityData = "ActivityData",
 }
 local PlayerKVEnum = _G.PlayerKVEnum
+local initialUnlockedSlots = {}
+for slotId = 1, _G.GameConfig.CommonConfig.BaseInitialSlots do
+    initialUnlockedSlots[tostring(slotId)] = true
+end
 
 return {
     Money = {
@@ -15,6 +19,19 @@ return {
     Diamonds = {
         Type = "number", Key = "Diamonds", DefVal = 0,
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
+    -- 进度随玩家保存；SlotData 以字符串槽位编号保存各槽的业务数据，不保存场景实例。
+    BaseData = {
+        Type = "table", Key = "BaseData",
+        DefVal = {
+            UnlockedSlotCount = _G.GameConfig.CommonConfig.BaseInitialSlots,
+            UnlockedSlots = initialUnlockedSlots, SlotData = {},
+        },
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
+    -- 场景基地每次登录重新分配，不随档案保存；0 表示正在等待空基地。
+    BaseId = {
+        Type = "number", Key = "BaseId", DefVal = 0, Sync = true,
     },
     Settings = {
         Type = "table", Key = "Settings",

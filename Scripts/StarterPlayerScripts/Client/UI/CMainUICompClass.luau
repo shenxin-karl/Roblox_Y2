@@ -1,10 +1,11 @@
--- 项目主界面扩展：仅保留通用道具说明接入，不依赖旧地图或玩法节点。
+-- 项目主界面：绑定 Studio 原生 HUD，并保留通用道具说明。
 local FX, FC = _G.FX, _G.FC
 local FXLoader = FX.Loader
 local Text = FX.Text
-local FCUIRoot = FXLoader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local FCItemDescription = FXLoader:RequireShared("Scripts.Framework.Client.FCItemDescription")
 local ItemConfig = FXLoader:RequireShared("Scripts.Game.Configs.ItemConfig")
+local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
+local PlayerDataConfig = _G.PlayerDataConfig
 local Component = FX.Class("CMainUICompClass", "FCUICompClass")
 
 --- 返回项目主界面组件协作名。
@@ -13,14 +14,20 @@ function Component:GetCompName()
     return "CMainUIComp"
 end
 
---- 复用框架画布创建自有容器，装备说明无需 Studio 预制节点。
+--- 绑定 Studio 主界面、真实余额与回家请求，装备说明沿用现有展示。
 function Component:OnReady()
-    self._rootNode = Instance.new("Frame")
-    self._rootNode.Name = "MainUI"
-    self._rootNode.Size = UDim2.fromScale(1, 1)
-    self._rootNode.BackgroundTransparency = 1
-    self._rootNode.ZIndex = 0
-    self._rootNode.Parent = FCUIRoot.Get()
+    self._rootNode = FXLoader:PlayerGui("Main.HUD")
+    self._moneyLabel = FXLoader:Here(self._rootNode, "Wallet.Money")
+    self:TrackConnection(self._rootNode:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+        self:RefreshLayout()
+    end))
+    self:WatchDataChanged(PlayerDataConfig.Money, function()
+        self:RefreshMoney()
+    end)
+    self:TrackConnection(FXLoader:Here(self._rootNode, "TopNav.Home").Activated:Connect(function()
+        FX.Network:SendMsgToServer("C2S_ReturnHome")
+    end))
+    self:RefreshLayout()
     self._itemDescription = FCItemDescription.New()
     self._itemDescription.Root.Parent = self._rootNode
     self._selectedToolConnections = {}
@@ -43,6 +50,20 @@ function Component:OnReady()
         self:BindCharacterTools(character)
     end
     self:Show()
+end
+
+--- 常驻 HUD 按参考画布等比缩小，顶部、侧栏与钱包保持各自的屏幕锚点。
+function Component:RefreshLayout()
+    local size = self._rootNode.AbsoluteSize
+    local scale = math.min(size.X / 1174, size.Y / 622)
+    for index, name in ipairs({"TopNav", "SideNav", "Wallet"}) do
+        FXLoader:Here(self._rootNode, name .. ".ResponsiveScale").Scale = scale
+    end
+end
+
+--- 余额只取玩家同步字段，缩写统一使用项目数量格式化方法。
+function Component:RefreshMoney()
+    self._moneyLabel.Text = "$" .. GameUtility.NumberToText(self:GetNumber(PlayerDataConfig.Money))
 end
 
 --- 仅在主界面可见且装备属于道具配置时显示，翻译与装备判断留在项目层。
@@ -112,7 +133,7 @@ function Component:BindCharacterTools(character)
     end
 end
 
---- 清理装备监听和组件自有界面，保留框架共享画布。
+--- 清理装备监听和自有道具说明，仅隐藏 Studio 提供的 HUD 模板副本。
 function Component:Dtor()
     if self._characterToolConnection then
         self._characterToolConnection:Disconnect()
@@ -127,7 +148,7 @@ function Component:Dtor()
         self._itemDescription:Destroy()
     end
     if self._rootNode then
-        self._rootNode:Destroy()
+        self._rootNode.Visible = false
     end
     Component.Super.Dtor(self)
 end

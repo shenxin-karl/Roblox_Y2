@@ -7,7 +7,7 @@ local Service = {}
 function Service.Init()
     local conveyor = FXLoader:Workspace("Decorations.SquareConveyor")
     local decks = FXLoader:Here(conveyor, "Decks")
-    local speed = conveyor:GetAttribute("Speed")
+    local speed = conveyor:GetAttribute("Speed") * 2
     for index = 1, 8 do
         local deck = FXLoader:Here(decks, string.format("%02d", index))
         local direction = (deck:GetAttribute("PathEnd") - deck:GetAttribute("PathStart")).Unit

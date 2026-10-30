@@ -27,33 +27,6 @@
       }
     },
     {
-      "id": "prefab-node-6c872085-eb64-4ad4-8dd3-6e6d6929860e",
-      "name": "base1",
-      "parentId": "ai-node-1",
-      "type": "PrefabReference",
-      "transform": {
-        "position": [
-          -93,
-          0.04,
-          125
-        ],
-        "rotation": [
-          0,
-          0,
-          0
-        ],
-        "scale": [
-          1,
-          1,
-          1
-        ]
-      },
-      "target": {
-        "kind": "project",
-        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
-      }
-    },
-    {
       "id": "prefab-node-a9977f81-36e1-4dfc-b32e-83e6ba56f880",
       "name": "ground",
       "parentId": "studio-block-models-root",
@@ -127,7 +100,34 @@
       }
     },
     {
-      "id": "prefab-node-0e430e46-905e-4e5e-a181-ffcf839a8411",
+      "id": "prefab-node-54b8abde-5d2d-456f-9263-3c4f8e910d41",
+      "name": "base1",
+      "parentId": "ai-node-1",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          -93,
+          0.04,
+          125
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
+      }
+    },
+    {
+      "id": "prefab-node-5e198e64-ccb4-4fa3-9946-83caba07609f",
       "name": "base2",
       "parentId": "ai-node-1",
       "type": "PrefabReference",
@@ -150,11 +150,11 @@
       },
       "target": {
         "kind": "project",
-        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
       }
     },
     {
-      "id": "prefab-node-1b5a0e10-1775-44b1-90cb-4e9fe3623b0d",
+      "id": "prefab-node-5a435946-5d23-4b0f-8907-b75c031bdf38",
       "name": "base3",
       "parentId": "ai-node-1",
       "type": "PrefabReference",
@@ -177,11 +177,11 @@
       },
       "target": {
         "kind": "project",
-        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
       }
     },
     {
-      "id": "prefab-node-62031c6b-38a1-41d4-ab1e-f8682b0fa471",
+      "id": "prefab-node-9cb0a7bc-f055-4b28-a401-eca6673c7494",
       "name": "base4",
       "parentId": "ai-node-1",
       "type": "PrefabReference",
@@ -204,11 +204,11 @@
       },
       "target": {
         "kind": "project",
-        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
       }
     },
     {
-      "id": "prefab-node-f1dd6694-07e3-4536-8a83-e4257908d489",
+      "id": "prefab-node-829baf92-279e-41ca-9371-a2b6d5d5f167",
       "name": "base5",
       "parentId": "ai-node-1",
       "type": "PrefabReference",
@@ -231,11 +231,11 @@
       },
       "target": {
         "kind": "project",
-        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
       }
     },
     {
-      "id": "prefab-node-1e74641c-5f5c-4568-98e4-4a7ddcc9b12a",
+      "id": "prefab-node-9fac6d9e-f99c-46b9-8a9a-8dc8824ac4be",
       "name": "base6",
       "parentId": "ai-node-1",
       "type": "PrefabReference",
@@ -258,11 +258,11 @@
       },
       "target": {
         "kind": "project",
-        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
       }
     },
     {
-      "id": "prefab-node-d0a29a80-6c14-4115-847d-45438d618935",
+      "id": "prefab-node-a8bc02e4-60b3-4031-accc-3cd69e85b740",
       "name": "base7",
       "parentId": "ai-node-1",
       "type": "PrefabReference",
@@ -285,11 +285,11 @@
       },
       "target": {
         "kind": "project",
-        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
       }
     },
     {
-      "id": "prefab-node-29441902-c80b-48fe-bec4-92c5edf5a688",
+      "id": "prefab-node-28b3f112-edd4-44b9-84d0-8ac01bd6ed78",
       "name": "base8",
       "parentId": "ai-node-1",
       "type": "PrefabReference",
@@ -312,7 +312,7 @@
       },
       "target": {
         "kind": "project",
-        "projectGuid": "40ab6dc5-9d73-49f8-a4f6-c339ff114e6d"
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
       }
     }
   ],
@@ -394,6 +394,10 @@
     {
       "projectGuid": "7454c941-063a-44ed-a9a4-b5878809124e",
       "name": "木箱与木桶"
+    },
+    {
+      "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97",
+      "name": "BaseLower"
     }
   ]
 }

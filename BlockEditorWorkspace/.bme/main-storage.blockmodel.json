@@ -25,9 +25,72 @@
           1
         ]
       }
+    },
+    {
+      "id": "prefab-node-989c39e1-016c-4d42-935b-80f3278a0f29",
+      "name": "BaseLower",
+      "parentId": "main-storage-root",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
+      }
+    },
+    {
+      "id": "prefab-node-2abd3274-6c3f-480d-86b5-61d52fe4850e",
+      "name": "BaseUpper",
+      "parentId": "main-storage-root",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "df98c184-af39-4d2b-8cbd-ffc993e16b3a"
+      }
     }
   ],
   "prefabFolders": [],
   "prefabs": [],
-  "externalPrefabAliases": []
+  "externalPrefabAliases": [
+    {
+      "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97",
+      "name": "BaseLower"
+    },
+    {
+      "projectGuid": "df98c184-af39-4d2b-8cbd-ffc993e16b3a",
+      "name": "BaseUpper"
+    }
+  ]
 }

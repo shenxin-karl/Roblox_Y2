@@ -55,7 +55,7 @@
     },
     {
       "id": "ai-node-11",
-      "name": "DoubleLevelBase",
+      "name": "BaseLower",
       "parentId": "root",
       "type": "Transform",
       "transform": {
@@ -630,12 +630,12 @@
     {
       "id": "ai-node-25",
       "name": "UpperFloor",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           0,
-          15.45,
+          20.45,
           0
         ],
         "rotation": [
@@ -681,12 +681,12 @@
     {
       "id": "ai-node-26",
       "name": "UpperSide_L",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           -19.6,
-          15.2,
+          20.2,
           0
         ],
         "rotation": [
@@ -732,12 +732,12 @@
     {
       "id": "ai-node-27",
       "name": "UpperSide_R",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           19.6,
-          15.2,
+          20.2,
           0
         ],
         "rotation": [
@@ -783,12 +783,12 @@
     {
       "id": "ai-node-28",
       "name": "UpperEdge_Back",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           0,
-          15.2,
+          20.2,
           23.6
         ],
         "rotation": [
@@ -834,12 +834,12 @@
     {
       "id": "ai-node-29",
       "name": "UpperEdge_Front",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           0,
-          15.2,
+          20.2,
           -23.6
         ],
         "rotation": [
@@ -885,12 +885,12 @@
     {
       "id": "ai-node-30",
       "name": "UpperStonePath",
-      "parentId": "ai-node-13",
+      "parentId": "ai-node-99",
       "type": "Geometry",
       "transform": {
         "position": [
           0,
-          15.99,
+          20.99,
           0
         ],
         "rotation": [
@@ -936,12 +936,12 @@
     {
       "id": "ai-node-31",
       "name": "UpperCopperEdge_L",
-      "parentId": "ai-node-13",
+      "parentId": "ai-node-99",
       "type": "Geometry",
       "transform": {
         "position": [
           -4.88,
-          16.04,
+          21.04,
           0
         ],
         "rotation": [
@@ -987,12 +987,12 @@
     {
       "id": "ai-node-32",
       "name": "UpperCopperEdge_R",
-      "parentId": "ai-node-13",
+      "parentId": "ai-node-99",
       "type": "Geometry",
       "transform": {
         "position": [
           4.88,
-          16.04,
+          21.04,
           0
         ],
         "rotation": [
@@ -1038,12 +1038,12 @@
     {
       "id": "ai-node-33",
       "name": "Column_LF",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           -19.3,
-          7.925,
+          10.425,
           -23.3
         ],
         "rotation": [
@@ -1061,7 +1061,7 @@
         "type": "Box",
         "size": [
           1.4,
-          13.25,
+          18.25,
           1.4
         ],
         "color": "#3e5063",
@@ -1089,12 +1089,12 @@
     {
       "id": "ai-node-34",
       "name": "Column_LB",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           -19.3,
-          7.925,
+          10.425,
           23.3
         ],
         "rotation": [
@@ -1112,7 +1112,7 @@
         "type": "Box",
         "size": [
           1.4,
-          13.25,
+          18.25,
           1.4
         ],
         "color": "#3e5063",
@@ -1140,12 +1140,12 @@
     {
       "id": "ai-node-35",
       "name": "Column_RF",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           19.3,
-          7.925,
+          10.425,
           -23.3
         ],
         "rotation": [
@@ -1163,7 +1163,7 @@
         "type": "Box",
         "size": [
           1.4,
-          13.25,
+          18.25,
           1.4
         ],
         "color": "#3e5063",
@@ -1191,12 +1191,12 @@
     {
       "id": "ai-node-36",
       "name": "Column_RB",
-      "parentId": "ai-node-12",
+      "parentId": "ai-node-98",
       "type": "Geometry",
       "transform": {
         "position": [
           19.3,
-          7.925,
+          10.425,
           23.3
         ],
         "rotation": [
@@ -1214,7 +1214,7 @@
         "type": "Box",
         "size": [
           1.4,
-          13.25,
+          18.25,
           1.4
         ],
         "color": "#3e5063",
@@ -4545,17 +4545,17 @@
     {
       "id": "prefab-node-0d9b0953-f515-415b-bd50-54be44c340cd",
       "name": "F2Left1",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           -14,
-          15.95,
+          20.95,
           -18
         ],
         "rotation": [
           0,
-          -90,
+          270,
           0
         ],
         "scale": [
@@ -4572,17 +4572,17 @@
     {
       "id": "prefab-node-b0373996-b492-4b55-b7f7-5b3a51ee6097",
       "name": "F2Left2",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           -14,
-          15.95,
+          20.95,
           -9
         ],
         "rotation": [
           0,
-          -90,
+          270,
           0
         ],
         "scale": [
@@ -4599,17 +4599,17 @@
     {
       "id": "prefab-node-54bff006-af3d-4500-83f1-4b8588263c04",
       "name": "F2Left3",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           -14,
-          15.95,
+          20.95,
           0
         ],
         "rotation": [
           0,
-          -90,
+          270,
           0
         ],
         "scale": [
@@ -4626,17 +4626,17 @@
     {
       "id": "prefab-node-96e3729f-a0c0-4b18-923e-10028fdb13c9",
       "name": "F2Left4",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           -14,
-          15.95,
+          20.95,
           9
         ],
         "rotation": [
           0,
-          -90,
+          270,
           0
         ],
         "scale": [
@@ -4653,17 +4653,17 @@
     {
       "id": "prefab-node-467f087d-c38e-4d14-9738-8d3e824bdec6",
       "name": "F2Left5",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           -14,
-          15.95,
+          20.95,
           18
         ],
         "rotation": [
           0,
-          -90,
+          270,
           0
         ],
         "scale": [
@@ -4680,12 +4680,12 @@
     {
       "id": "prefab-node-9239f814-7723-4aaa-bf43-8af8d0c6c92b",
       "name": "F2Right1",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           14,
-          15.95,
+          20.95,
           -18
         ],
         "rotation": [
@@ -4707,12 +4707,12 @@
     {
       "id": "prefab-node-45ae4466-045c-44a0-9cd0-5a29a280320e",
       "name": "F2Right2",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           14,
-          15.95,
+          20.95,
           -9
         ],
         "rotation": [
@@ -4734,12 +4734,12 @@
     {
       "id": "prefab-node-23d600ae-d9c0-4fc5-b97f-73199604a1fb",
       "name": "F2Right3",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           14,
-          15.95,
+          20.95,
           0
         ],
         "rotation": [
@@ -4761,12 +4761,12 @@
     {
       "id": "prefab-node-b5a9815b-b86f-4cc5-92be-de8bc15b4707",
       "name": "F2Right4",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           14,
-          15.95,
+          20.95,
           9
         ],
         "rotation": [
@@ -4788,12 +4788,12 @@
     {
       "id": "prefab-node-b3b58e2b-881e-4720-8b20-083071b612b3",
       "name": "F2Right5",
-      "parentId": "ai-node-14",
+      "parentId": "ai-node-100",
       "type": "PrefabReference",
       "transform": {
         "position": [
           14,
-          15.95,
+          20.95,
           18
         ],
         "rotation": [
@@ -4810,6 +4810,98 @@
       "target": {
         "kind": "project",
         "projectGuid": "8ed71c19-df93-41e4-acd6-b3a2d1a8a509"
+      }
+    },
+    {
+      "id": "ai-node-97",
+      "name": "BaseUpper",
+      "parentId": "root",
+      "type": "Transform",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-98",
+      "name": "Architecture",
+      "parentId": "ai-node-97",
+      "type": "Group",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-99",
+      "name": "Walkways",
+      "parentId": "ai-node-97",
+      "type": "Group",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "ai-node-100",
+      "name": "DisplayLayout",
+      "parentId": "ai-node-97",
+      "type": "Group",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
       }
     }
   ],
