@@ -2,12 +2,16 @@
 local FX = _G.FX
 local Player = FX.Class("SPlayerObjectClass", "FSPlayerObjectClass")
 
---- 挂载通用能力与基地组件，存档和握手仍由框架负责。
+--- 挂载背包、矿场、基地、锻造与槽位剑组件，存档和握手仍由框架负责。
 --- @param id number Roblox UserId。
 function Player:Ctor(id)
     Player.Super.Ctor(self, id)
     self:AddComponent("FSRewardCompClass")
+    self:AddComponent("SInventoryCompClass")
+    self:AddComponent("SMiningCompClass")
     self:AddComponent("SBaseCompClass")
+    self:AddComponent("SForgeCompClass")
+    self:AddComponent("SSlotSwordCompClass")
     self:AddComponent("SMiscCompClass")
     self:AddComponent("SGMCompClass")
     self:AddComponent("SAnalyticsCompClass")

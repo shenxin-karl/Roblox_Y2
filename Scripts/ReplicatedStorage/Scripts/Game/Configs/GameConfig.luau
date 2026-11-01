@@ -2,7 +2,18 @@ return {
     CommonConfig = {
         BaseInitialSlots = 5,
         BaseSlotsPerFloor = 10,
-        BaseMaxFloors = 4
+        BaseMaxFloors = 4,
+        SwordInitialIncome = 10,
+        SwordIncomePerLevel = 5,
+        SwordUpgradePricePerLevel = 25,
+        MiningRefreshInterval = 30,
+        MiningSpawnCount = 8,
+        MiningRockHits = 3,
+        MiningSpawnProbability = 0.8,
+        MiningOrePerHit = 1,
+        MiningOreItemId = 1001,
+        FurnaceOreCost = 5,
+        FurnaceSwordItemId = 1002
     },
     BaseSlotData = {
         [1] = {

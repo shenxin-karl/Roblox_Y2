@@ -18,18 +18,21 @@ end
 function Component:OnReady()
     self._rootNode = FXLoader:PlayerGui("Main.HUD")
     self._moneyLabel = FXLoader:Here(self._rootNode, "Wallet.Money")
-    self:TrackConnection(self._rootNode:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-        self:RefreshLayout()
-    end))
     self:WatchDataChanged(PlayerDataConfig.Money, function()
         self:RefreshMoney()
     end)
     self:TrackConnection(FXLoader:Here(self._rootNode, "TopNav.Home").Activated:Connect(function()
         FX.Network:SendMsgToServer("C2S_ReturnHome")
     end))
-    self:RefreshLayout()
     self._itemDescription = FCItemDescription.New()
     self._itemDescription.Root.Parent = self._rootNode
+    self._itemDescriptionScale = Instance.new("UIScale")
+    self._itemDescriptionScale.Name = "ResponsiveScale"
+    self._itemDescriptionScale.Parent = self._itemDescription.Root
+    self:TrackConnection(self._rootNode:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+        self:RefreshLayout()
+    end))
+    self:RefreshLayout()
     self._selectedToolConnections = {}
     self:TrackConnection(self._rootNode:GetPropertyChangedSignal("Visible"):Connect(function()
         self:RefreshSelectedTool()
@@ -52,13 +55,14 @@ function Component:OnReady()
     self:Show()
 end
 
---- 常驻 HUD 按参考画布等比缩小，顶部、侧栏与钱包保持各自的屏幕锚点。
+--- 常驻 HUD 与道具说明使用相同缩放，顶部、侧栏与钱包保持各自的屏幕锚点。
 function Component:RefreshLayout()
     local size = self._rootNode.AbsoluteSize
     local scale = math.min(size.X / 1174, size.Y / 622)
     for index, name in ipairs({"TopNav", "SideNav", "Wallet"}) do
         FXLoader:Here(self._rootNode, name .. ".ResponsiveScale").Scale = scale
     end
+    self._itemDescriptionScale.Scale = scale
 end
 
 --- 余额只取玩家同步字段，缩写统一使用项目数量格式化方法。

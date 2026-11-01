@@ -1,8 +1,60 @@
--- 槽位解锁与金币消耗共同预检，由框架统一提交；预检不修改场景或玩家档案。
+-- 槽位解锁、赠剑、领钱与升级由框架统一预检提交；处理器不直接修改场景或档案。
 local Fields = _G.PlayerDataConfig
 local GameConfig = _G.GameConfig
+local FX = _G.FX
+local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 
 return {
+    --- 初始剑只赠一次，不覆盖第一槽已有物品，标记与物品一起持久化。
+    --- @param rewardComponent table 框架奖励组件。
+    --- @param entry table 初始剑奖励条目，不接受客户端参数。
+    --- @param tables table 本次交易待提交的字段快照。
+    --- @return boolean 是否可以提交首次赠送。
+    StarterSlotSword = function(rewardComponent, entry, tables)
+        local data = tables.BaseData or rewardComponent:GetTable(Fields.BaseData)
+        if data.InitialSwordGranted then
+            return false
+        end
+        if not data.SlotData["1"] then
+            data.SlotData["1"] = {WeaponId = "StarterSword", Level = 1, StoredMoney = 0}
+        end
+        data.InitialSwordGranted = true
+        tables.BaseData = data
+        return true
+    end,
+    --- 同一批领钱奖励只有与当前累计额完全一致时才可清零。
+    --- @param rewardComponent table 框架奖励组件。
+    --- @param entry table 服务端读取的 Amount 快照。
+    --- @param tables table 本次交易待提交的字段快照。
+    --- @return boolean 是否允许发钱并清除本次累计额。
+    SlotSwordCollect = function(rewardComponent, entry, tables)
+        local data = tables.BaseData or rewardComponent:GetTable(Fields.BaseData)
+        local sword = data.SlotData["1"]
+        if not sword or sword.WeaponId ~= "StarterSword" or sword.StoredMoney <= 0
+            or sword.StoredMoney ~= entry.Amount then
+            return false
+        end
+        sword.StoredMoney = 0
+        tables.BaseData = data
+        return true
+    end,
+    --- 只改变剑自身等级；费用和新等级由奖励框架共同预检后提交。
+    --- @param rewardComponent table 框架奖励组件。
+    --- @param entry table 服务端固定的升级前等级。
+    --- @param tables table 本次交易待提交的字段快照。
+    --- @return boolean 是否允许升级当前这把剑。
+    SlotSwordUpgrade = function(rewardComponent, entry, tables)
+        local data = tables.BaseData or rewardComponent:GetTable(Fields.BaseData)
+        local sword = data.SlotData["1"]
+        if not sword or sword.WeaponId ~= "StarterSword" or sword.Level ~= entry.ExpectedLevel
+            or SwordRules.GetIncome(sword.Level + 1) >= math.huge
+            or SwordRules.GetUpgradePrice(sword.Level + 1) >= math.huge then
+            return false
+        end
+        sword.Level += 1
+        tables.BaseData = data
+        return true
+    end,
     --- 只允许购买当前基地已生成且未解锁的展示台，防止重复购买和越层授予。
     --- @param rewardComponent table 框架奖励组件。
     --- @param entry table 含 SlotId 的服务端奖励条目。

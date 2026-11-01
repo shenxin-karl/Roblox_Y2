@@ -25,13 +25,17 @@ return {
         Type = "table", Key = "BaseData",
         DefVal = {
             UnlockedSlotCount = _G.GameConfig.CommonConfig.BaseInitialSlots,
-            UnlockedSlots = initialUnlockedSlots, SlotData = {},
+            UnlockedSlots = initialUnlockedSlots, SlotData = {}, InitialSwordGranted = false,
         },
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
     -- 场景基地每次登录重新分配，不随档案保存；0 表示正在等待空基地。
     BaseId = {
         Type = "number", Key = "BaseId", DefVal = 0, Sync = true,
+    },
+    -- 本服会话内的锻造台编号；0 表示未占用，不持久化到玩家档案。
+    ForgeStation = {
+        Type = "number", Key = "ForgeStation", DefVal = 0, Sync = true,
     },
     Settings = {
         Type = "table", Key = "Settings",
