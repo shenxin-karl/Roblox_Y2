@@ -1,0 +1,46 @@
+{
+  "initialMoney": {
+    "kind": "number",
+    "value": 0,
+    "editor": {
+      "displayName": "初始金钱",
+      "display": { "kind": "number", "control": "number", "min": 0, "step": 1 }
+    }
+  },
+  "initialUnlockedSlotCount": {
+    "kind": "number",
+    "value": 5,
+    "editor": {
+      "displayName": "初始解锁槽位数",
+      "folder": "槽位配置",
+      "display": { "kind": "number", "control": "number", "min": 0, "max": 30, "step": 1 }
+    }
+  },
+  "slotUnlockCurve": {
+    "kind": "curve",
+    "input": {
+      "key": "slotId",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1,
+      "max": 30
+    },
+    "formula": {
+      "kind": "Power",
+      "base": 0,
+      "multiplier": { "kind": "constant", "value": 100 },
+      "power": { "kind": "constant", "value": 1 },
+      "rounding": "floor"
+    },
+    "editor": {
+      "displayName": "槽位解锁曲线",
+      "folder": "槽位配置",
+      "display": {
+        "kind": "curve",
+        "xLabel": "槽位 ID",
+        "yLabel": "解锁价格",
+        "sampleRange": { "min": 1, "max": 30, "step": 1 }
+      }
+    }
+  }
+}
