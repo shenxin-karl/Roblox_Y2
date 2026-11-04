@@ -1,0 +1,19 @@
+{
+  "defaultsInitialized": true,
+  "rules": [
+    {
+      "workbook": "ItemConfig.xlsx",
+      "config": "Display",
+      "fields": [
+        "Name"
+      ]
+    },
+    {
+      "workbook": "GoodsConfig.xlsx",
+      "config": "GoodsData",
+      "fields": [
+        "Name"
+      ]
+    }
+  ]
+}
