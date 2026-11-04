@@ -1,0 +1,10 @@
+/*
+!/.gitignore
+!/simulator.project.json
+!/Code/
+!/Docs/
+!/Data/
+/Data/*
+!/Data/config.json
+
+!/Data/talent-tree.json
