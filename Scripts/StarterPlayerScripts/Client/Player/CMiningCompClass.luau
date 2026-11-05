@@ -1,10 +1,12 @@
 -- 公共矿场界面：显示服务端刷新倒计时与最近交互，库存仍使用原生背包。
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
+local TweenService = game:GetService("TweenService")
 local FX, FC = _G.FX, _G.FC
 local Text = FX.Text
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local Config = _G.GameConfig.CommonConfig
+local MiningEffects = FX.Loader:RequireFromParent(script, "CMiningEffects")
 local UIRoot = FX.Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local TranslationTexts = Text.Define("MiningInteraction", {
     Refresh = "Rocks refresh in {seconds:int}s",
@@ -22,6 +24,7 @@ end
 
 --- 只创建自身界面，不改 Generated；场景目标允许随流式加载出现或消失。
 function Comp:OnReady()
+    self._effects = MiningEffects.New(self)
     local root = Instance.new("Frame")
     root.Name = "MiningHUD"
     root.Size = UDim2.fromScale(1, 1)
@@ -59,10 +62,10 @@ function Comp:OnReady()
         if not button.Visible or os.clock() - self._lastRequest < Settings.RequestCooldown then
             return
         end
-        self._lastRequest = os.clock()
         if self._rock then
-            FX.Network:SendMsgToServer("C2S_MineRock", self._rock)
+            self:MineRock()
         elseif self._nearFurnace then
+            self._lastRequest = os.clock()
             FX.Network:SendMsgToServer("C2S_SmeltSword")
         end
     end))
@@ -73,6 +76,7 @@ function Comp:OnReady()
     --- 限制附近目标扫描频率，倒计时仍以服务器绝对时间为准。
     --- @param deltaTime number 本帧经过秒数。
     self:TrackConnection(RunService.Heartbeat:Connect(function(deltaTime)
+        self._effects:Update()
         elapsed += deltaTime
         if elapsed >= 0.1 then
             elapsed = 0
@@ -80,6 +84,161 @@ function Comp:OnReady()
         end
     end))
     self:Refresh()
+end
+
+--- 换装、死亡或组件销毁时中断挥镐，取消尚未落下的攻击并恢复关节。
+function Comp:StopSwing()
+    if self._swingTrail then
+        self._swingTrail.Enabled = false
+        self._swingTrail:Clear()
+    end
+    if self._swingTask then
+        task.cancel(self._swingTask)
+        self._swingTask = nil
+    end
+    if self._swingTrack then
+        self._swingTrack:Destroy()
+        self._swingTrack = nil
+    end
+    for joint, pose in pairs(self._swingJoints or {}) do
+        if pose.Tween then
+            pose.Tween:Cancel()
+        end
+        if joint.Parent then
+            joint[pose.Property or "C0"] = pose.Base
+        end
+    end
+    self._swingJoints = nil
+end
+
+--- 沿用 Money 的关节补间，R15 只驱动腰部，手臂由原动画驱动。
+--- @param duration number 阶段持续秒数。
+--- @param armAngle number R6 持镐手臂俯仰角。
+--- @param bodyAngle number 躯干俯仰角。
+--- @param direction Enum.EasingDirection 当前阶段缓动方向。
+function Comp:PoseSwing(duration, armAngle, bodyAngle, direction)
+    for joint, pose in pairs(self._swingJoints) do
+        local angle = pose.Body and bodyAngle or armAngle
+        local base = pose.Base
+        local target = CFrame.new(base.Position) * CFrame.Angles(math.rad(angle), 0, 0) * base.Rotation
+        pose.Tween = TweenService:Create(joint, TweenInfo.new(duration, Enum.EasingStyle.Quad, direction), {
+            [pose.Property or "C0"] = target,
+        })
+        pose.Tween:Play()
+    end
+end
+
+--- 自动攻击或点击按钮时使用 Money 的挥镐节奏，落点仍由服务端校验。
+function Comp:MineRock()
+    if not self._rock or not self._swingTrail or self._swingTask or os.clock() - self._lastRequest < 0.8 then
+        return
+    end
+    local character = self:GetPlayerCharacter()
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local tool = self._pickaxe
+    if not humanoid or humanoid.Health <= 0 or not tool or not tool.Parent then
+        return
+    end
+    if tool.Parent ~= character then
+        humanoid:EquipTool(tool)
+    end
+    if tool.Parent ~= character then
+        return
+    end
+    self:StopSwing()
+    self._lastRequest = os.clock()
+    local rock = self._rock
+    local r15 = humanoid.RigType == Enum.HumanoidRigType.R15
+    if r15 then
+        local animator = humanoid:FindFirstChildOfClass("Animator")
+        if not animator then
+            return
+        end
+        local animation = tool:FindFirstChild("RockUpperBodySwing")
+        if not animation then
+            return
+        end
+        self._swingTrack = animator:LoadAnimation(animation)
+        self._swingTrack.Priority = Enum.AnimationPriority.Action
+        self._swingTrack.Looped = false
+        self._swingTrack:Play(0.08, 1, 0.25 / 0.26)
+    end
+    self._swingJoints = {}
+    if r15 then
+        local torso = character:FindFirstChild("UpperTorso")
+        local waist = torso and torso:FindFirstChild("Waist")
+        if waist and waist:IsA("Motor6D") then
+            self._swingJoints[waist] = {Base = waist.C0, Body = true}
+        elseif waist and waist:IsA("AnimationConstraint") and waist.Attachment0 then
+            local attachment = waist.Attachment0
+            self._swingJoints[attachment] = {Base = attachment.CFrame, Body = true, Property = "CFrame"}
+        end
+    else
+        for index, joint in ipairs(character:GetDescendants()) do
+            if joint:IsA("Motor6D") and joint.Part1 and joint.Part1.Name == "Right Arm" then
+                self._swingJoints[joint] = {Base = joint.C0, Body = false}
+            end
+        end
+    end
+    local windup = r15 and 0.26 or 0.22
+    local strike = r15 and 0.14 or 0.1
+    local recovery = r15 and 0.26 or 0.28
+    self._swingTask = task.spawn(function()
+        self:PoseSwing(windup, 85, 10, Enum.EasingDirection.Out)
+        task.wait(windup)
+        if self._swingTrack then
+            self._swingTrack:AdjustSpeed(0.25 / strike)
+        end
+        self._swingTrail.Enabled = true
+        self:PoseSwing(strike, -40, -38, Enum.EasingDirection.In)
+        task.wait(strike)
+        local root = humanoid.RootPart
+        if humanoid.Health > 0 and tool.Parent == character and rock.Parent and root
+            and (root.Position - rock.Position).Magnitude <= Settings.InteractDistance then
+            FX.Network:SendMsgToServer("C2S_MineRock", rock)
+        end
+        if self._swingTrack then
+            self._swingTrack:AdjustSpeed(1.25)
+        end
+        task.wait(0.06)
+        self._swingTrail.Enabled = false
+        self:PoseSwing(recovery, 0, 0, Enum.EasingDirection.Out)
+        task.wait(recovery)
+        self._swingTask = nil
+        self:StopSwing()
+    end)
+end
+
+--- 跟踪服务端复制的自制木镐，重生或换装时释放旧连接与镐头拖尾。
+function Comp:RefreshPickaxe()
+    local player = self:GetPlayerNode()
+    local character = self:GetPlayerCharacter()
+    local backpack = player:FindFirstChildOfClass("Backpack")
+    local tool = character and character:FindFirstChild("MiningPickaxe")
+        or backpack and backpack:FindFirstChild("MiningPickaxe")
+    local handle = tool and tool:FindFirstChild("Handle")
+    local trail = handle and handle:FindFirstChild("PickaxeSwingTrail")
+    if tool == self._pickaxe then
+        self._swingTrail = trail
+        return
+    end
+    self:StopSwing()
+    if self._toolActivated then
+        self._toolActivated:Disconnect()
+        self._toolUnequipped:Disconnect()
+        self._toolActivated = nil
+        self._toolUnequipped = nil
+    end
+    self._pickaxe = tool
+    self._swingTrail = trail
+    if tool then
+        self._toolActivated = tool.Activated:Connect(function()
+            self:MineRock()
+        end)
+        self._toolUnequipped = tool.Unequipped:Connect(function()
+            self:StopSwing()
+        end)
+    end
 end
 
 --- 原生 Tool 名称来自配置翻译，堆叠数仅显示整数，不复制私有背包数据。
@@ -113,6 +272,7 @@ end
 
 --- 只选择已复制到本客户端的最近公共石头；最终有效性仍由服务端重验。
 function Comp:Refresh()
+    self:RefreshPickaxe()
     local deadline = FX.SyncManager:GetNumber(_G.ServerDataConfig.MiningNextRefresh)
     local seconds = math.max(0, math.ceil(deadline - workspace:GetServerTimeNow()))
     self._countdown.Text = deadline > 0
@@ -128,8 +288,9 @@ function Comp:Refresh()
         for index, rock in ipairs(CollectionService:GetTagged(Settings.RockTag)) do
             local hits = rock:GetAttribute("RemainingHits")
             if rock:IsA("BasePart") and hits and hits > 0 then
-                local distance = (root.Position - rock.Position).Magnitude
-                if distance <= nearestDistance then
+                local offset = rock.Position - root.Position
+                local distance = offset.Magnitude
+                if distance <= nearestDistance and (distance < 0.01 or root.CFrame.LookVector:Dot(offset.Unit) > 0) then
                     self._rock = rock
                     nearestDistance = distance
                 end
@@ -142,6 +303,13 @@ function Comp:Refresh()
     self._button.Visible = self._rock ~= nil or self._nearFurnace
     if self._rock then
         self._button.Text = Text.Tr(TranslationTexts.Mine, {hits = self._rock:GetAttribute("RemainingHits")})
+        -- 与 Money 相同，靠近且面向矿石时自动挥镐；持有其他道具时不抢占装备。
+        local heldTool = character:FindFirstChildOfClass("Tool")
+        local offset = self._rock.Position - root.Position
+        if (not heldTool or heldTool == self._pickaxe)
+            and (offset.Magnitude < 0.01 or root.CFrame.LookVector:Dot(offset.Unit) > 0) then
+            self:MineRock()
+        end
     elseif self._nearFurnace then
         self._button.Text = Text.Tr(TranslationTexts.Smelt, {count = Config.FurnaceOreCost})
     end
@@ -150,6 +318,14 @@ end
 
 --- 只删除矿场自有节点，保留共享画布和背包 Tool。
 function Comp:Dtor()
+    self:StopSwing()
+    if self._effects then
+        self._effects:Destroy()
+    end
+    if self._toolActivated then
+        self._toolActivated:Disconnect()
+        self._toolUnequipped:Disconnect()
+    end
     Comp.Super.Dtor(self)
     if self._rootNode then
         self._rootNode:Destroy()

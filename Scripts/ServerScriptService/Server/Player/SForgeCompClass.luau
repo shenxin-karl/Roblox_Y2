@@ -50,6 +50,17 @@ function Comp:Teleport(character, humanoid, target)
     humanoid.RootPart.AssemblyAngularVelocity = Vector3.zero
 end
 
+--- 顶部导航前往庭院入口，复用角色校验、节流与固定落点，并释放原台位。
+function Comp:TeleportToArea()
+    local character, humanoid = self:GetLivingCharacter()
+    if not character or os.clock() - self._lastRequest < Settings.RequestCooldown then
+        return
+    end
+    self._lastRequest = os.clock()
+    self:Teleport(character, humanoid, self._manager:GetExit())
+    self:Release()
+end
+
 --- 仅在庭院附近随机取得一个空台位，分配与传送之间不让出执行。
 function Comp:Enter()
     local character, humanoid = self:GetLivingCharacter()

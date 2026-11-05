@@ -90,7 +90,7 @@ function Comp:PositionCharacter(character)
     end)
 end
 
---- 回家与楼层圆环共享节流，仅允许存活角色返回本人已分配的基地。
+--- 回家与楼层圆环共享节流，仅允许存活角色返回本人基地，并释放占用的锻造台。
 function Comp:ReturnHome()
     local player = self:GetPlayerNode()
     local character = player and player.Character
@@ -100,6 +100,10 @@ function Comp:ReturnHome()
         return
     end
     self._lastTeleport = os.clock()
+    local forge = self:GetPlayerObject():GetComponent("SForgeComp")
+    if forge then
+        forge:Release()
+    end
     humanoid.Sit = false
     self:PositionCharacter(character)
 end

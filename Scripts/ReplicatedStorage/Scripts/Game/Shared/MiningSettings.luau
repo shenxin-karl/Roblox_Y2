@@ -1,6 +1,6 @@
 -- 公共矿场交互几何；刷新与兑换数值统一由源配置表维护。
 local Settings = {
-    GroundPath = "BlockMeshs.ground.营地铺地.平地矿场",
+    GroundPath = "Decorations.MiningAreaDecorations.QuarryGround.InnerMiningSurface",
     FurnacePath = "Decorations.Forge.PublicFurnace.ProjectingStoneHearth",
     RockTag = "PublicMiningRock",
     InteractDistance = 9,

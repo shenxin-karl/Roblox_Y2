@@ -5,6 +5,8 @@ return {
         "C2S_SaveSettings",
         -- 无客户端目标参数，只能回到服务端为本人分配的基地。
         "C2S_ReturnHome",
+        -- 仅请求前往锻造庭院入口，落点由服务端决定。
+        "C2S_TeleportToForge",
         -- 仅请求进入或离开，不接受客户端指定的台位或传送坐标。
         "C2S_EnterForge",
         "C2S_LeaveForge",

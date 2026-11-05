@@ -17,6 +17,7 @@ function Manager:Ctor()
     assert(Config.FurnaceOreCost > 0 and Config.FurnaceOreCost % 1 == 0, "Invalid FurnaceOreCost")
     self._ground = FX.Loader:Workspace(Settings.GroundPath)
     self._furnace = FX.Loader:Workspace(Settings.FurnacePath)
+    self._rockTemplates = FX.Loader:Shared("Assets.Decorations.MiningRocks"):GetChildren()
     self._random = Random.new()
     self._rocks = {}
     self._folder = Instance.new("Folder")
@@ -35,19 +36,17 @@ function Manager:Refresh()
     table.clear(self._rocks)
     self._folder:ClearAllChildren()
     local radius = math.min(self._ground.Size.Y, self._ground.Size.Z) / 2 - 4
-    local center = self._ground.Position + Vector3.new(0, self._ground.Size.X / 2 + 1.5, 0)
+    local center = self._ground.Position + Vector3.new(0, self._ground.Size.X / 2, 0)
     local phase = self._random:NextNumber(0, math.pi * 2)
     for slot = 1, Config.MiningSpawnCount do
         if self._random:NextNumber() < Config.MiningSpawnProbability then
             local angle = phase + (slot - 1) * math.pi * 2 / Config.MiningSpawnCount
             local distance = self._random:NextNumber(radius * 0.35, radius)
-            local rock = Instance.new("Part")
+            local rock = self._rockTemplates[self._random:NextInteger(1, #self._rockTemplates)]:Clone()
             rock.Name = "Rock_" .. slot
-            rock.Shape = Enum.PartType.Ball
-            rock.Size = Vector3.new(4, 3, 4)
-            rock.Position = center + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
-            rock.Color = Color3.fromRGB(99, 103, 110)
-            rock.Material = Enum.Material.Slate
+            rock.CFrame = CFrame.new(center + Vector3.new(math.cos(angle) * distance,
+                rock.Size.Y / 2, math.sin(angle) * distance))
+                * CFrame.Angles(0, self._random:NextNumber(0, math.pi * 2), 0)
             rock.Anchored = true
             rock.CanTouch = false
             rock:SetAttribute("RemainingHits", Config.MiningRockHits)
@@ -82,7 +81,14 @@ function Manager:Mine(player, position, rock)
     hits -= 1
     if hits == 0 then
         self._rocks[rock] = nil
-        rock:Destroy()
+        -- 保留终态供客户端确认击碎，避免把定时刷新误判成破碎。
+        rock:SetAttribute("RemainingHits", 0)
+        rock.Transparency = 1
+        rock.CanCollide = false
+        rock.CanQuery = false
+        task.delay(0.5, function()
+            rock:Destroy()
+        end)
     else
         self._rocks[rock] = hits
         rock:SetAttribute("RemainingHits", hits)

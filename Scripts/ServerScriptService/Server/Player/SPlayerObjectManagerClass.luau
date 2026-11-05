@@ -54,6 +54,15 @@ end
 
 --- 锻造请求只转发给认证请求者，不接收目标玩家、台位或坐标。
 function Manager:RegForgeMsg()
+    --- 顶部导航可从地图任意位置前往庭院，不直接占用锻造台。
+    --- @param userId number 引擎认证的请求者 ID。
+    FX.Network:RegClientMsgCallback("C2S_TeleportToForge", function(userId)
+        local player = self:GetPlayerObject(userId)
+        local forge = player and player:GetComponent("SForgeComp")
+        if forge then
+            forge:TeleportToArea()
+        end
+    end)
     --- 未完成登录的玩家由组件的会话状态拒绝。
     --- @param userId number 引擎认证的请求者 ID。
     FX.Network:RegClientMsgCallback("C2S_EnterForge", function(userId)
