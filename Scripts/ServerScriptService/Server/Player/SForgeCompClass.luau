@@ -2,7 +2,6 @@
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
-local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Comp = FX.Class("SForgeCompClass", "FSPlayerCompClass")
 
 --- 每次登录重新分配会话，不将台位写入存档。
@@ -25,9 +24,7 @@ function Comp:ForgeSword()
     local success = false
     if station.OwnerUserId == self:GetPlayerId()
         and (humanoid.RootPart.Position - station.Arrival.Position).Magnitude <= 8 then
-        success = self:RequireComponent("FSRewardComp"):ExchangeRewards(
-            {{Type = "Item", ItemId = SwordRules.RawItemId, Count = 1}},
-            {{Type = "Item", ItemId = SwordRules.ItemId, Count = 1, ExtraData = {Level = 1, StoredMoney = 0}}})
+        success = self:RequireComponent("FSRewardComp"):AddRewards({{Type = "ForgeSword"}})
     end
     FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, success)
 end

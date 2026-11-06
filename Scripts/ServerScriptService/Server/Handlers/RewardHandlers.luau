@@ -5,6 +5,35 @@ local FX = _G.FX
 local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 
 return {
+    --- 在同一个库存快照中将原料替换为成品，优先手持原料并保留其变异与幸运值。
+    --- @param rewardComponent table 框架奖励组件。
+    --- @param entry table 服务端固定的打造条目，无客户端配方。
+    --- @param tables table 本次交易待提交的字段快照。
+    --- @return boolean 是否可以提交一把成品剑。
+    ForgeSword = function(rewardComponent, entry, tables)
+        local inventory = rewardComponent:RequireComponent("FSInventoryComp")
+        local items = tables.Inventory or rewardComponent:GetTable(Fields.Inventory)
+        local grid = inventory:GetEquippedGrid()
+        local item = grid and items[tostring(grid)]
+        if not item or item.itemId ~= SwordRules.RawItemId then
+            grid, item = nil, nil
+            for index = 1, inventory:GetTotalCapacity() do
+                local candidate = items[tostring(index)]
+                if candidate and candidate.itemId == SwordRules.RawItemId then
+                    grid, item = index, candidate
+                    break
+                end
+            end
+        end
+        local traits = item and SwordRules.GetTraits(item.extraData)
+        if not traits or item.stackCount ~= 1 then
+            return false
+        end
+        traits.Level, traits.StoredMoney = 1, 0
+        items[tostring(grid)] = {itemId = SwordRules.ItemId, stackCount = 1, extraData = traits}
+        tables.Inventory = items
+        return true
+    end,
     --- 初始剑只赠一次，不覆盖第一槽已有物品，标记与物品一起持久化。
     --- @param rewardComponent table 框架奖励组件。
     --- @param entry table 初始剑奖励条目，不接受客户端参数。
@@ -77,8 +106,13 @@ return {
             or not SwordRules.IsValid(item.extraData) then
             return false
         end
+        local traits = SwordRules.GetTraits(item.extraData)
+        if not traits then
+            return false
+        end
         data.SlotData[key] = {
             ItemId = item.itemId, Level = item.extraData.Level, StoredMoney = item.extraData.StoredMoney,
+            MutationId = traits.MutationId, Luck = traits.Luck,
         }
         items[tostring(entry.Grid)] = nil
         tables.Inventory, tables.BaseData = items, data

@@ -184,7 +184,9 @@ return {
             Probability = 0.8,
             EffectPath = nil,
             OreCountMultiplier = 1,
-            HitsMultiplier = 1
+            HitsMultiplier = 1,
+            OreItemId = 1001,
+            Luck = 1
         },
         Toxic = {
             Id = [[Toxic]],
@@ -192,7 +194,9 @@ return {
             Probability = 0.1,
             EffectPath = [[Assets.Effects.Aura.03_Toxic]],
             OreCountMultiplier = 1,
-            HitsMultiplier = 1
+            HitsMultiplier = 1,
+            OreItemId = 1101,
+            Luck = 2
         },
         Frost = {
             Id = [[Frost]],
@@ -200,7 +204,9 @@ return {
             Probability = 0.05,
             EffectPath = [[Assets.Effects.Aura.19_Frost]],
             OreCountMultiplier = 1,
-            HitsMultiplier = 1
+            HitsMultiplier = 1,
+            OreItemId = 1102,
+            Luck = 3
         },
         Inferno = {
             Id = [[Inferno]],
@@ -208,7 +214,9 @@ return {
             Probability = 0.03,
             EffectPath = [[Assets.Effects.Aura.20_Inferno]],
             OreCountMultiplier = 1,
-            HitsMultiplier = 1
+            HitsMultiplier = 1,
+            OreItemId = 1103,
+            Luck = 4
         },
         Storm = {
             Id = [[Storm]],
@@ -216,7 +224,9 @@ return {
             Probability = 0.015,
             EffectPath = [[Assets.Effects.Aura.21_Storm]],
             OreCountMultiplier = 1,
-            HitsMultiplier = 1
+            HitsMultiplier = 1,
+            OreItemId = 1104,
+            Luck = 5
         },
         Astral = {
             Id = [[Astral]],
@@ -224,7 +234,9 @@ return {
             Probability = 0.005,
             EffectPath = [[Assets.Effects.Aura.25_Astral]],
             OreCountMultiplier = 1,
-            HitsMultiplier = 1
+            HitsMultiplier = 1,
+            OreItemId = 1105,
+            Luck = 6
         }
     },
     MiningRockData = {

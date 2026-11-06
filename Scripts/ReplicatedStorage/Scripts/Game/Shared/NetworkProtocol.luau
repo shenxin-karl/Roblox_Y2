@@ -18,5 +18,5 @@ return {
         "C2S_MineRock",
         "C2S_SmeltSword",
     },
-    ServerMsgID = {"S2C_ForgeSwordResult"},
+    ServerMsgID = {"S2C_ForgeSwordResult", "S2C_MiningReward"},
 }

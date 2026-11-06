@@ -26,6 +26,51 @@ return {
             HeldHandler = [[Sword]],
             NumberArray = nil,
             KVTable = nil
+        },
+        [1101] = {
+            Id = 1101,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
+        },
+        [1102] = {
+            Id = 1102,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
+        },
+        [1103] = {
+            Id = 1103,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
+        },
+        [1104] = {
+            Id = 1104,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
+        },
+        [1105] = {
+            Id = 1105,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
         }
     },
     Display = {
@@ -52,6 +97,46 @@ return {
             Quality = 1,
             IconId = [[rbxasset://Textures/Sword128.png]],
             DisplayModelId = [[Sword]]
+        },
+        [1101] = {
+            Id = 1101,
+            Name = [[Toxic Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://0]],
+            DisplayModelId = nil
+        },
+        [1102] = {
+            Id = 1102,
+            Name = [[Frost Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://0]],
+            DisplayModelId = nil
+        },
+        [1103] = {
+            Id = 1103,
+            Name = [[Inferno Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://0]],
+            DisplayModelId = nil
+        },
+        [1104] = {
+            Id = 1104,
+            Name = [[Storm Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://0]],
+            DisplayModelId = nil
+        },
+        [1105] = {
+            Id = 1105,
+            Name = [[Astral Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://0]],
+            DisplayModelId = nil
         }
     },
     ExtraDataSchema = {
@@ -63,7 +148,13 @@ return {
         },
         ForgedSword = {
             Level = 1,
-            StoredMoney = 0
+            StoredMoney = 0,
+            MutationId = [[Normal]],
+            Luck = 1
+        },
+        RawSword = {
+            MutationId = [[Normal]],
+            Luck = 1
         }
     }
 }

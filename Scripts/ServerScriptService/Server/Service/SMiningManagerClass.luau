@@ -24,6 +24,8 @@ function Manager:Ctor()
         local oreCount = Config.MiningOrePerHit * mutation.OreCountMultiplier
         assert(hits > 0 and hits % 1 == 0, "Mutation hits must be a positive integer: " .. id)
         assert(oreCount > 0 and oreCount % 1 == 0, "Mutation reward must be a positive integer: " .. id)
+        assert(_G.ItemConfig.Data[mutation.OreItemId].Type == "Ore", "Invalid mutation ore: " .. id)
+        assert(mutation.Luck >= 0 and mutation.Luck < math.huge, "Invalid mutation luck: " .. id)
         probability += mutation.Probability
         table.insert(self._mutations, mutation)
     end
@@ -133,6 +135,7 @@ function Manager:Refresh()
             self._rocks[rock] = {
                 Hits = hits,
                 OreCount = Config.MiningOrePerHit * mutation.OreCountMultiplier,
+                OreItemId = mutation.OreItemId,
             }
             rock.Parent = self._folder
             CollectionService:AddTag(rock, Settings.RockTag)
@@ -158,7 +161,7 @@ function Manager:Mine(player, position, rock)
         return false
     end
     local reward = player:RequireComponent("FSRewardComp")
-    if not reward:AddRewards({{Type = "Item", ItemId = Config.MiningOreItemId, Count = state.OreCount}}) then
+    if not reward:AddRewards({{Type = "Item", ItemId = state.OreItemId, Count = state.OreCount}}) then
         return false
     end
     local hits = state.Hits - 1
@@ -182,10 +185,11 @@ function Manager:Mine(player, position, rock)
     else
         rock:SetAttribute("RemainingHits", hits)
     end
+    FX.Network:SendMsgToClient(player:GetPlayerId(), "S2C_MiningReward", state.OreItemId, state.OreCount)
     return true
 end
 
---- 火炉只做一次原子兑换，不引入锻造台小游戏或客户端指定配方。
+--- 优先熔炼手持矿石，否则选择数量足够且幸运值最低的一种，避免默认消耗稀有矿石。
 --- @param player table 已登录的服务端玩家对象。
 --- @param position Vector3 服务端读取的角色位置。
 --- @return boolean 是否扣矿并获得剑。
@@ -193,9 +197,30 @@ function Manager:Smelt(player, position)
     if Settings.DistanceToPart(self._furnace, position) > Settings.InteractDistance then
         return false
     end
+    local inventory = player:RequireComponent("FSInventoryComp")
+    local data = inventory:GetData()
+    local held = data[inventory:GetEquippedGrid()]
+    local counts = {}
+    for grid, item in pairs(data) do
+        counts[item.itemId] = (counts[item.itemId] or 0) + item.stackCount
+    end
+    local selected
+    for index, mutation in ipairs(self._mutations) do
+        if held and held.itemId == mutation.OreItemId then
+            selected = mutation
+            break
+        elseif (counts[mutation.OreItemId] or 0) >= Config.FurnaceOreCost
+            and (not selected or mutation.Luck < selected.Luck) then
+            selected = mutation
+        end
+    end
+    if not selected then
+        return false
+    end
     return player:RequireComponent("FSRewardComp"):ExchangeRewards(
-        {{Type = "Item", ItemId = Config.MiningOreItemId, Count = Config.FurnaceOreCost}},
-        {{Type = "Item", ItemId = Config.FurnaceSwordItemId, Count = 1}}
+        {{Type = "Item", ItemId = selected.OreItemId, Count = Config.FurnaceOreCost}},
+        {{Type = "Item", ItemId = Config.FurnaceSwordItemId, Count = 1,
+            ExtraData = {MutationId = selected.Id, Luck = selected.Luck}}}
     )
 end
 

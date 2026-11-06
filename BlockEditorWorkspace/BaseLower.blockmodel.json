@@ -3929,6 +3929,92 @@
         "kind": "project",
         "projectGuid": "8ed71c19-df93-41e4-acd6-b3a2d1a8a509"
       }
+    },
+    {
+      "id": "ai-node-1",
+      "name": "CollectAll",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          10,
+          0.18,
+          -27.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          8,
+          0.2,
+          3
+        ],
+        "color": "#39ef62",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": "ai-node-2",
+      "name": "CollectAllPlate",
+      "parentId": "ai-node-11",
+      "type": "Geometry",
+      "transform": {
+        "position": [
+          10,
+          0.04,
+          -27.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "geometry": {
+        "type": "Box",
+        "size": [
+          8.2,
+          0.08,
+          3.2
+        ],
+        "color": "#183e43",
+        "texturePattern": "solid",
+        "roblox": {
+          "surfaces": {
+            "top": "Smooth",
+            "bottom": "Smooth",
+            "left": "Smooth",
+            "right": "Smooth",
+            "front": "Smooth",
+            "back": "Smooth"
+          }
+        }
+      }
     }
   ],
   "prefabFolders": [],

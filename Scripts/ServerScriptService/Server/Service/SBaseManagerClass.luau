@@ -17,7 +17,7 @@ end
 
 --- 缓存原始碰撞属性；透明预览只由客户端处理。
 --- @param model Model 单层基地。
---- @param assetFloor number 模板使用的槽位名称前缀，底层为 1，上层模板为 2。
+--- @param assetFloor number 模板使用的槽位名称前缀，当前底层和新上层均为 1。
 --- @param floorIndex number 实际场景楼层。
 --- @param baseId number 所属基地编号，供客户端筛选本人基地。
 --- @return table 按全局槽位编号索引的碰撞缓存。
@@ -50,11 +50,10 @@ end
 function Manager:Ctor()
     assert(Rules.BaseSlotsPerFloor == 10, "基地模板每层必须配置 10 个槽位")
     self._bases, self._owners = {}, {}
-    self._upperTemplate = FXLoader:Shared("Assets.BlockMeshs.BaseUpper.BaseUpper")
-    self._upperFloor = FXLoader:Here(self._upperTemplate, "Architecture.UpperFloor")
-    local templateLowerFloor = FXLoader:Shared("Assets.BlockMeshs.BaseLower.BaseLower.Architecture.LowerFloor")
-    self._floorHeight = templateLowerFloor.CFrame:ToObjectSpace(self._upperFloor.CFrame).Position.Y
-    assert(self._floorHeight > 0, "基地楼层模板的地板高度不正确")
+    self._upperTemplate = FXLoader:Shared("Assets.BlockMeshs.BaseUpperNew.BaseUpperNew")
+    self._upperFloor = FXLoader:Here(self._upperTemplate, "Architecture.LowerFloor")
+    -- 新上层模板以地面为原点，沿用旧模板地板高度差 20.45 - 0.5。
+    self._floorHeight = 19.95
     for slotId = 1, Rules.BaseSlotsPerFloor * Rules.BaseMaxFloors do
         local config = _G.GameConfig.BaseSlotData[slotId]
         assert(config and config.UnlockPrice >= 0 and config.UnlockPrice < math.huge, "缺少有效基地槽位价格")
@@ -79,7 +78,10 @@ function Manager:Ctor()
             Model = lower, Part = FXLoader:Here(lower, "Architecture.LowerFloor"),
             Ring = FXLoader:Here(lower, "TeleportRing"), Slots = CacheSlots(lower, 1, 1, id),
         }
-        self._bases[id] = {Id = id, OwnerUserId = 0, UnlockedSlotCount = 0, FloorCount = 1, Floors = {[1] = floor}}
+        self._bases[id] = {
+            Id = id, OwnerUserId = 0, UnlockedSlotCount = 0, FloorCount = 1, Floors = {[1] = floor},
+            CollectAll = FXLoader:Here(lower, "CollectAll"),
+        }
         self:SetUnlockedSlots(floor, {})
     end
     self:Publish()
@@ -111,7 +113,7 @@ function Manager:Allocate(userId)
     return available
 end
 
---- 服务端按底层地板坐标克隆上层，保留基地朝向和模板内已有的单层高度。
+--- 服务端按底层地板坐标和固定层高克隆新上层，保留基地朝向及模板自带圆环。
 --- @param base table 已分配的场景基地。
 --- @param floorIndex number 需要生成的实际楼层，范围为 2 到配置上限。
 --- @return table 新建楼层的场景与槽位缓存。
@@ -121,13 +123,11 @@ function Manager:CreateUpperFloor(base, floorIndex)
     local model = self._upperTemplate:Clone()
     model.Name = "Floor" .. floorIndex
     model:PivotTo(target * self._upperFloor.CFrame:ToObjectSpace(self._upperTemplate:GetPivot()))
-    local ring = lower.Ring:Clone()
-    ring:PivotTo(target * lower.Part.CFrame:ToObjectSpace(lower.Ring:GetPivot()))
-    ring.Parent = model
+    local ring = FXLoader:Here(model, "TeleportRing")
     DisableShadows(model)
     local floor = {
-        Model = model, Part = FXLoader:Here(model, "Architecture.UpperFloor"), Ring = ring,
-        Slots = CacheSlots(model, 2, floorIndex, base.Id),
+        Model = model, Part = FXLoader:Here(model, "Architecture.LowerFloor"), Ring = ring,
+        Slots = CacheSlots(model, 1, floorIndex, base.Id),
     }
     self:SetUnlockedSlots(floor, {})
     model:SetAttribute("FloorIndex", floorIndex)

@@ -12,6 +12,7 @@ local TranslationTexts = Text.Define("SlotSword", {
     Place = "Place held finished sword",
     Remove = "Remove weapon",
     Slot = "Slot {slot:int}",
+    CollectAll = "Collect All\n${value}",
 })
 local Comp = FX.Class("CSlotSwordCompClass", "FCPlayerCompClass")
 
@@ -131,6 +132,15 @@ end
 function Comp:BuildView(display)
     local view = self._views[display]
     local sword, sign, collect = display:FindFirstChild("Sword"), display:FindFirstChild("UpgradeSign"), display:FindFirstChild("CollectArea")
+    if view and display:GetAttribute("CollectAll") then
+        if collect and not view.Collect then
+            view.Collect, view.Amount = self:CreateSurface(collect, Enum.NormalId.Top, false)
+            view.Collect.CanvasSize = Vector2.new(800, 300)
+            view.Amount.Size, view.Amount.Rotation = UDim2.fromScale(0.92, 0.88), 0
+            self:Render(display)
+        end
+        return
+    end
     if not view or view.IncomeGui or not sword or not sign or not collect then
         return
     end
@@ -166,6 +176,16 @@ end
 --- @param display Model 正在刷新的槽位剑容器。
 function Comp:Render(display)
     local view = self._views[display]
+    if view and display:GetAttribute("CollectAll") then
+        if view.Collect then
+            local stored = display:GetAttribute("StoredMoney")
+            view.Collect.Enabled = stored ~= nil
+            if stored ~= nil then
+                view.Amount.Text = Text.Tr(TranslationTexts.CollectAll, {value = GameUtility.NumberToText(stored)})
+            end
+        end
+        return
+    end
     local level, income = display:GetAttribute("Level"), display:GetAttribute("Income")
     local price, stored = display:GetAttribute("UpgradePrice"), display:GetAttribute("StoredMoney")
     if not view or not view.IncomeGui then
@@ -198,6 +218,8 @@ function Comp:RemoveDisplay(display)
         view.IncomeGui:Destroy()
         view.IncomeAnchor:Destroy()
         view.Sign:Destroy()
+    end
+    if view.Collect then
         view.Collect:Destroy()
     end
     self._views[display] = nil

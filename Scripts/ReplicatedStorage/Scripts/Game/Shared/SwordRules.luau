@@ -2,6 +2,25 @@
 local Config = _G.GameConfig.CommonConfig
 local Rules = {ItemId = 1003, RawItemId = Config.FurnaceSwordItemId}
 
+--- 旧测试物品未保存词条时视为普通原料；已保存幸运值不随调表改变。
+--- @param extra table? 背包或槽位中保存的武器属性。
+--- @return table? 有效的变异和幸运值，损坏属性返回 nil。
+function Rules.GetTraits(extra)
+    if extra ~= nil and type(extra) ~= "table" then
+        return nil
+    end
+    local mutationId = extra and extra.MutationId or "Normal"
+    local mutation = _G.GameConfig.MiningMutationData[mutationId]
+    local luck = extra and extra.Luck
+    if luck == nil and mutation then
+        luck = mutation.Luck
+    end
+    if not mutation or type(luck) ~= "number" or luck < 0 or luck >= math.huge then
+        return nil
+    end
+    return {MutationId = mutationId, Luck = luck}
+end
+
 --- 校验背包与槽位之间转移的武器成长，拒绝损坏存档参与交易。
 --- @param sword table? 武器成长数据。
 --- @return boolean 等级和累计金币是否有效。

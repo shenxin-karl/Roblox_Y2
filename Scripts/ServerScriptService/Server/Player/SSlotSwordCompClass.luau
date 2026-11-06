@@ -126,6 +126,18 @@ function Comp:RefreshSlots()
     if not self._active or not base then
         return
     end
+    if not self._collectAllDisplay then
+        local display = Instance.new("Model")
+        display.Name = "BaseCollectAll"
+        display.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+        display:SetAttribute("OwnerUserId", self:GetPlayerId())
+        display:SetAttribute("CollectAll", true)
+        self:CreateAnchor(base.CollectAll, "CollectArea", display)
+        display.Parent = base.Runtime
+        self._collectAllDisplay = display
+        self:Publish()
+        CollectionService:AddTag(display, "SlotSwordDisplay")
+    end
     local data = self:GetTable(Fields.BaseData)
     for slotId, entry in pairs(self._prompts) do
         if not data.UnlockedSlots[tostring(slotId)] then
@@ -168,10 +180,15 @@ function Comp:Transfer(slotId)
     local reward = self:RequireComponent("FSRewardComp")
     local sword = self:GetSword(slotId)
     if sword then
+        local traits = Rules.GetTraits(sword)
+        if not traits then
+            return
+        end
+        traits.Level, traits.StoredMoney = sword.Level, sword.StoredMoney
         local success = reward:AddRewards({
             {Type = "SlotSwordRemove", SlotId = slotId, Level = sword.Level, StoredMoney = sword.StoredMoney},
             {Type = "Item", ItemId = sword.ItemId, Count = 1,
-                ExtraData = {Level = sword.Level, StoredMoney = sword.StoredMoney}},
+                ExtraData = traits},
         })
         if not success then
             self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.BackpackFull)
@@ -239,6 +256,26 @@ function Comp:Collect(slotId)
     })
 end
 
+--- 本人走到基地前的绿块后，将所有楼层的累计收益作为同一奖励计划领取。
+function Comp:CollectAll()
+    local base = self:RequireComponent("SBaseComp"):GetBase()
+    if not base or not self:IsNear(base.CollectAll, 0) then
+        return
+    end
+    local rewards, total = {}, 0
+    local data = self:GetTable(Fields.BaseData)
+    for slotId, sword in pairs(data.SlotData) do
+        if sword.ItemId == Rules.ItemId and sword.StoredMoney > 0 then
+            table.insert(rewards, {Type = "SlotSwordCollect", SlotId = slotId, Amount = sword.StoredMoney})
+            total += sword.StoredMoney
+        end
+    end
+    if total > 0 then
+        table.insert(rewards, {Type = "Money", Currency = "Money", Count = total})
+        self:RequireComponent("FSRewardComp"):AddRewards(rewards)
+    end
+end
+
 --- 只升级本人当前槽位的武器，编号、距离与费用均由服务端复核。
 --- @param slotId any 客户端请求的槽位编号。
 function Comp:Upgrade(slotId)
@@ -261,6 +298,15 @@ end
 
 --- 向所有客户端发布公开展示值，不把领钱或升级资格交给客户端。
 function Comp:Publish()
+    if self._collectAllDisplay then
+        local total = 0
+        for slotId, sword in pairs(self:GetTable(Fields.BaseData).SlotData) do
+            if sword.ItemId == Rules.ItemId then
+                total += sword.StoredMoney
+            end
+        end
+        self._collectAllDisplay:SetAttribute("StoredMoney", total)
+    end
     for slotId, view in pairs(self._displays) do
         local sword = self:GetSword(slotId)
         local display = view.Model
@@ -280,6 +326,7 @@ function Comp:OnUpdate(serverTime)
     if self._active then
         self:RefreshSlots()
         self:Accrue()
+        self:CollectAll()
         for slotId in pairs(self._displays) do
             self:Collect(slotId)
         end
@@ -290,6 +337,10 @@ end
 function Comp:OnPlayerLogout()
     self:Accrue()
     self._active = false
+    if self._collectAllDisplay then
+        self._collectAllDisplay:Destroy()
+        self._collectAllDisplay = nil
+    end
     for slotId, view in pairs(self._displays) do
         view.Model:Destroy()
     end

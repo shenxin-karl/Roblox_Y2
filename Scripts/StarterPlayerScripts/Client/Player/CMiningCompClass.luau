@@ -13,6 +13,7 @@ local TranslationTexts = Text.Define("MiningInteraction", {
     Preparing = "Preparing rocks...",
     Mine = "Mine ({hits:int} hits left)",
     Smelt = "Smelt raw sword ({count:int} ore)",
+    Received = "Received {count:int} {name}",
 })
 local Comp = FX.Class("CMiningCompClass", "FCUICompClass")
 
@@ -44,6 +45,19 @@ function Comp:OnReady()
     countdown.AutoLocalize = false
     countdown.Parent = root
     self._countdown = countdown
+    local feedback = countdown:Clone()
+    feedback.Name = "MiningReward"
+    feedback.Position = UDim2.new(0.5, 0, 0, 115)
+    feedback.Size = UDim2.fromOffset(460, 36)
+    feedback.TextColor3 = Color3.fromRGB(120, 255, 80)
+    feedback.Visible = false
+    feedback.Parent = root
+    self._rewardLabel = feedback
+    FX.Network:RegServerMsgCallback("S2C_MiningReward", function(itemId, count)
+        self._rewardItemId, self._rewardCount = itemId, count
+        self._rewardUntil = os.clock() + 2
+        self:RefreshReward()
+    end)
     local button = Instance.new("TextButton")
     button.Name = "MiningInteraction"
     button.AnchorPoint = Vector2.new(0.5, 1)
@@ -84,6 +98,17 @@ function Comp:OnReady()
         end
     end))
     self:Refresh()
+end
+
+--- 仅显示服务器已入包的矿石数量，语言切换沿用矿场刷新，不预测奖励。
+function Comp:RefreshReward()
+    local visible = self._rewardUntil ~= nil and os.clock() < self._rewardUntil
+    self._rewardLabel.Visible = visible
+    if visible then
+        self._rewardLabel.Text = Text.Tr(TranslationTexts.Received, {
+            count = self._rewardCount, name = Text.TrSource(_G.ItemConfig.Display[self._rewardItemId].Name),
+        })
+    end
 end
 
 --- 换装、死亡或组件销毁时中断挥镐，取消尚未落下的攻击并恢复关节。
@@ -272,6 +297,7 @@ end
 
 --- 只选择已复制到本客户端的最近公共石头；最终有效性仍由服务端重验。
 function Comp:Refresh()
+    self:RefreshReward()
     self:RefreshPickaxe()
     local deadline = FX.SyncManager:GetNumber(_G.ServerDataConfig.MiningNextRefresh)
     local seconds = math.max(0, math.ceil(deadline - workspace:GetServerTimeNow()))
@@ -318,6 +344,7 @@ end
 
 --- 只删除矿场自有节点，保留共享画布和背包 Tool。
 function Comp:Dtor()
+    FX.Network:UnRegServerMsgCallback("S2C_MiningReward")
     self:StopSwing()
     if self._effects then
         self._effects:Destroy()

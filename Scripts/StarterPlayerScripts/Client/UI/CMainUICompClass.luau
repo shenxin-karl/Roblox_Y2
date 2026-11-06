@@ -6,6 +6,9 @@ local FCItemDescription = FXLoader:RequireShared("Scripts.Framework.Client.FCIte
 local ItemConfig = FXLoader:RequireShared("Scripts.Game.Configs.ItemConfig")
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local PlayerDataConfig = _G.PlayerDataConfig
+local TranslationTexts = Text.Define("MainItemDescription", {
+    Traits = "{description}\nMutation: {mutation}\nLuck: {luck}",
+})
 local Component = FX.Class("CMainUICompClass", "FCUICompClass")
 
 --- 返回项目主界面组件协作名。
@@ -81,9 +84,18 @@ function Component:RefreshSelectedTool()
         self._itemDescription:Hide()
         return
     end
+    local description = Text.TrSource(ItemConfig.Display[itemId].Desc)
+    local mutationId, luck = tool:GetAttribute("MutationId"), tool:GetAttribute("Luck")
+    if mutationId and luck ~= nil then
+        description = Text.Tr(TranslationTexts.Traits, {
+            description = description,
+            mutation = Text.TrSource(_G.GameConfig.MiningMutationData[mutationId].Name),
+            luck = GameUtility.NumberToText(luck),
+        })
+    end
     self._itemDescription:Show({
         Title = tool.Name,
-        Description = Text.TrSource(ItemConfig.Display[itemId].Desc),
+        Description = description,
         Icon = tool.TextureId,
     })
 end
@@ -102,9 +114,11 @@ function Component:SetSelectedTool(tool)
                 self:RefreshSelectedTool()
             end))
         end
-        table.insert(self._selectedToolConnections, tool:GetAttributeChangedSignal("FrameworkItemId"):Connect(function()
-            self:RefreshSelectedTool()
-        end))
+        for index, attribute in ipairs({"FrameworkItemId", "MutationId", "Luck"}) do
+            table.insert(self._selectedToolConnections, tool:GetAttributeChangedSignal(attribute):Connect(function()
+                self:RefreshSelectedTool()
+            end))
+        end
     end
     self:RefreshSelectedTool()
 end

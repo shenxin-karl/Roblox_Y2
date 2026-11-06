@@ -79,6 +79,33 @@
         "kind": "project",
         "projectGuid": "df98c184-af39-4d2b-8cbd-ffc993e16b3a"
       }
+    },
+    {
+      "id": "prefab-node-743d7261-8fa9-4c82-9d4f-4f96e21f5c80",
+      "name": "BaseUpperNew",
+      "parentId": "main-storage-root",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "963ea175-7af0-478f-b4d8-8a2905aae95a"
+      }
     }
   ],
   "prefabFolders": [],
@@ -91,6 +118,10 @@
     {
       "projectGuid": "df98c184-af39-4d2b-8cbd-ffc993e16b3a",
       "name": "BaseUpper"
+    },
+    {
+      "projectGuid": "963ea175-7af0-478f-b4d8-8a2905aae95a",
+      "name": "BaseUpperNew"
     }
   ]
 }

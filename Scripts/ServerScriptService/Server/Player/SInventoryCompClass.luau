@@ -105,6 +105,8 @@ function Comp:SyncTools()
             end
             tool:SetAttribute("FrameworkGrid", grid)
             tool:SetAttribute("WeaponLevel", entry.extraData and entry.extraData.Level)
+            tool:SetAttribute("MutationId", entry.extraData and entry.extraData.MutationId)
+            tool:SetAttribute("Luck", entry.extraData and entry.extraData.Luck)
             tool:SetAttribute("FrameworkStackCount", entry.stackCount)
         end
     end
