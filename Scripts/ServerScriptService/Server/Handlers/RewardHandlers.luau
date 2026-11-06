@@ -16,7 +16,7 @@ return {
             return false
         end
         if not data.SlotData["1"] then
-            data.SlotData["1"] = {WeaponId = "StarterSword", Level = 1, StoredMoney = 0}
+            data.SlotData["1"] = {ItemId = SwordRules.ItemId, Level = 1, StoredMoney = 0}
         end
         data.InitialSwordGranted = true
         tables.BaseData = data
@@ -29,8 +29,8 @@ return {
     --- @return boolean 是否允许发钱并清除本次累计额。
     SlotSwordCollect = function(rewardComponent, entry, tables)
         local data = tables.BaseData or rewardComponent:GetTable(Fields.BaseData)
-        local sword = data.SlotData["1"]
-        if not sword or sword.WeaponId ~= "StarterSword" or sword.StoredMoney <= 0
+        local sword = data.SlotData[tostring(entry.SlotId)]
+        if not sword or sword.ItemId ~= SwordRules.ItemId or sword.StoredMoney <= 0
             or sword.StoredMoney ~= entry.Amount then
             return false
         end
@@ -45,13 +45,59 @@ return {
     --- @return boolean 是否允许升级当前这把剑。
     SlotSwordUpgrade = function(rewardComponent, entry, tables)
         local data = tables.BaseData or rewardComponent:GetTable(Fields.BaseData)
-        local sword = data.SlotData["1"]
-        if not sword or sword.WeaponId ~= "StarterSword" or sword.Level ~= entry.ExpectedLevel
+        local sword = data.SlotData[tostring(entry.SlotId)]
+        if not sword or sword.ItemId ~= SwordRules.ItemId or sword.Level ~= entry.ExpectedLevel
             or SwordRules.GetIncome(sword.Level + 1) >= math.huge
             or SwordRules.GetUpgradePrice(sword.Level + 1) >= math.huge then
             return false
         end
         sword.Level += 1
+        tables.BaseData = data
+        return true
+    end,
+    --- 精确移走本人手持格子的成品剑，连同等级与金币一起转入空槽。
+    --- @param rewardComponent table 框架奖励组件。
+    --- @param entry table 服务端确定的槽位与手持格号。
+    --- @param tables table 本次交易快照，背包与基地由框架共同提交。
+    --- @return boolean 是否允许整批放置。
+    SlotSwordPlace = function(rewardComponent, entry, tables)
+        local inventory = rewardComponent:RequireComponent("FSInventoryComp")
+        if inventory:GetEquippedGrid() ~= entry.Grid then
+            return false
+        end
+        local base = rewardComponent:RequireComponent("SBaseComp"):GetBase()
+        local data = tables.BaseData or rewardComponent:GetTable(Fields.BaseData)
+        local key = tostring(entry.SlotId)
+        if not base or not data.UnlockedSlots[key] or data.SlotData[key] then
+            return false
+        end
+        local items = tables.Inventory or rewardComponent:GetTable(Fields.Inventory)
+        local item = items[tostring(entry.Grid)]
+        if not item or item.itemId ~= SwordRules.ItemId or item.stackCount ~= 1
+            or not SwordRules.IsValid(item.extraData) then
+            return false
+        end
+        data.SlotData[key] = {
+            ItemId = item.itemId, Level = item.extraData.Level, StoredMoney = item.extraData.StoredMoney,
+        }
+        items[tostring(entry.Grid)] = nil
+        tables.Inventory, tables.BaseData = items, data
+        return true
+    end,
+    --- 卸下预检与背包容量检查共同执行；失败保留原槽位武器。
+    --- @param rewardComponent table 框架奖励组件。
+    --- @param entry table 服务端读取的武器快照与槽位编号。
+    --- @param tables table 本次交易待提交字段。
+    --- @return boolean 是否允许清空该槽位。
+    SlotSwordRemove = function(rewardComponent, entry, tables)
+        local data = tables.BaseData or rewardComponent:GetTable(Fields.BaseData)
+        local key = tostring(entry.SlotId)
+        local sword = data.SlotData[key]
+        if not sword or sword.ItemId ~= SwordRules.ItemId or sword.Level ~= entry.Level
+            or sword.StoredMoney ~= entry.StoredMoney then
+            return false
+        end
+        data.SlotData[key] = nil
         tables.BaseData = data
         return true
     end,

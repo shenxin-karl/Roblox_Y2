@@ -176,5 +176,106 @@ return {
             SlotId = 40,
             UnlockPrice = 1
         }
+    },
+    MiningMutationData = {
+        Normal = {
+            Id = [[Normal]],
+            Name = [[Normal]],
+            Probability = 0.8,
+            EffectPath = nil,
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1
+        },
+        Toxic = {
+            Id = [[Toxic]],
+            Name = [[Toxic]],
+            Probability = 0.1,
+            EffectPath = [[Assets.Effects.Aura.03_Toxic]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1
+        },
+        Frost = {
+            Id = [[Frost]],
+            Name = [[Frost]],
+            Probability = 0.05,
+            EffectPath = [[Assets.Effects.Aura.19_Frost]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1
+        },
+        Inferno = {
+            Id = [[Inferno]],
+            Name = [[Inferno]],
+            Probability = 0.03,
+            EffectPath = [[Assets.Effects.Aura.20_Inferno]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1
+        },
+        Storm = {
+            Id = [[Storm]],
+            Name = [[Storm]],
+            Probability = 0.015,
+            EffectPath = [[Assets.Effects.Aura.21_Storm]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1
+        },
+        Astral = {
+            Id = [[Astral]],
+            Name = [[Astral]],
+            Probability = 0.005,
+            EffectPath = [[Assets.Effects.Aura.25_Astral]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1
+        }
+    },
+    MiningRockData = {
+        [1] = {
+            Id = 1,
+            Name = [[Gray]],
+            ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_01_Gray]],
+            ModelScale = 0.35,
+            SpawnWeight = 40
+        },
+        [2] = {
+            Id = 2,
+            Name = [[Green]],
+            ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_02_Green]],
+            ModelScale = 0.35,
+            SpawnWeight = 25
+        },
+        [3] = {
+            Id = 3,
+            Name = [[Blue]],
+            ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_03_Blue]],
+            ModelScale = 0.35,
+            SpawnWeight = 15
+        },
+        [4] = {
+            Id = 4,
+            Name = [[Purple]],
+            ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_04_Purple]],
+            ModelScale = 0.35,
+            SpawnWeight = 10
+        },
+        [5] = {
+            Id = 5,
+            Name = [[Orange]],
+            ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_05_Orange]],
+            ModelScale = 0.35,
+            SpawnWeight = 6
+        },
+        [6] = {
+            Id = 6,
+            Name = [[Gold]],
+            ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_06_Gold]],
+            ModelScale = 0.35,
+            SpawnWeight = 3
+        },
+        [7] = {
+            Id = 7,
+            Name = [[Red]],
+            ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_07_Red]],
+            ModelScale = 0.35,
+            SpawnWeight = 1
+        }
     }
 }

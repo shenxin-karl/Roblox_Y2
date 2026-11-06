@@ -17,18 +17,9 @@ function Player:Ctor(id)
     self:AddComponent("SAnalyticsCompClass")
 end
 
---- 将旧版连续解锁进度补成槽位集合；已有集合时保留玩家任选的位置。
---- @param version number 框架读取的存档版本，本次按字段是否存在兼容旧档。
+--- 项目尚未上线，保留框架迁移入口，当前不兼容旧测试存档。
+--- @param version number 框架读取的存档版本，当前无需迁移。
 function Player:MigrateData(version)
-    local field = _G.PlayerDataConfig.BaseData
-    local data = self:GetTable(field)
-    if data.UnlockedSlots == nil then
-        data.UnlockedSlots = {}
-        for slotId = 1, data.UnlockedSlotCount do
-            data.UnlockedSlots[tostring(slotId)] = true
-        end
-        self:SetTable(field, data)
-    end
 end
 
 return Player

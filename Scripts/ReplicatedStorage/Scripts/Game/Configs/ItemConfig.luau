@@ -11,7 +11,16 @@ return {
         },
         [1002] = {
             Id = 1002,
-            Type = [[Sword]],
+            Type = [[RawSword]],
+            MaxStack = 1,
+            UseHandler = nil,
+            HeldHandler = [[Sword]],
+            NumberArray = nil,
+            KVTable = nil
+        },
+        [1003] = {
+            Id = 1003,
+            Type = [[ForgedSword]],
             MaxStack = 1,
             UseHandler = nil,
             HeldHandler = [[Sword]],
@@ -23,15 +32,23 @@ return {
         [1001] = {
             Id = 1001,
             Name = [[Iron Ore]],
-            Desc = [[Smelt ore into a sword at the furnace.]],
+            Desc = [[Smelt ore into a raw sword at the public furnace.]],
             Quality = 1,
             IconId = [[rbxassetid://0]],
             DisplayModelId = nil
         },
         [1002] = {
             Id = 1002,
-            Name = [[Iron Sword]],
-            Desc = [[A sword smelted from iron ore.]],
+            Name = [[Raw Iron Sword]],
+            Desc = [[Forge this raw sword at a forge station before placing it in your base.]],
+            Quality = 1,
+            IconId = [[rbxasset://Textures/Sword128.png]],
+            DisplayModelId = [[Sword]]
+        },
+        [1003] = {
+            Id = 1003,
+            Name = [[Forged Iron Sword]],
+            Desc = [[A finished sword. Place it in an unlocked base slot to earn coins.]],
             Quality = 1,
             IconId = [[rbxasset://Textures/Sword128.png]],
             DisplayModelId = [[Sword]]
@@ -43,6 +60,10 @@ return {
             mutationExp = 1,
             size = 1,
             sizeMutationPityCount = 0
+        },
+        ForgedSword = {
+            Level = 1,
+            StoredMoney = 0
         }
     }
 }

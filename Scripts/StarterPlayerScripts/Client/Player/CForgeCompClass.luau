@@ -1,4 +1,4 @@
--- 锻造交互与本地表现：台位由服务端裁定，敲击预览不消耗材料或修改装备。
+-- 锻造交互与本地表现：台位与材料兑换由服务端裁定，命中动画只发起一次请求。
 local ContextActionService = game:GetService("ContextActionService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -64,9 +64,16 @@ function Comp:OnReady()
     self:TrackConnection(self._view.StrikeButton.Activated:Connect(function()
         self:Strike(false)
     end))
-    self:TrackConnection(self._view.GreatStrikeButton.Activated:Connect(function()
-        self:Strike(true)
-    end))
+    FX.Network:RegServerMsgCallback("S2C_ForgeSwordResult", function(stationId, success)
+        if self._effects and self._stationId == stationId then
+            if success then
+                self._strikeCount += 1
+                self._view:Impact(false, self._strikeCount)
+            else
+                self._view:ShowFailure()
+            end
+        end
+    end)
     self:TrackConnection(self._view.LeaveButton.Activated:Connect(function()
         self:RequestLeave()
     end))
@@ -152,14 +159,14 @@ function Comp:TryOpenView(stationId)
     self._view:Open(effects:GetBoardPanel(), stationId)
     ContextActionService:BindActionAtPriority(self._actionName, function(actionName, inputState, inputObject)
         return self:HandlePreviewInput(actionName, inputState, inputObject)
-    end, false, 3000, Enum.KeyCode.F, Enum.KeyCode.G, Enum.KeyCode.E,
-        Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonB,
+    end, false, 3000, Enum.KeyCode.F, Enum.KeyCode.E,
+        Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonB,
         Enum.PlayerActions.CharacterForward, Enum.PlayerActions.CharacterBackward,
         Enum.PlayerActions.CharacterLeft, Enum.PlayerActions.CharacterRight, Enum.PlayerActions.CharacterJump)
     self._opening = false
 end
 
---- 键盘和手柄只操作本人预览，聊天框输入不触发敲击。
+--- 键盘和手柄只操作本人锻造台，聊天框输入不触发敲击。
 --- @param actionName string ContextActionService 传入的本组件动作名。
 --- @param inputState Enum.UserInputState 当前输入阶段。
 --- @param inputObject InputObject 当前按键或手柄输入。
@@ -172,8 +179,6 @@ function Comp:HandlePreviewInput(actionName, inputState, inputObject)
         local key = inputObject.KeyCode
         if key == Enum.KeyCode.F or key == Enum.KeyCode.ButtonR2 then
             self:Strike(false)
-        elseif key == Enum.KeyCode.G or key == Enum.KeyCode.ButtonY then
-            self:Strike(true)
         elseif key == Enum.KeyCode.E or key == Enum.KeyCode.ButtonB then
             self:RequestLeave()
         end
@@ -181,12 +186,11 @@ function Comp:HandlePreviewInput(actionName, inputState, inputObject)
     return Enum.ContextActionResult.Sink
 end
 
---- 两档只改变表现强度，计数在实际命中回调中增加，不伪造强化或收益。
---- @param powerful boolean 是否预览大成功反馈。
+--- 落锤时请求服务端兑换；成品数量只在收到成功结果后增加。
+--- @param powerful boolean 沿用动画接口，本次基础锻造固定使用普通敲击。
 function Comp:Strike(powerful)
     if self._effects and self._effects:Strike(powerful, function()
-        self._strikeCount += 1
-        self._view:Impact(powerful, self._strikeCount)
+        FX.Network:SendMsgToServer("C2S_ForgeSword")
     end) then
         self._view:SetBusy(true)
     end
@@ -278,6 +282,7 @@ end
 --- 清理本组件按钮、输入、相机和表现，不销毁框架画布或 Studio 模板。
 function Comp:Dtor()
     self._destroyed = true
+    FX.Network:UnRegServerMsgCallback("S2C_ForgeSwordResult")
     self:CloseView()
     if self._renderName then
         RunService:UnbindFromRenderStep(self._renderName)

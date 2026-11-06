@@ -12,7 +12,7 @@ local TranslationTexts = Text.Define("MiningInteraction", {
     Refresh = "Rocks refresh in {seconds:int}s",
     Preparing = "Preparing rocks...",
     Mine = "Mine ({hits:int} hits left)",
-    Smelt = "Smelt sword ({count:int} ore)",
+    Smelt = "Smelt raw sword ({count:int} ore)",
 })
 local Comp = FX.Class("CMiningCompClass", "FCUICompClass")
 
@@ -194,7 +194,7 @@ function Comp:MineRock()
         task.wait(strike)
         local root = humanoid.RootPart
         if humanoid.Health > 0 and tool.Parent == character and rock.Parent and root
-            and (root.Position - rock.Position).Magnitude <= Settings.InteractDistance then
+            and (root.Position - rock:GetPivot().Position).Magnitude <= Settings.InteractDistance then
             FX.Network:SendMsgToServer("C2S_MineRock", rock)
         end
         if self._swingTrack then
@@ -287,8 +287,8 @@ function Comp:Refresh()
         local nearestDistance = Settings.InteractDistance
         for index, rock in ipairs(CollectionService:GetTagged(Settings.RockTag)) do
             local hits = rock:GetAttribute("RemainingHits")
-            if rock:IsA("BasePart") and hits and hits > 0 then
-                local offset = rock.Position - root.Position
+            if rock:IsA("Model") and rock.PrimaryPart and hits and hits > 0 then
+                local offset = rock:GetPivot().Position - root.Position
                 local distance = offset.Magnitude
                 if distance <= nearestDistance and (distance < 0.01 or root.CFrame.LookVector:Dot(offset.Unit) > 0) then
                     self._rock = rock
@@ -305,7 +305,7 @@ function Comp:Refresh()
         self._button.Text = Text.Tr(TranslationTexts.Mine, {hits = self._rock:GetAttribute("RemainingHits")})
         -- 与 Money 相同，靠近且面向矿石时自动挥镐；持有其他道具时不抢占装备。
         local heldTool = character:FindFirstChildOfClass("Tool")
-        local offset = self._rock.Position - root.Position
+        local offset = self._rock:GetPivot().Position - root.Position
         if (not heldTool or heldTool == self._pickaxe)
             and (offset.Magnitude < 0.01 or root.CFrame.LookVector:Dot(offset.Unit) > 0) then
             self:MineRock()

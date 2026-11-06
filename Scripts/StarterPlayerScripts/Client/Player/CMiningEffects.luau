@@ -5,6 +5,16 @@ local FX = _G.FX
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local Effects = {}
 Effects.__index = Effects
+-- 原光环按 R6 身体分组；以身体包围盒为基准映射到矿石表面。
+local AuraReferenceSize = Vector3.new(4, 5, 2)
+local AuraOffsets = {
+    Head = Vector3.new(0, 2, 0),
+    Torso = Vector3.new(0, 0.5, 0),
+    ["Left Arm"] = Vector3.new(-1.5, 0.5, 0),
+    ["Right Arm"] = Vector3.new(1.5, 0.5, 0),
+    ["Left Leg"] = Vector3.new(-0.5, -1.5, 0),
+    ["Right Leg"] = Vector3.new(0.5, -1.5, 0),
+}
 
 --- 由矿场组件持有，沿用服务器复制的次数而不预测发奖。
 --- @param owner table 矿场客户端组件。
@@ -13,7 +23,14 @@ function Effects.New(owner)
     local self = setmetatable({}, Effects)
     self._owner = owner
     self._templates = FX.Loader:Shared("Assets.Decorations.MiningEffects")
+    self._mutationTemplates = {}
+    for id, mutation in pairs(_G.GameConfig.MiningMutationData) do
+        if mutation.EffectPath then
+            self._mutationTemplates[id] = FX.Loader:Shared(mutation.EffectPath)
+        end
+    end
     self._rocks = {}
+    self._pending = {}
     self._fragments = {}
     self._fragmentPool = {}
     self._folder = Instance.new("Folder")
@@ -31,26 +48,68 @@ function Effects.New(owner)
     return self
 end
 
---- 克隆单块石头的外观，固定碰撞体不跟随受击抖动，避免影响玩家行走。
+--- 克隆完整七色模型，固定碰撞体不跟随受击抖动，避免影响玩家行走。
 --- @param rock Instance 流式加载到客户端的公共矿石。
 function Effects:AddRock(rock)
-    local hits = rock:GetAttribute("RemainingHits")
-    if self._rocks[rock] or not rock:IsA("BasePart") or not hits or hits <= 0 then
+    if self._rocks[rock] or not rock:IsA("Model") then
         return
     end
-    local visual = rock:Clone()
-    CollectionService:RemoveTag(visual, Settings.RockTag)
-    visual.CanCollide = false
-    visual.CanTouch = false
-    visual.CanQuery = false
-    visual.Parent = self._folder
+    local hits = rock:GetAttribute("RemainingHits")
+    local maxHits = rock:GetAttribute("MaxHits")
+    local mutationId = rock:GetAttribute("MutationId")
+    if hits and hits <= 0 then
+        self:RemoveRock(rock)
+        return
+    end
+    if not hits or not maxHits or not mutationId or not rock.PrimaryPart then
+        -- 标签与属性可能分批复制；不等待或漏掉稍后才完整到达的矿石。
+        if not self._pending[rock] then
+            --- 属性或主部件到达后重新检查完整模型，不创建重复外观。
+            local function retry()
+                self:AddRock(rock)
+            end
+            self._pending[rock] = {
+                rock.AttributeChanged:Connect(retry),
+                rock:GetPropertyChangedSignal("PrimaryPart"):Connect(retry),
+            }
+        end
+        return
+    end
+    if self._pending[rock] then
+        for index, connection in ipairs(self._pending[rock]) do
+            connection:Disconnect()
+        end
+        self._pending[rock] = nil
+    end
+    local model = rock:Clone()
+    CollectionService:RemoveTag(model, Settings.RockTag)
+    local visual = model.PrimaryPart
+    for index, node in ipairs(model:GetDescendants()) do
+        if node:IsA("BasePart") then
+            node.CanCollide = false
+            node.CanTouch = false
+            node.CanQuery = false
+            node.LocalTransparencyModifier = 0
+        end
+    end
+    model.Parent = self._folder
     local entry = {
-        Visual = visual, Size = rock.Size, Pose = rock.CFrame,
-        Hits = hits, MaxHits = _G.GameConfig.CommonConfig.MiningRockHits,
-        Transparency = rock.LocalTransparencyModifier,
+        Model = model, ModelScale = model:GetScale(),
+        Visual = visual, Size = visual.Size, Pose = visual.CFrame,
+        Hits = hits, MaxHits = maxHits,
+        Transparencies = {}, Lights = {},
     }
     self._rocks[rock] = entry
-    rock.LocalTransparencyModifier = 1
+    for index, node in ipairs(rock:GetDescendants()) do
+        if node:IsA("BasePart") then
+            entry.Transparencies[node] = node.LocalTransparencyModifier
+            node.LocalTransparencyModifier = 1
+        elseif node:IsA("Light") then
+            entry.Lights[node] = node.Enabled
+            node.Enabled = false
+        end
+    end
+    self:AddMutationEffect(entry, mutationId)
     entry.Connection = rock:GetAttributeChangedSignal("RemainingHits"):Connect(function()
         local remaining = rock:GetAttribute("RemainingHits")
         if remaining and remaining < entry.Hits then
@@ -59,11 +118,87 @@ function Effects:AddRock(rock)
             self:PlayHitEffect(entry, remaining == 0)
             self:UpdateHealthBar(entry)
             if remaining == 0 then
-                visual.Transparency = 1
+                self:ClearMutationEffect(entry)
+                model:Destroy()
             end
         end
     end)
     self:UpdateHealthBar(entry)
+end
+
+--- 将角色光环的粒子组挂到矿石附着点，保留嵌套节点和素材自身旋转。
+--- @param entry table 本地矿石表现及原始尺寸。
+--- @param mutationId string 服务器复制的固定变异 ID。
+function Effects:AddMutationEffect(entry, mutationId)
+    local template = self._mutationTemplates[mutationId]
+    if not template then
+        return
+    end
+    entry.AuraRoots = {}
+    entry.AuraAttachments = {}
+    entry.AuraEmitters = {}
+    local dimensions = entry.Size / AuraReferenceSize
+    entry.AuraSizeScale = math.min(dimensions.X, dimensions.Y, dimensions.Z)
+    for index, group in ipairs(template:GetChildren()) do
+        local anchor = Instance.new("Attachment")
+        anchor.Name = "MiningAura_" .. group.Name
+        local offset = assert(AuraOffsets[group.Name], "Unknown aura group: " .. group.Name)
+        table.insert(entry.AuraRoots, anchor)
+        table.insert(entry.AuraAttachments, {Node = anchor, Offset = offset / AuraReferenceSize})
+        for childIndex, child in ipairs(group:GetChildren()) do
+            child:Clone().Parent = anchor
+        end
+        for descendantIndex, node in ipairs(anchor:GetDescendants()) do
+            if node:IsA("Attachment") then
+                table.insert(entry.AuraAttachments, {Node = node, Offset = node.Position / AuraReferenceSize})
+            elseif node:IsA("ParticleEmitter") then
+                node.Enabled = true
+                node.LockedToPart = true
+                -- 沿用 Money 的加色混合，避免光效纹理露出黑色底框。
+                node.LightEmission = 1
+                node.Speed = NumberRange.new(node.Speed.Min * entry.AuraSizeScale, node.Speed.Max * entry.AuraSizeScale)
+                node.Acceleration *= entry.AuraSizeScale
+                table.insert(entry.AuraEmitters, {Node = node, Size = node.Size})
+            end
+        end
+        anchor.Parent = entry.Visual
+    end
+    self:UpdateMutationEffect(entry, 1)
+end
+
+--- 从原始偏移和粒子尺寸缩放，不累计误差；静止矿石不重复构造序列。
+--- @param entry table 持有本块矿石光环节点的表现记录。
+--- @param scale number 当前受击和残血共同决定的缩放倍率。
+function Effects:UpdateMutationEffect(entry, scale)
+    if not entry.AuraRoots or entry.AuraScale == scale then
+        return
+    end
+    entry.AuraScale = scale
+    for index, attachment in ipairs(entry.AuraAttachments) do
+        attachment.Node.Position = attachment.Offset * entry.Visual.Size
+    end
+    local sizeScale = entry.AuraSizeScale * scale
+    for index, emitter in ipairs(entry.AuraEmitters) do
+        local points = {}
+        for pointIndex, point in ipairs(emitter.Size.Keypoints) do
+            points[pointIndex] = NumberSequenceKeypoint.new(point.Time, point.Value * sizeScale, point.Envelope * sizeScale)
+        end
+        emitter.Node.Size = NumberSequence.new(points)
+    end
+end
+
+--- 挖完立即清掉存活粒子；其余移除路径随本地外观一起销毁。
+--- @param entry table 当前矿石表现记录。
+function Effects:ClearMutationEffect(entry)
+    if not entry.AuraRoots then
+        return
+    end
+    for index, root in ipairs(entry.AuraRoots) do
+        root:Destroy()
+    end
+    entry.AuraRoots = nil
+    entry.AuraAttachments = nil
+    entry.AuraEmitters = nil
 end
 
 --- 沿用 Money 的世界血条，仅受损时出现，击碎后隐藏。
@@ -104,12 +239,27 @@ end
 --- 移除刷新或流式卸载的石头，不把普通移除当作击碎。
 --- @param rock Instance 已离开矿场标签集合的石头。
 function Effects:RemoveRock(rock)
+    if self._pending[rock] then
+        for index, connection in ipairs(self._pending[rock]) do
+            connection:Disconnect()
+        end
+        self._pending[rock] = nil
+    end
     local entry = self._rocks[rock]
     if entry then
         entry.Connection:Disconnect()
-        entry.Visual:Destroy()
+        entry.Model:Destroy()
         if rock.Parent then
-            rock.LocalTransparencyModifier = entry.Transparency
+            for part, transparency in pairs(entry.Transparencies) do
+                if part.Parent then
+                    part.LocalTransparencyModifier = transparency
+                end
+            end
+            for light, enabled in pairs(entry.Lights) do
+                if light.Parent then
+                    light.Enabled = enabled
+                end
+            end
         end
         self._rocks[rock] = nil
     end
@@ -226,9 +376,10 @@ function Effects:Update()
             local kick = math.sin(kickProgress * math.pi * 2) * (1 - kickProgress)
             local direction = entry.Direction or Vector3.zAxis
             local tiltAxis = entry.Pose:VectorToObjectSpace(Vector3.yAxis:Cross(direction))
-            entry.Visual.Size = entry.Size * scale
-            entry.Visual.CFrame = CFrame.new(position + direction * (0.18 * kick)) * entry.Pose.Rotation
-                * CFrame.fromAxisAngle(tiltAxis, math.rad(4) * kick)
+            entry.Model:ScaleTo(entry.ModelScale * scale)
+            self:UpdateMutationEffect(entry, scale)
+            entry.Model:PivotTo(CFrame.new(position + direction * (0.18 * kick)) * entry.Pose.Rotation
+                * CFrame.fromAxisAngle(tiltAxis, math.rad(4) * kick))
             if entry.HealthBar then
                 entry.HealthBar.StudsOffsetWorldSpace = Vector3.new(0, entry.Visual.Size.Y / 2 + 1.2, 0)
             end
@@ -256,6 +407,9 @@ end
 function Effects:Destroy()
     self._added:Disconnect()
     self._removed:Disconnect()
+    for rock in pairs(self._pending) do
+        self:RemoveRock(rock)
+    end
     for rock in pairs(self._rocks) do
         self:RemoveRock(rock)
     end

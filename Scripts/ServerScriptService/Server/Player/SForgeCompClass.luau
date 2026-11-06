@@ -2,6 +2,7 @@
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
+local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Comp = FX.Class("SForgeCompClass", "FSPlayerCompClass")
 
 --- 每次登录重新分配会话，不将台位写入存档。
@@ -10,6 +11,25 @@ function Comp:Ctor(owner)
     Comp.Super.Ctor(self, owner)
     self._manager = _G.SForgeManager
     self._lastRequest = -math.huge
+    self._lastForge = -math.huge
+end
+
+--- 本人占用且靠近锻造台才可将一把原料剑兑换为等级一成品，失败不扣材料。
+function Comp:ForgeSword()
+    local character, humanoid = self:GetLivingCharacter()
+    local station = self._station
+    if not character or not station or os.clock() - self._lastForge < Settings.RequestCooldown then
+        return
+    end
+    self._lastForge = os.clock()
+    local success = false
+    if station.OwnerUserId == self:GetPlayerId()
+        and (humanoid.RootPart.Position - station.Arrival.Position).Magnitude <= 8 then
+        success = self:RequireComponent("FSRewardComp"):ExchangeRewards(
+            {{Type = "Item", ItemId = SwordRules.RawItemId, Count = 1}},
+            {{Type = "Item", ItemId = SwordRules.ItemId, Count = 1, ExtraData = {Level = 1, StoredMoney = 0}}})
+    end
+    FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, success)
 end
 
 --- 返回玩家组件协作名。

@@ -43,17 +43,27 @@ end
 function Manager:RegSlotSwordMsg()
     --- 未登录玩家由组件的会话检查拒绝，不接收目标玩家参数。
     --- @param userId number 引擎认证的请求者 ID。
-    FX.Network:RegClientMsgCallback("C2S_UpgradeSlotSword", function(userId)
+    --- @param slotId any 客户端提交的目标槽位，由玩家组件复核。
+    FX.Network:RegClientMsgCallback("C2S_UpgradeSlotSword", function(userId, slotId)
         local player = self:GetPlayerObject(userId)
         local sword = player and player:GetComponent("SSlotSwordComp")
         if sword then
-            sword:Upgrade()
+            sword:Upgrade(slotId)
         end
     end)
 end
 
 --- 锻造请求只转发给认证请求者，不接收目标玩家、台位或坐标。
 function Manager:RegForgeMsg()
+    --- 只对请求者的台位和背包进行锻造，不接受客户端配方或成品参数。
+    --- @param userId number 引擎认证的请求者 ID。
+    FX.Network:RegClientMsgCallback("C2S_ForgeSword", function(userId)
+        local player = self:GetPlayerObject(userId)
+        local forge = player and player:GetComponent("SForgeComp")
+        if forge then
+            forge:ForgeSword()
+        end
+    end)
     --- 顶部导航可从地图任意位置前往庭院，不直接占用锻造台。
     --- @param userId number 引擎认证的请求者 ID。
     FX.Network:RegClientMsgCallback("C2S_TeleportToForge", function(userId)

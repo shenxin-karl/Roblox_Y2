@@ -103,9 +103,25 @@ function Comp:SyncTools()
                 tool.Name = Items.Display[entry.itemId].Name
                 tool.Parent = backpack
             end
+            tool:SetAttribute("FrameworkGrid", grid)
+            tool:SetAttribute("WeaponLevel", entry.extraData and entry.extraData.Level)
             tool:SetAttribute("FrameworkStackCount", entry.stackCount)
         end
     end
+end
+
+--- 从本组件创建的实例确认手持格子，不信任客户端提交的 Tool 属性。
+--- @return number? 本人当前装备的背包格号。
+function Comp:GetEquippedGrid()
+    local character = self:GetPlayerNode().Character
+    if character then
+        for grid, tool in pairs(self._tools) do
+            if tool.Parent == character then
+                return grid
+            end
+        end
+    end
+    return nil
 end
 
 --- 框架整理等全量变更仍走同一展示更新。

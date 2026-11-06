@@ -1,22 +1,23 @@
--- 锻造木板展示：只显示本地敲击效果，不伪造概率、强化等级或收益。
+-- 基础锻造木板：展示固定配方和服务端确认的成品结果。
 local TweenService = game:GetService("TweenService")
 local FX = _G.FX
 local FXLoader = FX.Loader
 local Text = FX.Text
 local TranslationTexts = Text.Define("ForgeView", {
-    Title = "Practice sword",
+    Title = "Forge finished sword",
     Station = "Forge station {station:int}",
-    Strikes = "Strikes",
+    Strikes = "Finished swords",
     Ready = "Ready to forge",
-    SuccessEffect = "Success effect",
+    SuccessEffect = "Finished sword received",
     GreatSuccessEffect = "Great success effect",
     Broken = "Broken",
     Damaged = "Damaged",
     Unchanged = "Unchanged",
     Success = "Success",
     GreatSuccess = "Great success",
-    Notice = "Effects preview only. No materials consumed.",
-    Hint = "Press F to strike or G to preview a great success.",
+    Notice = "1 raw sword → 1 level 1 finished sword",
+    Hint = "Press F to forge a finished sword.",
+    Failed = "Forge failed. Check raw swords and backpack space.",
     Busy = "Forging...",
     StrikeButton = "F · Strike",
     GreatStrikeButton = "G · Great success preview",
@@ -50,6 +51,8 @@ function View.New(root)
     end
     self.StrikeButton = FXLoader:Here(self._controls, "Strike")
     self.GreatStrikeButton = FXLoader:Here(self._controls, "GreatStrike")
+    self.GreatStrikeButton.Visible = false
+    FXLoader:Here(self._panel, "Outcomes").Visible = false
     self.LeaveButton = FXLoader:Here(self._controls, "Leave")
     self._hint = FXLoader:Here(self._controls, "Hint")
     self._tweens = {}
@@ -63,6 +66,7 @@ end
 function View:Open(panel, stationId)
     self:Close()
     self._stationId, self._count, self._powerful, self._busy = stationId, 0, nil, nil
+    self._failed = false
     self._surface.Adornee = panel
     self._surface.Enabled, self._root.Enabled = true, true
     for index, pip in ipairs(self._pips) do
@@ -102,10 +106,11 @@ function View:SetBusy(busy)
     self:RefreshText()
 end
 
---- 所有反馈在实际落锤时更新，概率仍保留模板的未配置符号。
+--- 仅在服务端确认获得成品后更新数量和命中反馈。
 --- @param powerful boolean 是否显示大成功的视觉预览。
 --- @param count number 当前进入会话已经落下的锤数。
 function View:Impact(powerful, count)
+    self._failed = false
     self._powerful, self._count = powerful, count
     self:RefreshText()
     for index, pip in ipairs(self._pips) do
@@ -123,6 +128,12 @@ function View:Impact(powerful, count)
     flashTween:Play()
 end
 
+--- 交易失败时保留成品数量，并提示玩家检查材料及容量。
+function View:ShowFailure()
+    self._failed = true
+    self:RefreshText()
+end
+
 --- 语言切换时重新翻译原始定义，不缓存旧语言结果。
 function View:RefreshText()
     self._labels.Title.Text = Text.Tr(TranslationTexts.Title)
@@ -132,7 +143,10 @@ function View:RefreshText()
     self._labels.Notice.Text = Text.Tr(TranslationTexts.Notice)
     local resultKey = TranslationTexts.Ready
     local resultColor = Color3.fromRGB(255, 241, 217)
-    if self._powerful ~= nil then
+    if self._failed then
+        resultKey = TranslationTexts.Failed
+        resultColor = Color3.fromRGB(255, 130, 110)
+    elseif self._powerful ~= nil then
         resultKey = self._powerful and TranslationTexts.GreatSuccessEffect or TranslationTexts.SuccessEffect
         resultColor = self._powerful and Color3.fromRGB(221, 166, 255) or Color3.fromRGB(128, 215, 255)
     end

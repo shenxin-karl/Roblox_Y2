@@ -9,6 +9,9 @@ local TranslationTexts = Text.Define("SlotSword", {
     Income = "Sword\n${value}/s",
     Upgrade = "${value}\nUpgrade {level:int} > {nextLevel:int}",
     Collected = "${value}",
+    Place = "Place held finished sword",
+    Remove = "Remove weapon",
+    Slot = "Slot {slot:int}",
 })
 local Comp = FX.Class("CSlotSwordCompClass", "FCPlayerCompClass")
 
@@ -21,6 +24,7 @@ end
 --- 仅创建自有世界界面，支持晚复制的基地和玩家语言刷新。
 function Comp:OnReady()
     self._views = {}
+    self._prompts = {}
     self._uiRoot = Instance.new("Folder")
     self._uiRoot.Name = "SlotSwordUI"
     self._uiRoot.Parent = UIRoot.Get()
@@ -34,9 +38,37 @@ function Comp:OnReady()
         for display in pairs(self._views) do
             self:Render(display)
         end
+        self:RefreshPrompts()
     end))
+    self:TrackConnection(CollectionService:GetInstanceAddedSignal("BaseWeaponPrompt"):Connect(function(prompt)
+        self._prompts[prompt] = true
+        self:RefreshPrompts()
+    end))
+    self:TrackConnection(CollectionService:GetInstanceRemovedSignal("BaseWeaponPrompt"):Connect(function(prompt)
+        self._prompts[prompt] = nil
+    end))
+    for index, prompt in ipairs(CollectionService:GetTagged("BaseWeaponPrompt")) do
+        self._prompts[prompt] = true
+    end
+    self:WatchDataChanged(_G.PlayerDataConfig.BaseData, function()
+        self:RefreshPrompts()
+    end)
     for index, display in ipairs(CollectionService:GetTagged("SlotSwordDisplay")) do
         self:TrackDisplay(display)
+    end
+end
+
+--- 只显示本人已解锁槽位的放置或卸下提示；隐藏不替代服务端鉴权。
+function Comp:RefreshPrompts()
+    local data = self:GetTable(_G.PlayerDataConfig.BaseData)
+    for prompt in pairs(self._prompts) do
+        local slotId = prompt:GetAttribute("SlotId")
+        prompt.Enabled = prompt:GetAttribute("OwnerUserId") == self:GetPlayerId()
+            and data.UnlockedSlots[tostring(slotId)] == true
+        if prompt.Enabled then
+            prompt.ActionText = Text.Tr(data.SlotData[tostring(slotId)] and TranslationTexts.Remove or TranslationTexts.Place)
+            prompt.ObjectText = Text.Tr(TranslationTexts.Slot, {slot = slotId})
+        end
     end
 end
 
@@ -124,7 +156,7 @@ function Comp:BuildView(display)
     view.Income.TextColor3 = Color3.fromRGB(120, 255, 80)
     table.insert(view.Connections, view.Upgrade.Activated:Connect(function()
         if display:GetAttribute("OwnerUserId") == self:GetPlayerId() then
-            FX.Network:SendMsgToServer("C2S_UpgradeSlotSword")
+            FX.Network:SendMsgToServer("C2S_UpgradeSlotSword", display:GetAttribute("SlotId"))
         end
     end))
     self:Render(display)
