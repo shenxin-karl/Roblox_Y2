@@ -24,6 +24,9 @@
 - View 的代理和元表均冻结，嵌套值继续代理。不能只对原表设置 `__newindex`，它拦不住已有键；不能冻结原表，否则存档模块也无法写入。View 使用 Luau 的 `for key, value in view do` 遍历，支持索引和 `#`；`pairs/ipairs/next/rawget/table.*` 不适用。不要把 View 直接发送网络、序列化或交给通用 DeepCopy；需要普通表重新 GetTable。SetTable 可直接接收安全浅拷贝或 View，内部会转换成隔离的普通表。
 - 玩家 GetTableView 在字段替换、周期重置后读取当前值，离服后失效；不得跨会话缓存。只读查询优先 View，编辑取深拷贝，不批量替换不涉及的调用点。
 - 底层 GetKVTable 返回冻结的方法句柄，不含 `_db/_table`：Get/GetDeep 深拷贝，GetShallow/GetDeepShallow 安全浅拷贝，GetView/GetDeepView 只读，Set/SetDeep 复制入参后写入。业务层不依赖 RealData/LastSaveTime 存储布局，字段是否写过用玩家 HasStoredData。
-- 异步操作前取得 GetSessionToken，返回后 IsSessionActive 校验原会话；GetState 只返回冻结的标量状态快照，Save(playerId, session) 只保存指定会话。加载、离服、失败恢复与释放由存档管理器负责。购买容量预检用 `GetDataSize(id, session)` 取得 JSON 字节数，编码失败或会话失效返回 nil，不暴露原始表。
+- 异步操作前取得 GetSessionToken，返回后 IsSessionActive 校验原会话；GetState 只返回冻结的标量状态快照，Save(playerId, session) 只保存指定会话。加载、离服、失败恢复与释放由存档管理器负责。
+- 同服重连须等待旧 Player 会话完整关闭，等待后重新核对当前 Player 才加载；关服调用管理器 Close，停止新会话加载、关闭在线玩家并等待已离线及加载中的关闭任务，不读取内部映射。
+- 购买容量预检用 `GetDataSize(id, session)` 获取 JSON 字节数，会话失效或无法编码返回 nil；只限制新购买窗口，不据此拒绝已付款回执。收据只持久化完整 PurchaseId 去重标记，分析快照留在当前会话，历史 table 记录加载时压缩为 true，不删除去重 ID。
+- 货币白名单和开发者名单经 `Provider:GetCurrencyDataConfig/GetDeveloperUserIds` 提供；框架不读取具体游戏字段，项目迁移保留本项目货币和管理员范围。
 - 发奖回滚用玩家 RunDataTransaction(callback)：回调无参数、必须无 yield、成功返回 true，只通过公开接口修改本玩家，不保存、发消息或执行外部副作用。存档快照与回滚留在存档模块；收据去重/元数据和加载失败 GM 恢复走管理器专用接口。
 - 修改数据接口时同步维护接口注释、AGENTS.md 和本节；完成后定向检索内部成员，核对所有命中是否局限在存档模块，不能仅把直接访问换个名字隐藏起来。

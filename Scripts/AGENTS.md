@@ -85,6 +85,8 @@
 - View 的任意层级均不可写，赋值、rawset 和修改型 table 函数会报错且不改变存档；不能只给原表设置 `__newindex` 或仅冻结第一层。View 使用 `for key, value in view do` 遍历，不使用 `pairs/ipairs/next/rawget/table.*`，不直接发送网络或序列化；需要普通表时重新 GetTable。View 离服后失效，不得跨会话缓存。
 - `GetKVTable` 仅返回冻结的公开方法句柄：`Get/GetDeep` 深拷贝，`GetShallow/GetDeepShallow` 安全浅拷贝，`GetView/GetDeepView` 只读代理，`Set/SetDeep` 复制入参后写入。业务字段不得依赖 `RealData/LastSaveTime` 存储布局，是否已存储用 `HasStoredData`。
 - 会话检查、状态快照和保存使用 `GetSessionToken/IsSessionActive/GetState/Save`；跨 yield 后重验原会话。支付发奖回滚用玩家 `RunDataTransaction`，回调只能通过公开接口修改当前玩家，禁止 yield、保存和外部副作用；收据元数据、GM 恢复、会话释放走管理器专用接口，不在业务层操作底层存档。
+- 同服重连等待旧 Player 会话关闭后，重新核对当前 Player 再加载；关服调用存档管理器 `Close`，停止新会话加载、关闭在线玩家并等待已离服及加载中的关闭任务。
+- 购买容量预检使用 `GetDataSize(id, session)` 获取 JSON 字节数；只限制发起新购买，不据此拒绝已付款回执。收据持久化保留全部 PurchaseId 的最小去重标记，分析快照只留在当前会话。
 - 接口维护必须同步更新注释和 `.agents/skills/roblox-framework-dev/reference-rules.md`；检查存档改动时检索上述内部成员，确保存档模块之外没有新增直接访问。
 
 ## 数值文案显示
