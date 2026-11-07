@@ -44,20 +44,21 @@ end
 
 --- 权限按所属玩家校验；不接受任意字段、目标玩家或旧业务命令。
 --- @param action any ResetData 或 SaveNow。
---- @return table 操作结果与提示定义。
+--- @return table 操作结果与提示定义；保存返回后重新校验原会话。
 function Component:Request(action)
     local userId = self:GetPlayerId()
     if not FX.IsDeveloper(userId) then
         return {success = false, key = TranslationTexts.Forbidden}
     end
     local player = self:GetPlayerObject()
-    local db = FS.PlayerKVDataManager._playerDBMap[userId]
-    if (action ~= "ResetData" and action ~= "SaveNow") or not db
-        or not db:IsLoadFinished() or db._leaving then
+    local storage = FS.PlayerKVDataManager
+    local state = storage:GetState(userId)
+    if (action ~= "ResetData" and action ~= "SaveNow") or not state
+        or not state.loaded or state.leaving then
         return {success = false, key = TranslationTexts.Unknown}
     end
     local now = os.clock()
-    if self._busy or db._saving or now < self._nextSave then
+    if self._busy or state.saving or now < self._nextSave then
         return {success = false, key = TranslationTexts.Busy}
     end
     self._busy = true
@@ -68,7 +69,7 @@ function Component:Request(action)
         if action == "ResetData" then
             self:ResetData()
         end
-        return db:Save(false)
+        return storage:Save(userId, state.session)
     end)
     self._busy = false
     if not ok then
@@ -77,7 +78,7 @@ function Component:Request(action)
     if not ok or not saved then
         return {success = false, key = TranslationTexts.SaveFailed}
     end
-    if db._leaving or FS.PlayerKVDataManager._playerDBMap[userId] ~= db
+    if not storage:IsSessionActive(userId, state.session)
         or FS.PlayerManager:GetPlayerObject(userId) ~= player then
         return {success = false, key = TranslationTexts.Unknown}
     end
