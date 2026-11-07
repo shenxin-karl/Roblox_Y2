@@ -100,14 +100,41 @@ function FSPlayerCompClass:GetFlag(boolEnum)
     return self:GetPlayerObject():GetFlag(boolEnum)
 end
 
---获取表
+--- 获取深拷贝，修改后必须 SetTable 提交。
+--- @param tableEnum table 玩家表字段定义。
+--- @return table 与存档完全隔离的副本。
 function FSPlayerCompClass:GetTable(tableEnum)
     return self:GetPlayerObject():GetTable(tableEnum)
 end
 
--- 设置表
+--- 获取第一层可编辑的安全浅拷贝，嵌套表只读；修改后必须 SetTable 提交。
+--- @param tableEnum table 玩家表字段定义。
+--- @return table 安全浅拷贝。
+function FSPlayerCompClass:GetTableShallow(tableEnum)
+    return self:GetPlayerObject():GetTableShallow(tableEnum)
+end
+
+--- 获取实时只读 View，任意层级写入均报错且不改变存档；用 Luau 通用遍历读取。
+--- @param tableEnum table 玩家表字段定义。
+--- @return table 冻结代理，不支持 pairs/ipairs/next/table.* 或直接网络序列化。
+function FSPlayerCompClass:GetTableView(tableEnum)
+    return self:GetPlayerObject():GetTableView(tableEnum)
+end
+
+--- 提交表修改；内部复制入参，不保留调用方的可写引用。
+--- @param tableEnum table 玩家表字段定义。
+--- @param data table? 待提交数据，nil 恢复默认值。
+--- @return boolean 是否完成内存提交。
 function FSPlayerCompClass:SetTable(tableEnum, data)
     return self:GetPlayerObject():SetTable(tableEnum, data)
+end
+
+--- 一次提交多个一级字段并通知一次，未提交字段保留；嵌套表整体复制替换，不递归合并。
+--- @param tableEnum table 玩家表字段定义。
+--- @param fields table 一级键到新值的补丁；false 为有效值，nil 删除改用 GetTable/SetTable。
+--- @return boolean 是否提交；空补丁或已失效会话返回 false。
+function FSPlayerCompClass:SetTableFields(tableEnum, fields)
+    return self:GetPlayerObject():SetTableFields(tableEnum, fields)
 end
 
 -- 设置同步数据

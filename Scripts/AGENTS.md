@@ -77,6 +77,16 @@
 
 - 框架初始化后的必需固定路径节点和模块优先用 `FX.Loader`；接口与等待语义见 `.agents/skills/roblox-luau-standards/reference-rules.md`。
 
+## 玩家存档访问边界（关键）
+
+- `PlayerDBMap`、DB、KV 原始表及其内部状态只能由 `Framework/Server/PlayerKV/` 存档模块持有。其他框架与项目代码禁止访问 `_playerDBMap`、`_data`、`_database`、`_db`、`_table`、`_session` 等存档内部成员，也不得通过增加返回 DB/原表的接口绕过此限制。
+- 服务端玩家对象和组件的 `GetTable` 返回深拷贝；`GetTableShallow` 只复制第一层，嵌套表返回只读 View；`GetTableView` 返回实时只读代理且不深拷贝。只读查询优先 View，编辑嵌套数据使用 GetTable，修改后统一 SetTable 提交。
+- 修改一组数据优先一次调用 `SetTableFields(field, {key = value, ...})`：仅设置提供的一级字段，其余保留；嵌套表整体复制替换，不递归合并，不支持路径。一次调用只提交和通知一次，不拆成多次逐键调用。空补丁不通知；false 正常写入；nil 无法出现在补丁中，删除键用 GetTable 修改后一次 SetTable。该接口保留现有整字段快照和同步，不代表零深拷贝。
+- View 的任意层级均不可写，赋值、rawset 和修改型 table 函数会报错且不改变存档；不能只给原表设置 `__newindex` 或仅冻结第一层。View 使用 `for key, value in view do` 遍历，不使用 `pairs/ipairs/next/rawget/table.*`，不直接发送网络或序列化；需要普通表时重新 GetTable。View 离服后失效，不得跨会话缓存。
+- `GetKVTable` 仅返回冻结的公开方法句柄：`Get/GetDeep` 深拷贝，`GetShallow/GetDeepShallow` 安全浅拷贝，`GetView/GetDeepView` 只读代理，`Set/SetDeep` 复制入参后写入。业务字段不得依赖 `RealData/LastSaveTime` 存储布局，是否已存储用 `HasStoredData`。
+- 会话检查、状态快照和保存使用 `GetSessionToken/IsSessionActive/GetState/Save`；跨 yield 后重验原会话。支付发奖回滚用玩家 `RunDataTransaction`，回调只能通过公开接口修改当前玩家，禁止 yield、保存和外部副作用；收据元数据、GM 恢复、会话释放走管理器专用接口，不在业务层操作底层存档。
+- 接口维护必须同步更新注释和 `.agents/skills/roblox-framework-dev/reference-rules.md`；检查存档改动时检索上述内部成员，确保存档模块之外没有新增直接访问。
+
 ## 数值文案显示
 
 - 力量、货币、经验、价格、收益等数量文案，统一调用 `ReplicatedStorage/Scripts/Game/Shared/GameUtility.luau` 的 `GameUtility.NumberToText`；不要在各 UI 中重复实现单位换算或小数格式化。

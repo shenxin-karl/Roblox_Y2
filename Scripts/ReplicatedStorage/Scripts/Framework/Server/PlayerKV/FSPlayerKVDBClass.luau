@@ -144,9 +144,10 @@ function DB:SaveAsync()
 end
 
 --- @param name string 已声明的 KV 域。
---- @return table KV 视图。
+--- @return table? 冻结的 KV 公开方法句柄，不暴露 DB 或原始数据表。
 function DB:GetKVTable(name)
-    return self._database[name]
+    local kvTable = self._database[name]
+    return kvTable and kvTable:GetHandle()
 end
 
 --- @return boolean 是否成功加载且仍拥有会话。

@@ -9,6 +9,7 @@ FS.PlayerMgrClass = Class
 
 --- 接管项目玩家管理器，并在业务服务已创建后自动开放客户端握手。
 --- @param playerClassType string 项目玩家类名。
+--- @return nil
 function Class:Ctor(playerClassType)
     Class.Super.Ctor(self, playerClassType)
     self._playerMap, self._clientReady, self._serverReady = {}, {}, {}
@@ -31,8 +32,7 @@ function Class:Ctor(playerClassType)
     --- @param id number 引擎认证的玩家 ID。
     FX.Network:RegClientMsgCallback("C2S_ClientReady", function(id)
         self:SetPlayerReady(id, true)
-        local db = FS.PlayerKVDataManager._playerDBMap[id]
-        if db and db:IsLoadFinished() then
+        if FS.PlayerKVDataManager:GetSessionToken(id) then
             self:SetPlayerReady(id, false)
         end
     end)
@@ -41,11 +41,7 @@ function Class:Ctor(playerClassType)
         self._connections,
         FS.Events.OnPlayerDataLoadFinished.Event:Connect(function(id)
             if not Players:GetPlayerByUserId(id) then
-                local db = FS.PlayerKVDataManager._playerDBMap[id]
-                if db then
-                    db:Save(true)
-                    FS.PlayerKVDataManager._playerDBMap[id] = nil
-                end
+                FS.PlayerKVDataManager:ReleaseOfflinePlayer(id)
 
                 return
             end
