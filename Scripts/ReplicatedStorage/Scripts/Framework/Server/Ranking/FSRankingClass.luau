@@ -157,15 +157,14 @@ function FSRankingClass:OnPlayerDataLoadFinished(playerId)
     self:UpdatePlayerScore(playerId, value)
 end
 
---- 玩家存档开始时，将当前周期待刷新的榜单数据落到云榜。
+--- 玩家存档开始时写入云榜；失败或写入期间分数更新时保留队列供后续重试。
 --- @param playerId number 玩家ID
 --- @return nil
 function FSRankingClass:OnPlayerDataSaveStarted(playerId)
     local info = self._updateRankingPlayerMap[playerId]
-    if info ~= nil then
-        self:SetRankValue(playerId, info)
+    if info ~= nil and self:SetRankValue(playerId, info) and self._updateRankingPlayerMap[playerId] == info then
+        self._updateRankingPlayerMap[playerId] = nil
     end
-    self._updateRankingPlayerMap[playerId] = nil
     self:MakeRoomRankingDataDirty()
 end
 

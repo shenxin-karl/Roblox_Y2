@@ -27,7 +27,6 @@ function FCItemDescription.New()
         Name = "ItemDescription", AnchorPoint = Vector2.new(0.5, 0),
         Position = UDim2.fromScale(0.5, 0.18),
         Size = UDim2.fromOffset(220, 72),
-        AutomaticSize = Enum.AutomaticSize.Y,
         BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 0,
     })
     Node("UICorner", self.Root, {CornerRadius = UDim.new(0, 12)})
@@ -63,23 +62,23 @@ function FCItemDescription.New()
     })
     self._content = Node("Frame", self.Root, {
         Name = "Content", Position = UDim2.fromOffset(72, 10), Size = UDim2.new(1, -88, 0, 0),
-        BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, ZIndex = 2,
+        BackgroundTransparency = 1, ZIndex = 2,
     })
     Node("UIPadding", self._content, {PaddingBottom = UDim.new(0, 12)})
-    -- 标题和描述按实际换行高度向下排列，保持大字号而不互相遮挡。
+    -- 文本高度由布局计算，背景只跟随面板，避免自动高度与满高背景循环依赖。
     Node("UIListLayout", self._content, {Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder})
     self._title = Node("TextLabel", self._content, {
         Name = "Title", Size = UDim2.new(1, 0, 0, 32), LayoutOrder = 1,
         BackgroundTransparency = 1, AutoLocalize = false, Font = Enum.Font.GothamBlack,
         TextSize = 26, TextColor3 = Color3.fromRGB(255, 243, 215), TextXAlignment = Enum.TextXAlignment.Left,
-        TextScaled = false, TextWrapped = true, AutomaticSize = Enum.AutomaticSize.Y, Text = "", ZIndex = 2,
+        TextScaled = false, TextWrapped = true, Text = "", ZIndex = 2,
     })
     self._description = Node("TextLabel", self._content, {
         Name = "Description", Size = UDim2.new(1, 0, 0, 0), LayoutOrder = 2,
         BackgroundTransparency = 1, AutoLocalize = false, Font = Enum.Font.GothamBold,
         TextSize = 22, TextColor3 = Color3.fromRGB(250, 247, 237),
         TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
-        TextWrapped = true, TextScaled = false, AutomaticSize = Enum.AutomaticSize.Y, Text = "", ZIndex = 2,
+        TextWrapped = true, TextScaled = false, Text = "", ZIndex = 2,
     })
     for index, label in ipairs({self._title, self._description}) do
         Node("UIStroke", label, {
@@ -94,16 +93,25 @@ function FCItemDescription.New()
     return self
 end
 
---- 按文字自然宽度和屏幕可用宽度布局，长文字由文本节点自动换行撑高。
+--- 先确定文字宽度，再按换行高度撑高面板；不让背景参与内容尺寸计算。
 function FCItemDescription:_Layout()
     local left = self._icon.Visible and 72 or 16
     local titleSize = TextService:GetTextSize(self._title.Text, self._title.TextSize, self._title.Font, Vector2.new(10000, 10000))
     local descriptionSize = TextService:GetTextSize(self._description.Text, self._description.TextSize, self._description.Font, Vector2.new(10000, 10000))
     local width = math.min(math.clamp(math.ceil(math.max(titleSize.X, descriptionSize.X)) + left + 22, 220, 420),
         math.max(1, self._screen.AbsoluteSize.X - 32))
-    self.Root.Size = UDim2.fromOffset(width, 72)
+    local textWidth = math.max(1, width - left - 16)
+    local bounds = Vector2.new(textWidth, 10000)
+    local titleHeight = math.max(32, math.ceil(TextService:GetTextSize(
+        self._title.Text, self._title.TextSize, self._title.Font, bounds).Y))
+    local descriptionHeight = math.ceil(TextService:GetTextSize(
+        self._description.Text, self._description.TextSize, self._description.Font, bounds).Y)
+    local contentHeight = titleHeight + 4 + descriptionHeight + 12
+    self.Root.Size = UDim2.fromOffset(width, math.max(72, 10 + contentHeight))
     self._content.Position = UDim2.fromOffset(left, 10)
-    self._content.Size = UDim2.new(1, -left - 16, 0, 0)
+    self._content.Size = UDim2.fromOffset(textWidth, contentHeight)
+    self._title.Size = UDim2.new(1, 0, 0, titleHeight)
+    self._description.Size = UDim2.new(1, 0, 0, descriptionHeight)
 end
 
 --- 展示调用方准备好的内容，不读取 Tool、配置或执行二次翻译。

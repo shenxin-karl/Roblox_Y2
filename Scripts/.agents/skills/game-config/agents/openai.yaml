@@ -1,4 +1,4 @@
 interface:
   display_name: "游戏配置"
   short_description: "通过配置 MCP 维护五类游戏配置，理解字段语义和 Lua/Luau 导出格式"
-  default_prompt: "使用 $game-config，按任务选择配置分类或 MCP 参考，维护当前工程的游戏配置并核对导出结构。"
+  default_prompt: "使用 $game-config，通过配置 MCP 查询或修改当前工程 XLSX，按需读取 config API 文档，核对分类、字段、版本及检查保存导出状态。"

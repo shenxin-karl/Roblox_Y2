@@ -6,7 +6,8 @@ local Access = require(script.Parent.FSPlayerDataAccess)
 require(script.Parent.FSPlayerKVTableClass)
 require(script.Parent.FSPlayerKVDBClass)
 -- DB 映射只存在于模块闭包；公开接口不得返回 DB、原始表或可写的嵌套引用。
-local playerDBMap, closing = {}, {}
+local playerDBMap, closing, sessionPlayers = {}, {}, {}
+local shuttingDown = false
 local Manager = {}
 FS.PlayerKVDataManager = Manager
 
@@ -29,16 +30,23 @@ function Manager:Init()
     end)
 end
 
---- 创建并加载新玩家会话，不向调用方暴露 DB。
+--- 等待旧会话完整释放后加载；每次等待后核对 Player，避免为已离服的重连请求建档。
 --- @param player Player 进入服务器的玩家。
 --- @return nil
 function Manager:PlayerAdded(player)
-    if playerDBMap[player.UserId] then
+    local id = player.UserId
+    while playerDBMap[id] do
+        if shuttingDown or sessionPlayers[id] == player or Players:GetPlayerByUserId(id) ~= player then
+            return
+        end
+        task.wait()
+    end
+    if shuttingDown or Players:GetPlayerByUserId(id) ~= player then
         return
     end
 
-    local db = FS.PlayerKVDBClass.New(player.UserId)
-    playerDBMap[player.UserId] = db
+    local db = FS.PlayerKVDBClass.New(id)
+    playerDBMap[id], sessionPlayers[id] = db, player
     db:LoadAsync()
 end
 
@@ -47,6 +55,9 @@ end
 --- @return nil
 function Manager:PlayerRemoving(player)
     local id = player.UserId
+    if sessionPlayers[id] ~= player then
+        return
+    end
     if closing[id] then
         while closing[id] do
             task.wait()
@@ -68,6 +79,9 @@ function Manager:PlayerRemoving(player)
 
     FS.Events.OnPlayerDataSaveStarted:Fire(id)
     FS.RankingManager:OnPlayerDataSaveStarted(id)
+    while db._loading or db._recovering do
+        task.wait()
+    end
     if db:IsLoadFinished() then
         for attempt = 1, 3 do
             if db:Save(true) then
@@ -79,7 +93,25 @@ function Manager:PlayerRemoving(player)
     end
 
     playerDBMap[id] = nil
+    sessionPlayers[id] = nil
     closing[id] = nil
+end
+
+--- 停止新会话加载并关闭在线玩家，等待所有已离服及加载中的关闭任务。
+--- @return nil
+function Manager:Close()
+    shuttingDown = true
+    local pending = 0
+    for playerIndex, player in ipairs(Players:GetPlayers()) do
+        pending += 1
+        task.spawn(function()
+            self:PlayerRemoving(player)
+            pending -= 1
+        end)
+    end
+    while pending > 0 or next(closing) do
+        task.wait()
+    end
 end
 
 --- 获取 KV 公开方法句柄；不返回 DB 或原始表，业务玩家字段优先使用玩家对象接口。
@@ -153,20 +185,16 @@ function Manager:Save(id, session)
     return playerDBMap[id]:Save(false)
 end
 
---- 处理加载完成时玩家已离线的情况；释放和映射清理由存档模块独占。
+--- 加载完成后发现玩家离线时复用关闭流程，使保存始终计入关服等待。
 --- @param id number 已完成加载的玩家 ID。
 --- @return nil
 function Manager:ReleaseOfflinePlayer(id)
     if Players:GetPlayerByUserId(id) or closing[id] then
         return
     end
-    local db = playerDBMap[id]
-    if db then
-        db._leaving = true
-        db:Save(true)
-        if playerDBMap[id] == db then
-            playerDBMap[id] = nil
-        end
+    local player = sessionPlayers[id]
+    if player then
+        self:PlayerRemoving(player)
     end
 end
 

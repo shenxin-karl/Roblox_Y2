@@ -20,7 +20,8 @@ function DB:Ctor(playerId)
     self._revision = 0
 end
 
---- 加载失败绝不创建空档继续游戏；历史支付记录压缩为去重标记，不删除 PurchaseId。
+--- 加载失败绝不创建空档继续游戏；离服后的加载结果仅由管理器关闭，不通知重连玩家。
+--- @return nil
 function DB:LoadAsync()
     self._loading, self._loadFailed = true, false
     task.spawn(function()
@@ -47,11 +48,14 @@ function DB:LoadAsync()
         if not success or not record then
             self._loading, self._loadFailed = false, true
             warn("[Storage] Load failed or session locked", self._playerId, record)
-            FS.Events.OnPlayerDataLoadFailed:Fire(self._playerId)
+            if not self._leaving then
+                FS.Events.OnPlayerDataLoadFailed:Fire(self._playerId)
+            end
             return
         end
 
         self._data = record.Data
+        -- 历史分析元数据不再持久化，保留全部 PurchaseId 以防重复发奖。
         if self._data.PurchaseReceipts then
             for purchaseId, receiptRecord in pairs(self._data.PurchaseReceipts) do
                 if type(receiptRecord) == "table" then
@@ -64,7 +68,9 @@ function DB:LoadAsync()
             if data ~= nil and type(data) ~= "table" then
                 self._loading, self._loadFailed = false, true
                 warn("[Storage] Invalid KV domain", name)
-                FS.Events.OnPlayerDataLoadFailed:Fire(self._playerId)
+                if not self._leaving then
+                    FS.Events.OnPlayerDataLoadFailed:Fire(self._playerId)
+                end
                 return
             end
 
@@ -74,7 +80,6 @@ function DB:LoadAsync()
 
         self._loaded, self._loading = true, false
         if self._leaving then
-            self:Save(true)
             return
         end
 
