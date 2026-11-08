@@ -23,7 +23,7 @@
 | `Service/SRankingServiceClass.luau` | 排行榜请求校验与框架查询转发。启用榜单时同时接入 Provider 的榜单定义；分数由所属业务在服务端更新。 |
 | `Config/StorageConfig.luau` | 项目私有的存档名称、测试模式、保存周期和会话锁设置。变更时说明对测试与正式数据的影响，不作为玩法配置表。 |
 
-三个 `Handlers` 表由 Main 注册到 Provider。模板当前为空；按实际功能添加处理器，并先读取对应框架上下文的签名、返回值和禁止 yield 等约束。预留的 `BuyHandlers/ItemHandlers/RewardHandlers` 沿用现有固定名称；新建端专属模块仍遵循 AGENTS.md 的 C/FC/S/FS 命名规则。
+三个 `Handlers` 表由 Main 注册到 Provider。模板当前为空；按实际功能添加处理器，并先读取对应框架上下文的签名、返回值和禁止 yield 等约束。预留的 `BuyHandlers/ItemHandlers/RewardHandlers` 沿用现有固定名称；新建端专属模块遵循 [目录与命名](reference-project-structure.md) 规则。
 
 ## 处理器调用契约
 
@@ -61,4 +61,4 @@
 
 复制模板时保留通用存档生命周期：重连等待旧 Player 会话关闭，关服由 `PlayerKVDataManager:Close()` 停止加载并等待关闭任务；排行榜写入失败或写入期间更新分数时保留重试队列。购买预检用 `GetDataSize(id, session)`，容量限制只用于发起新购买，不阻断已付款回执。管理员、货币、榜单和背包容量仍由新项目配置，不能复制其他项目的账户或玩法默认值。
 
-验证遵循 AGENTS.md：默认编译与同步核对；用户授权试玩时再验证加载、Ready、数据同步和本次功能，不把空入口已加载当成功能已实现。
+验证遵循 [Luau 验证规则](../roblox-luau-standards/reference-rules.md#验证)：用户授权试玩时再验证加载、Ready、数据同步和本次功能，不把空入口已加载当成功能已实现。
