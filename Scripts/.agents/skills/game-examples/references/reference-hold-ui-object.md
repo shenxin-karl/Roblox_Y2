@@ -12,7 +12,7 @@ FClient 已加载：
 `ReplicatedStorage/Scripts/Framework/Shared/FXProximityPromptObjectClass.luau` 由 FShared 加载：
 - `FX.ProximityPromptObjectClass.New(parent)` 创建交互对象。
 - SetHoldDuration、SetEnabled 控制交互，SetHoldCompleteCallback 接收 player；传 nil 清除回调。
-- GetPrompt 返回原生 ProximityPrompt，文案按 AGENTS.md 本地化规则处理。
+- GetPrompt 返回原生 ProximityPrompt，文案按 [本地化规则](../../roblox-localization/SKILL.md) 处理。
 - Dtor 清理自建提示与连接，保留 parent；额外连接由调用方清理。
 
 服务端回调仍需校验业务资格和重复操作，Triggered 不证明实际长按时长。

@@ -45,7 +45,7 @@
 | `Game/Shared/PlayerDataConfig.luau` | 玩家字段类型、默认值、存档域与同步策略。新增字段在此声明，组件不重复补默认结构；是否迁移由项目存档版本决定。 |
 | `Game/Shared/NetworkProtocol.luau` | 初始化前声明项目消息名，模板当前仅声明音量保存。框架已有的 GM、本地化提示、握手、同步、好友和购买预检协议不重复声明。 |
 
-`Game/Configs/` 是生成产物。新增道具、商品和玩法配置通过配置技能操作源 XLSX 后导出，不直接修改生成文件。当前残留生成配置不代表功能已经启用，仍需处理器、组件和服务接入。
+`Game/Configs/` 只读；按来源回源：XLSX 配置遵循 [XLSX 游戏配置](../roblox-external-tools/references/game-config.md)，`NumericalConfig.luau` 遵循 [模拟器协作](../roblox-external-tools/references/simulator.md)，均经对应流程校验、保存、导出，不手改生成文件。扩展已有 Shared 模块前按文件定向搜索，不批量读取整个目录。
 
 通用协议统一声明在 `Framework/FrameworkInit.luau`：`C2S_GMCommand` 由 `FSPlayerObjectManagerClass` 注册，先按认证身份调用 `FX.IsDeveloper` 鉴权，再交给项目覆写的 `HandleGMCommand`；框架默认拒绝未实现命令。项目命令仍需校验参数、所属会话和动作范围，异步返回重新确认会话。
 

@@ -1,7 +1,7 @@
 # 界面接入
 
-- `StarterPlayerScripts/Client/UI/Generated/` 中有界面对应脚本，就属于 UIEditor 生成的 UI，不要求额外生成标记。具体规则见下方生成 UI 接入 skill；节点查询按 AGENTS.md。
-- 有对应生成 View 时使用 [UIEditor 生成 UI 接入](../roblox-uieditor-integration/SKILL.md)，契约、职责边界与回源改造流程只在该 skill 维护。
+- `StarterPlayerScripts/Client/UI/Generated/` 中有界面对应脚本，就属于 UIEditor 生成的 UI，不要求额外生成标记。实际节点与托管范围按 [UI 归属与业务接入](../roblox-external-tools/references/ui-integration.md) 确认；节点查询按 [Studio 操作](../roblox-studio-operations/SKILL.md)。
+- 有对应生成 View 时使用 [外部工具协作](../roblox-external-tools/SKILL.md) 的 UI 接入参考；契约、职责边界与回源改造流程只在该参考维护。
 - 无对应生成类的普通界面使用 FCUICompClass 或已有项目 UI 基类。
 
 # UI 生命周期
