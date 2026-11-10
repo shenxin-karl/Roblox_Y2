@@ -1,6 +1,6 @@
 ---
 name: server-code-critical-review
-description: 审查 Roblox_Y1 服务端的身份与权限漏洞、严重逻辑缺陷、存档损坏、重复奖励和支付风险。请求服务端安全审查或高危 Bug 复查时使用，当前 agent 直接完成。
+description: 审查 Roblox_Y2 服务端的身份与权限漏洞、严重逻辑缺陷、存档损坏、重复奖励和支付风险。请求服务端安全审查或高危 Bug 复查时使用，当前 agent 直接完成。
 ---
 
 # 服务端高风险审查
