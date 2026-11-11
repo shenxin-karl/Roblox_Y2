@@ -4,7 +4,12 @@
     "value": 0,
     "editor": {
       "displayName": "初始金钱",
-      "display": { "kind": "number", "control": "number", "min": 0, "step": 1 }
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 0,
+        "step": 1
+      }
     }
   },
   "initialUnlockedSlotCount": {
@@ -13,7 +18,13 @@
     "editor": {
       "displayName": "初始解锁槽位数",
       "folder": "槽位配置",
-      "display": { "kind": "number", "control": "number", "min": 0, "max": 30, "step": 1 }
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 0,
+        "max": 30,
+        "step": 1
+      }
     }
   },
   "slotUnlockCurve": {
@@ -28,8 +39,14 @@
     "formula": {
       "kind": "Power",
       "base": 0,
-      "multiplier": { "kind": "constant", "value": 100 },
-      "power": { "kind": "constant", "value": 1 },
+      "multiplier": {
+        "kind": "constant",
+        "value": 100
+      },
+      "power": {
+        "kind": "constant",
+        "value": 1
+      },
       "rounding": "floor"
     },
     "editor": {
@@ -39,8 +56,178 @@
         "kind": "curve",
         "xLabel": "槽位 ID",
         "yLabel": "解锁价格",
-        "sampleRange": { "min": 1, "max": 30, "step": 1 }
+        "sampleRange": {
+          "min": 1,
+          "max": 30,
+          "step": 1
+        }
       }
+    }
+  },
+  "miningRefreshInterval": {
+    "kind": "number",
+    "value": 300,
+    "editor": {
+      "displayName": "矿石整批刷新间隔（秒）",
+      "folder": "矿石刷新",
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 1,
+        "step": 1
+      }
+    }
+  },
+  "miningSpawnCount": {
+    "kind": "number",
+    "value": 20,
+    "editor": {
+      "displayName": "每批矿石数量",
+      "folder": "矿石刷新",
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 1,
+        "step": 1
+      }
+    }
+  },
+  "miningMutationProbabilityCurve": {
+    "kind": "lottery",
+    "distribution": {
+      "kind": "GeometricDecay",
+      "prizeCount": 6,
+      "r": 0.45
+    },
+    "editor": {
+      "displayName": "矿石变异概率曲线",
+      "folder": "矿石刷新",
+      "display": {
+        "kind": "curve",
+        "xLabel": "变异 ID（1 普通 / 2 Toxic / 3 Frost / 4 Inferno / 5 Storm / 6 Astral）",
+        "yLabel": "出现概率",
+        "sampleRange": {
+          "min": 1,
+          "max": 6,
+          "step": 1
+        }
+      }
+    }
+  },
+  "oreCollectInterval": {
+    "kind": "number",
+    "value": 30,
+    "editor": {
+      "displayName": "打造取矿冷却（秒）",
+      "folder": "手动打造",
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 1,
+        "step": 1
+      }
+    }
+  },
+  "initialPlayerLuck": {
+    "kind": "number",
+    "value": 1,
+    "editor": {
+      "displayName": "初始人物幸运",
+      "folder": "手动打造",
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 1,
+        "step": 1
+      }
+    }
+  },
+  "miningMutationLuckCurve": {
+    "kind": "curve",
+    "input": {
+      "key": "mutationId",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1,
+      "max": 6
+    },
+    "formula": {
+      "kind": "Power",
+      "base": 0,
+      "multiplier": {
+        "kind": "constant",
+        "value": 1
+      },
+      "power": {
+        "kind": "constant",
+        "value": 1
+      },
+      "rounding": "none"
+    },
+    "editor": {
+      "displayName": "矿石变异对应原料幸运",
+      "folder": "手动打造",
+      "display": {
+        "kind": "curve",
+        "xLabel": "变异 ID",
+        "yLabel": "原料幸运 W",
+        "sampleRange": {
+          "min": 1,
+          "max": 6,
+          "step": 1
+        }
+      }
+    }
+  },
+  "swordUpgradeCurves": {
+    "kind": "curveGroup",
+    "input": {
+      "key": "level",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1
+    },
+    "columns": [
+      {
+        "key": "upgradeCost",
+        "formula": {
+          "kind": "Power",
+          "base": 0,
+          "multiplier": { "kind": "constant", "value": 25 },
+          "power": { "kind": "constant", "value": 1 },
+          "rounding": "floor"
+        }
+      },
+      {
+        "key": "levelMultiplier",
+        "formula": {
+          "kind": "Power",
+          "base": 0.5,
+          "multiplier": { "kind": "constant", "value": 0.5 },
+          "power": { "kind": "constant", "value": 1 },
+          "rounding": "none"
+        }
+      }
+    ],
+    "editor": {
+      "displayName": "武器升级曲线",
+      "display": {
+        "kind": "curve",
+        "xLabel": "武器当前等级",
+        "sampleRange": { "min": 1, "max": 10, "step": 1 },
+        "columns": {
+          "upgradeCost": { "displayName": "升一级费用" },
+          "levelMultiplier": { "displayName": "等级倍率" }
+        }
+      }
+    }
+  },
+  "__framework": {
+    "schedule": {
+      "enabled": true,
+      "sessionsPerDay": 2,
+      "onlineSeconds": 1800,
+      "offlineSeconds": 14400
     }
   }
 }
