@@ -1,17 +1,4 @@
 {
-  "initialMoney": {
-    "kind": "number",
-    "value": 0,
-    "editor": {
-      "displayName": "初始金钱",
-      "display": {
-        "kind": "number",
-        "control": "number",
-        "min": 0,
-        "step": 1
-      }
-    }
-  },
   "initialUnlockedSlotCount": {
     "kind": "number",
     "value": 5,
@@ -128,20 +115,6 @@
       }
     }
   },
-  "initialPlayerLuck": {
-    "kind": "number",
-    "value": 1,
-    "editor": {
-      "displayName": "初始人物幸运",
-      "folder": "手动打造",
-      "display": {
-        "kind": "number",
-        "control": "number",
-        "min": 1,
-        "step": 1
-      }
-    }
-  },
   "miningMutationLuckCurve": {
     "kind": "curve",
     "input": {
@@ -193,8 +166,14 @@
         "formula": {
           "kind": "Power",
           "base": 0,
-          "multiplier": { "kind": "constant", "value": 25 },
-          "power": { "kind": "constant", "value": 1 },
+          "multiplier": {
+            "kind": "constant",
+            "value": 25
+          },
+          "power": {
+            "kind": "constant",
+            "value": 1
+          },
           "rounding": "floor"
         }
       },
@@ -203,8 +182,14 @@
         "formula": {
           "kind": "Power",
           "base": 0.5,
-          "multiplier": { "kind": "constant", "value": 0.5 },
-          "power": { "kind": "constant", "value": 1 },
+          "multiplier": {
+            "kind": "constant",
+            "value": 0.5
+          },
+          "power": {
+            "kind": "constant",
+            "value": 1
+          },
           "rounding": "none"
         }
       }
@@ -214,10 +199,332 @@
       "display": {
         "kind": "curve",
         "xLabel": "武器当前等级",
-        "sampleRange": { "min": 1, "max": 10, "step": 1 },
+        "sampleRange": {
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
         "columns": {
-          "upgradeCost": { "displayName": "升一级费用" },
-          "levelMultiplier": { "displayName": "等级倍率" }
+          "upgradeCost": {
+            "displayName": "升一级费用"
+          },
+          "levelMultiplier": {
+            "displayName": "等级倍率"
+          }
+        }
+      }
+    }
+  },
+  "smeltingUpgradeCurves": {
+    "kind": "curveGroup",
+    "input": {
+      "key": "level",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1
+    },
+    "columns": [
+      {
+        "key": "upgradeCost",
+        "formula": {
+          "kind": "Power",
+          "base": 0,
+          "multiplier": {
+            "kind": "constant",
+            "value": 100
+          },
+          "power": {
+            "kind": "constant",
+            "value": 2
+          },
+          "rounding": "floor"
+        }
+      }
+    ],
+    "editor": {
+      "displayName": "熔炼幸运升级价格（临时数值）",
+      "folder": "玩家升级",
+      "display": {
+        "kind": "curve",
+        "xLabel": "当前等级",
+        "sampleRange": {
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
+        "columns": {
+          "upgradeCost": {
+            "displayName": "升一级费用"
+          }
+        }
+      }
+    }
+  },
+  "forgingUpgradeCurves": {
+    "kind": "curveGroup",
+    "input": {
+      "key": "level",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1
+    },
+    "columns": [
+      {
+        "key": "upgradeCost",
+        "formula": {
+          "kind": "Power",
+          "base": 0,
+          "multiplier": {
+            "kind": "constant",
+            "value": 100
+          },
+          "power": {
+            "kind": "constant",
+            "value": 2
+          },
+          "rounding": "floor"
+        }
+      }
+    ],
+    "editor": {
+      "displayName": "武器锻造升级价格（临时数值）",
+      "folder": "玩家升级",
+      "display": {
+        "kind": "curve",
+        "xLabel": "当前等级",
+        "sampleRange": {
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
+        "columns": {
+          "upgradeCost": {
+            "displayName": "升一级费用"
+          }
+        }
+      }
+    }
+  },
+  "incomeUpgradeCurves": {
+    "kind": "curveGroup",
+    "input": {
+      "key": "level",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1
+    },
+    "columns": [
+      {
+        "key": "upgradeCost",
+        "formula": {
+          "kind": "Power",
+          "base": 0,
+          "multiplier": {
+            "kind": "constant",
+            "value": 100
+          },
+          "power": {
+            "kind": "constant",
+            "value": 2
+          },
+          "rounding": "floor"
+        }
+      },
+      {
+        "key": "effect",
+        "formula": {
+          "kind": "Power",
+          "base": 0.9,
+          "multiplier": {
+            "kind": "constant",
+            "value": 0.1
+          },
+          "power": {
+            "kind": "constant",
+            "value": 1
+          },
+          "rounding": "none"
+        }
+      }
+    ],
+    "editor": {
+      "displayName": "玩家收益倍率升级（临时数值）",
+      "folder": "玩家升级",
+      "display": {
+        "kind": "curve",
+        "xLabel": "当前等级",
+        "sampleRange": {
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
+        "columns": {
+          "upgradeCost": {
+            "displayName": "升一级费用"
+          },
+          "effect": {
+            "displayName": "玩家收益倍率"
+          }
+        }
+      }
+    }
+  },
+  "swordQualityIncomeCurve": {
+    "kind": "curve",
+    "input": {
+      "key": "quality",
+      "valueType": "number",
+      "rounding": "none",
+      "min": -3
+    },
+    "formula": {
+      "kind": "BaseExp",
+      "base": 0,
+      "multiplier": {
+        "kind": "constant",
+        "value": 1
+      },
+      "power": {
+        "kind": "constant",
+        "value": 1.2
+      },
+      "rounding": "none"
+    },
+    "editor": {
+      "displayName": "武器品质基础秒收益（临时数值）",
+      "folder": "基地收益",
+      "display": {
+        "kind": "curve",
+        "xLabel": "品质",
+        "yLabel": "金币/秒",
+        "sampleRange": {
+          "min": -3,
+          "max": 20,
+          "step": 1
+        }
+      }
+    }
+  },
+  "swordMutationIncomeCurve": {
+    "kind": "curve",
+    "input": {
+      "key": "mutationId",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1,
+      "max": 6
+    },
+    "formula": {
+      "kind": "Power",
+      "base": 1,
+      "multiplier": {
+        "kind": "constant",
+        "value": 0
+      },
+      "power": {
+        "kind": "constant",
+        "value": 1
+      },
+      "rounding": "none"
+    },
+    "editor": {
+      "displayName": "武器变异收益倍率（暂为1）",
+      "folder": "基地收益",
+      "display": {
+        "kind": "curve",
+        "xLabel": "变异 ID",
+        "yLabel": "倍率",
+        "sampleRange": {
+          "min": 1,
+          "max": 6,
+          "step": 1
+        }
+      }
+    }
+  },
+  "initialDiamonds": {
+    "kind": "number",
+    "value": 0,
+    "editor": {
+      "displayName": "初始钻石（新手35钻已用于默认2倍）",
+      "folder": "钻石与付费倍率",
+      "display": { "kind": "number", "control": "number", "min": 0, "step": 1 }
+    }
+  },
+  "initialPaidMultiplierTier": {
+    "kind": "number",
+    "value": 1,
+    "editor": {
+      "displayName": "新手默认已购倍率档位",
+      "folder": "钻石与付费倍率",
+      "display": { "kind": "number", "control": "number", "min": 1, "max": 11, "step": 1 }
+    }
+  },
+  "dailyDiamondReward": {
+    "kind": "number",
+    "value": 28,
+    "editor": {
+      "displayName": "每日赠送钻石",
+      "folder": "钻石与付费倍率",
+      "display": { "kind": "number", "control": "number", "min": 0, "step": 1 }
+    }
+  },
+  "paidMultiplierCurves": {
+    "kind": "curveGroup",
+    "input": {
+      "key": "tier",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1,
+      "max": 11
+    },
+    "columns": [
+      {
+        "key": "multiplier",
+        "formula": {
+          "kind": "BaseExp",
+          "base": 0,
+          "multiplier": { "kind": "constant", "value": 1 },
+          "power": { "kind": "constant", "value": 2 },
+          "rounding": "none"
+        }
+      },
+      {
+        "key": "diamondCost",
+        "formula": {
+          "kind": "Power",
+          "base": 0,
+          "multiplier": {
+            "kind": "linear",
+            "ranges": [
+              { "fromInput": 1, "toInput": 1, "fromValue": 35, "toValue": 35 },
+              { "fromInput": 2, "toInput": 2, "fromValue": 48, "toValue": 48 },
+              { "fromInput": 3, "toInput": 3, "fromValue": 60, "toValue": 60 },
+              { "fromInput": 4, "toInput": 4, "fromValue": 98, "toValue": 98 },
+              { "fromInput": 5, "toInput": 5, "fromValue": 288, "toValue": 288 },
+              { "fromInput": 6, "toInput": 6, "fromValue": 588, "toValue": 588 },
+              { "fromInput": 7, "toInput": 7, "fromValue": 1188, "toValue": 1188 },
+              { "fromInput": 8, "toInput": 8, "fromValue": 2688, "toValue": 2688 },
+              { "fromInput": 9, "toInput": 9, "fromValue": 5688, "toValue": 5688 },
+              { "fromInput": 10, "toInput": 10, "fromValue": 12888, "toValue": 12888 },
+              { "fromInput": 11, "toInput": 11, "fromValue": 28888, "toValue": 28888 }
+            ]
+          },
+          "power": { "kind": "constant", "value": 0 },
+          "rounding": "none"
+        }
+      }
+    ],
+    "editor": {
+      "displayName": "付费倍率逐档购买（钻石方案暂定数值）",
+      "folder": "钻石与付费倍率",
+      "display": {
+        "kind": "curve",
+        "xLabel": "目标档位",
+        "sampleRange": { "min": 1, "max": 11, "step": 1 },
+        "columns": {
+          "multiplier": { "displayName": "最终金币倍率" },
+          "diamondCost": { "displayName": "本档钻石价格" }
         }
       }
     }
@@ -227,7 +534,7 @@
       "enabled": true,
       "sessionsPerDay": 2,
       "onlineSeconds": 1800,
-      "offlineSeconds": 14400
+      "offlineSeconds": 7200
     }
   }
 }
