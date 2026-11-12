@@ -38,8 +38,9 @@ button.Text = Text.Tr(TranslationTexts.Close)
 ## 3. 哪些不能改
 
 - 不改 Generated、生成配置、UI 模板或翻译产物；生成源有问题就报告，不绕过。
-- 不擅自改旧 Key；改 Source 不改 Key。不建共享文案表，不自动上传。
-- 导入 UI 沿用 AutoLocalize 配置，不补批量关闭代码。脚本自行创建且由代码翻译的具体文本节点，必须在写入译文前设置 `AutoLocalize = false`，避免重复翻译；不关闭父容器，不阻断后代自动翻译。
+- 不擅自改旧 Key；改 Source 不改 Key。不建共享文案表；编码任务不手工修改翻译文件、不通过 Roblox MCP 维护翻译表、不上传云端。
+- UIEditor 导入节点与 Generated 展示脚本已在制作阶段处理动态文本和 AutoLocalize；接入沿用节点配置与克隆继承，不在 OnReady、Render 或刷新逻辑补关闭代码。
+- 脚本自行创建且由代码翻译的具体文本节点，必须在写入译文前设置 `AutoLocalize = false`，避免重复翻译。只关闭该文本节点，不关闭作为祖先的图片节点、按钮或容器，也不关闭整组子树；祖先关闭会阻断后代，子节点设为 true 不能恢复。
 
 ## 4. 怎么使用和检查
 
@@ -56,7 +57,7 @@ button.Text = Text.Tr(TranslationTexts.Close)
 
 - 服务端用 `ShowLocalizedTips` 传完整定义和参数，不先拼文案；客户端语言变化后重新翻译。
 - 天数、道具件数等整数数量直接用 `{days:int}`、`{count:int}`，传整数 number，不使用 `GameUtility.NumberToText`。
-- 收益、货币、均分结果等允许小数，用 `GameUtility.NumberToText` 后传 `{value}`；例如 `2/3` 显示 `0.67`，不擅自取整。格式化只影响显示，不改计算值。
+- 收益、货币、均分结果等数量文案先按 [数值显示规则](../roblox-luau-standards/reference-rules.md#数值文案显示) 格式化，再传 `{value}`；参数为显示字符串，不使用整数说明符。
 - 字符串用 `{name}`，禁用 `{name:string}`；数字格式说明符传 number，日期传 Unix 秒，倒计时在参数侧补零；参数名与模板一致。
-- UI 接入后用 MCP 只读检查文本节点、隐藏原型及祖先/后代的 AutoLocalize，异常报告、不自动修节点。
-- 定义变化时检查文件内 Key/Source 去重及参数。遵守 AGENTS.md，不自动试玩、不将保存当作同步或运行通过。
+- UI 接入后按 [Studio 操作](../roblox-studio-operations/SKILL.md) 用 MCP 批量只读检查本次 UI 的文本节点、隐藏原型及祖先/后代 AutoLocalize。属性异常、翻译层级冲突或无法核验时反馈用户，不自动修改生成节点或补运行时开关。
+- 定义变化时检查文件内 Key/Source 去重及参数；代码验证按 [Luau 验证规则](../roblox-luau-standards/reference-rules.md#验证)，不将保存当作同步或运行通过。

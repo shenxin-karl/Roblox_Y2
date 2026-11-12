@@ -51,20 +51,9 @@ for _, player in ipairs(Players:GetPlayers()) do
     FS.PlayerKVDataManager:PlayerAdded(player)
 end
 
---- 关服时等待在线玩家保存完成，释放各自的存档会话锁。
+--- 关服时等待在线玩家及已离服会话的关闭任务，释放各自的存档会话锁。
 game:BindToClose(function()
-    local pending = 0
-    for _, player in ipairs(Players:GetPlayers()) do
-        pending += 1
-        task.spawn(function()
-            FS.PlayerKVDataManager:PlayerRemoving(player)
-            pending -= 1
-        end)
-    end
-
-    while pending > 0 do
-        task.wait()
-    end
+    FS.PlayerKVDataManager:Close()
 end)
 
 --- 使用 Roblox 同步时钟，供客户端计算服务端时间。

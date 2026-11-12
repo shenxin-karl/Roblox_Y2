@@ -2,7 +2,7 @@
 
 本文件说明采用本配置体系的游戏如何分类数据，不绑定某个游戏的玩法、代码路径或当前表内容。
 以下文件名和常用子表名沿用这套配置约定；实际子表和字段须读取当前工程，不能当成所有游戏必须具有的完整 schema。
-Meta、支持类型、Excel 布局和完整导出示例见同目录 `mcp-and-format.md`，需要时再加载。
+Meta、字段类型、Excel 布局及 Lua/Luau 导出结构按需读取 [XLSX 游戏配置](game-config.md) 中的 MCP 说明与配置格式，不在业务分类文档重复维护工具 API。
 
 ## 1. 五类配置各负责什么
 
@@ -134,4 +134,4 @@ UseHandler、HeldHandler 只是接入代码的名称；配置中新增名称不�
 - 数值主键 `1` 与字符串主键 `"1"` 不同；物理 Excel 行号不会自动成为记录键。
 
 例如 GameConfig 中同时使用 CommonConfig 和 LevelData，导出后的访问分别是 `GameConfig.CommonConfig.MaxPlayerCount` 与 `GameConfig.LevelData[1].HP`。
-具体输入表与 Lua/Luau 输出的一一对应，见 `mcp-and-format.md` 第 5 节；生成配置成功后，仍要由游戏代码加载并按字段约定使用。
+生成配置成功后，仍要由游戏代码加载并按字段约定使用。

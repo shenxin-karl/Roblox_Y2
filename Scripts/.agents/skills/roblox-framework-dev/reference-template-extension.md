@@ -45,7 +45,7 @@
 | `Game/Shared/PlayerDataConfig.luau` | 玩家字段类型、默认值、存档域与同步策略。新增字段在此声明，组件不重复补默认结构；是否迁移由项目存档版本决定。 |
 | `Game/Shared/NetworkProtocol.luau` | 初始化前声明项目消息名，模板当前仅声明音量保存。框架已有的 GM、本地化提示、握手、同步、好友和购买预检协议不重复声明。 |
 
-`Game/Configs/` 是生成产物。新增道具、商品和玩法配置通过配置技能操作源 XLSX 后导出，不直接修改生成文件。当前残留生成配置不代表功能已经启用，仍需处理器、组件和服务接入。
+`Game/Configs/` 只读；按来源回源：XLSX 配置遵循 [XLSX 游戏配置](../roblox-external-tools/references/game-config.md)，`NumericalConfig.luau` 遵循 [模拟器协作](../roblox-external-tools/references/simulator.md)，均经对应流程校验、保存、导出，不手改生成文件。扩展已有 Shared 模块前按文件定向搜索，不批量读取整个目录。
 
 通用协议统一声明在 `Framework/FrameworkInit.luau`：`C2S_GMCommand` 由 `FSPlayerObjectManagerClass` 注册，先按认证身份调用 `FX.IsDeveloper` 鉴权，再交给项目覆写的 `HandleGMCommand`；框架默认拒绝未实现命令。项目命令仍需校验参数、所属会话和动作范围，异步返回重新确认会话。
 
@@ -58,5 +58,7 @@
 - 项目业务使用 `S/C`；跨项目可复用且不依赖项目配置或节点的能力才考虑 `FS/FC/FX`。普通项目功能通过现有 Provider、回调或子类接入；迁移框架仍需用户明确授权。
 - 模板预留文件保留不等于功能启用。当前没有项目背包实现，排行榜默认关闭。主界面只保留原生 Tool 装备说明接入；通用 UI 和声音项目子类仍有停用的旧业务，启用前按新需求检查，不批量取消注释。
 - `Game/Shared` 的 GameEnum、RankingDataConfig、TutorialGuideConfig 保留为空的项目扩展入口；旧玩法共享模块已经移除。节点查找复用 FX.Loader，不恢复 InstancePath 或另建重复路径工具；包含特殊字符的节点名用原生节点 API 查询。
+
+复制模板时保留通用存档生命周期：重连等待旧 Player 会话关闭，关服由 `PlayerKVDataManager:Close()` 停止加载并等待关闭任务；排行榜写入失败或写入期间更新分数时保留重试队列。购买预检用 `GetDataSize(id, session)`，容量限制只用于发起新购买，不阻断已付款回执。管理员、货币、榜单和背包容量仍由新项目配置，不能复制其他项目的账户或玩法默认值。
 
 验证遵循 AGENTS.md：默认编译与同步核对；用户授权试玩时再验证加载、Ready、数据同步和本次功能，不把空入口已加载当成功能已实现。

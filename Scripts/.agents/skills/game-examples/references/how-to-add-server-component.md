@@ -26,4 +26,4 @@ return SExampleCompClass
 
 协议只在玩家管理器或服务中注册一次，再通过已认证 userId 找组件；
 不要在每位玩家的 Ctor 注册同名 RegClientMsgCallback。
-日常开发不自动维护 Docs/功能验收清单.md；仅在用户明确调用 update-acceptance-checklist 时集中生成系统规则与数值条目清单。
+日常开发不自动维护 Docs/功能验收清单.md；仅在用户显式调用 [checklist](../../checklist/SKILL.md) 时，按“更新”或“验收”模式维护。

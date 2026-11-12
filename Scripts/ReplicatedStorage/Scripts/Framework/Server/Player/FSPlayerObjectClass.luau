@@ -1,6 +1,7 @@
 local FX, FS = _G.FX, _G.FS
 local Provider = _G.Provider
 local FXLoader = FX.Loader
+local DataAccess = FXLoader:RequireShared("Scripts.Framework.Server.PlayerKV.FSPlayerDataAccess")
 local FXNetwork = FX.Network
 local FXTask = FX.Task
 local FXTime = FX.Time
@@ -23,9 +24,13 @@ local FSRankingManager = FS.RankingManager
 local FSPlayerObjectClass = FX.Class("FSPlayerObjectClass", "FXObjectBaseClass")
 FS.PlayerObjectClass = FSPlayerObjectClass
 
+--- 绑定创建时的存档会话，旧玩家对象的 View 和事务不能转向重进后的新档案。
+--- @param playerId number 已完成存档加载的玩家 ID。
+--- @return nil
 function FSPlayerObjectClass:Ctor(playerId)
     FSPlayerObjectClass.Super.Ctor(self, playerId)
     self._playerId = playerId
+    self._dataSession = FSPlayerKVDataManager:GetSessionToken(playerId)
     self._pendingSyncData = {} -- 需要同步的数据
     self._tempDataMap = {}
     self._syncTimerTask = nil
@@ -62,6 +67,18 @@ function FSPlayerObjectClass:_CopyDefaultData(varEnum)
     else
         return varEnum.DefVal
     end
+end
+
+--- 只读访问默认值时不深拷贝配置表；编辑副本仍由 GetTable 按需创建。
+--- @param varEnum table 玩家字段定义。
+--- @return any 默认标量或只读 View。
+function FSPlayerObjectClass:_GetDefaultDataView(varEnum)
+    if type(varEnum.DefVal) == "table" then
+        return DataAccess.View(function()
+            return varEnum.DefVal
+        end)
+    end
+    return varEnum.DefVal
 end
 
 -- 数据变化
@@ -101,9 +118,10 @@ end
 --- @param varEnum table 字段定义。
 --- @param newData any 新值。
 --- @param checkEqual boolean 是否跳过相等标量。
+--- @return nil
 function FSPlayerObjectClass:_SetKVData(varEnum, newData, checkEqual)
     local kvTable = FSPlayerKVDataManager:GetKVTable(self._playerId, varEnum.KVTable)
-    local oldData = self:_GetKVData(varEnum)
+    local oldData = self:_GetData(varEnum)
     if checkEqual and oldData == newData then
         return
     end
@@ -115,11 +133,14 @@ function FSPlayerObjectClass:_SetKVData(varEnum, newData, checkEqual)
     self:OnDataChanged(varEnum, newData, oldData)
 end
 
+--- 内部读取临时字段，缺失时返回只读默认值；公开接口负责隔离表引用。
+--- @param varEnum table 玩家字段定义。
+--- @return any 临时数据或只读默认值。
 function FSPlayerObjectClass:_GetTempData(varEnum)
     if self._tempDataMap[varEnum.Key] ~= nil then
         return self._tempDataMap[varEnum.Key]
     end
-    return self:_CopyDefaultData(varEnum)
+    return self:_GetDefaultDataView(varEnum)
 end
 
 function FSPlayerObjectClass:_IsKVDataExpired(resetType, lastSaveTime, currentTime)
@@ -144,7 +165,7 @@ end
 --- @return boolean 是否发生重置
 function FSPlayerObjectClass:_ResetExpiredKVData(varEnum, currentTime)
     local kvTable = FSPlayerKVDataManager:GetKVTable(self._playerId, varEnum.KVTable)
-    local realData = kvTable:GetDeep(varEnum.Key .. ".RealData")
+    local realData = kvTable:GetDeepView(varEnum.Key .. ".RealData")
     if realData == nil then
         return false
     end
@@ -171,12 +192,15 @@ function FSPlayerObjectClass:CheckExpiredPlayerData(currentTime)
     return hasResetData
 end
 
+--- 通过 KV 公开句柄读取字段；表值仅以只读 View 传递，副本由取表接口决定。
+--- @param varEnum table 玩家字段定义。
+--- @return any 标量或只读 View，包含默认值与周期重置后的读取结果。
 function FSPlayerObjectClass:_GetKVData(varEnum)
     local kvTable = FSPlayerKVDataManager:GetKVTable(self._playerId, varEnum.KVTable)
     local lastSaveTime = kvTable:GetDeep(varEnum.Key .. ".LastSaveTime")
-    local realData = kvTable:GetDeep(varEnum.Key .. ".RealData")
+    local realData = kvTable:GetDeepView(varEnum.Key .. ".RealData")
     if realData == nil then
-        return self:_CopyDefaultData(varEnum)
+        return self:_GetDefaultDataView(varEnum)
     end
 
     local resetType = varEnum.KVResetType
@@ -185,11 +209,11 @@ function FSPlayerObjectClass:_GetKVData(varEnum)
     end
 
     if not lastSaveTime then
-        return self:_CopyDefaultData(varEnum)
+        return self:_GetDefaultDataView(varEnum)
     end
 
     if self:_IsKVDataExpired(resetType, lastSaveTime, os.time()) then
-        return self:_CopyDefaultData(varEnum)
+        return self:_GetDefaultDataView(varEnum)
     end
 
     return realData
@@ -205,13 +229,14 @@ function FSPlayerObjectClass:_GetData(varEnum)
     else
         data = self:_GetTempData(varEnum)
     end
-    return type(data) == "table" and FXTable:DeepCopy(data) or data
+    return DataAccess.DeepCopy(data)
 end
 
 --- 按字段类型统一校验并路由持久或临时写入；nil 恢复默认值。
 --- @param varEnum table 字段定义。
 --- @param data any 新值。
 --- @param checkEqual boolean 是否忽略相等标量。
+--- @return nil
 function FSPlayerObjectClass:_SetData(varEnum, data, checkEqual)
     if data == nil then
         data = self:_CopyDefaultData(varEnum)
@@ -220,7 +245,7 @@ function FSPlayerObjectClass:_SetData(varEnum, data, checkEqual)
     if type(data) == "number" then
         assert(data == data and math.abs(data) < math.huge, "Player data must be finite")
     elseif type(data) == "table" then
-        data = FXTable:DeepCopy(data)
+        data = DataAccess.DeepCopy(data)
     end
     if varEnum.KVTable then
         self:_SetKVData(varEnum, data, checkEqual)
@@ -357,6 +382,10 @@ function FSPlayerObjectClass:GetFlag(boolEnum)
     return self:_GetData(boolEnum)
 end
 
+--- 提交整表修改；入参深拷贝后写入，后续修改入参不会影响存档。
+--- @param tableEnum table 表字段定义。
+--- @param tableData table? 普通表、安全浅拷贝或 View；nil 恢复默认值。
+--- @return boolean 是否完成内存提交，不表示已持久化。
 function FSPlayerObjectClass:SetTable(tableEnum, tableData)
     if tableEnum.Type ~= "table" or (type(tableData) ~= "table" and tableData ~= nil) then
         FX.ErrorWithTraceback("SetTable: tableEnum type error, expected table, got " .. type(tableData))
@@ -365,12 +394,94 @@ function FSPlayerObjectClass:SetTable(tableEnum, tableData)
     return true
 end
 
--- 设置表
+--- 一次设置多个一级字段，只提交一次并触发一次整字段通知；未提交的一级字段保留。
+--- 嵌套表整体复制替换，不递归合并，不接受路径；nil 无法出现在补丁表中，删除使用 GetTable/SetTable。
+--- 本接口简化批量修改，提交仍沿用 SetTable 的快照、周期重置、同步和持久化标记，不承诺零深拷贝。
+--- @param tableEnum table 玩家表字段定义。
+--- @param fields table 一级键到新值的补丁；支持 false，新表值不与存档共享可写引用。
+--- @return boolean 是否完成一次内存提交；空补丁或原会话已失效返回 false，不触发通知。
+function FSPlayerObjectClass:SetTableFields(tableEnum, fields)
+    assert(tableEnum.Type == "table", "SetTableFields: expected table field")
+    assert(type(fields) == "table", "SetTableFields: expected fields table")
+    if not FSPlayerKVDataManager:IsSessionActive(self._playerId, self._dataSession) then
+        return false
+    end
+    local data = self:GetTableShallow(tableEnum)
+    local hasFields = false
+    for key, value in fields do
+        data[key] = value
+        hasFields = true
+    end
+    if not hasFields then
+        return false
+    end
+    return self:SetTable(tableEnum, data)
+end
+
+--- 获取可独立编辑的深拷贝；任意层级修改均不影响存档，必须 SetTable 提交。
+--- @param tableEnum table 表字段定义。
+--- @return table 表字段的深拷贝。
 function FSPlayerObjectClass:GetTable(tableEnum)
     if tableEnum.Type ~= "table" then
         FX.ErrorWithTraceback("GetTable: tableEnum type error, expected table, got " .. tostring(tableEnum.Type))
     end
     return self:_GetData(tableEnum)
+end
+
+--- 获取安全浅拷贝：只复制第一层，嵌套表为只读 View；第一层修改必须 SetTable 提交。
+--- @param tableEnum table 表字段定义。
+--- @return table 第一层可编辑、嵌套只读的表；嵌套编辑请使用 GetTable。
+function FSPlayerObjectClass:GetTableShallow(tableEnum)
+    return DataAccess.ShallowCopy(self:GetTableView(tableEnum))
+end
+
+--- 获取实时只读 View，不深拷贝；字段替换/周期重置后继续读取当前值。
+--- 所有层级写入均报错且不改变存档；遍历用 for key, value in view do，不用 pairs/ipairs/next/table.*。
+--- View 离服后失效，不会转向重进后的新会话；不要直接发送网络或序列化，需普通表时用 GetTable。
+--- @param tableEnum table 表字段定义。
+--- @return table 不含原始表引用的冻结代理。
+function FSPlayerObjectClass:GetTableView(tableEnum)
+    assert(tableEnum.Type == "table", "GetTableView: expected table field")
+    local session = self._dataSession
+    return DataAccess.View(function()
+        if not FSPlayerKVDataManager:IsSessionActive(self._playerId, session) then
+            return nil
+        end
+        if tableEnum.KVTable then
+            return self:_GetKVData(tableEnum)
+        end
+        return self:_GetTempData(tableEnum)
+    end)
+end
+
+--- 检查持久字段是否曾写入；不使用默认值推断，也不向业务暴露 RealData 存储结构。
+--- @param varEnum table 带 KVTable 的玩家字段定义。
+--- @return boolean 原始存档中是否存在该字段值。
+function FSPlayerObjectClass:HasStoredData(varEnum)
+    assert(varEnum.KVTable ~= nil, "HasStoredData: expected persistent field")
+    local kv = FSPlayerKVDataManager:GetKVTable(self._playerId, varEnum.KVTable)
+    return kv:GetDeepView(varEnum.Key .. ".RealData") ~= nil
+end
+
+--- 在存档内存事务中执行玩家操作；失败时同时恢复待同步字段并重建背包呈现。
+--- 回调必须无 yield、只通过公开接口修改本玩家数据，成功返回 true；本接口不保存存档。
+--- @param callback function 无参数的业务操作，不接收 DB 或原始数据表。
+--- @return boolean 是否完整提交内存操作。
+function FSPlayerObjectClass:RunDataTransaction(callback)
+    local session = self._dataSession
+    if not FSPlayerKVDataManager:IsSessionActive(self._playerId, session) then
+        return false
+    end
+    local pending = DataAccess.DeepCopy(self._pendingSyncData)
+    if FSPlayerKVDataManager:RunTransaction(self._playerId, session, callback) then
+        return true
+    end
+    self._pendingSyncData = pending
+    local inventory = self:GetComponent("FSInventoryComp")
+    if inventory then
+        inventory:OnAllChanged()
+    end
+    return false
 end
 
 -- 获取排行榜分数
