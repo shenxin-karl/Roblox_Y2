@@ -1,0 +1,6 @@
+interface:
+  display_name: "验收清单"
+  short_description: "通过更新或验收参数维护清单，按代码补充修订规则，逐项答疑并按反馈修复代码和文档"
+  default_prompt: "使用 $checklist；若未指定“更新”或“验收”模式，先询问用户需要做什么，不执行更新或验收。更新模式按代码补充修订清单并汇报变化；验收模式由用户逐项核对、按代码答疑，并按明确反馈修改代码和文档。"
+policy:
+  allow_implicit_invocation: false

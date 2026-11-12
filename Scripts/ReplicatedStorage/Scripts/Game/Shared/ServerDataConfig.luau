@@ -3,6 +3,4 @@
 return {
     -- 以字符串基地编号索引本服归属和进度；场景实例、连接与冷却不参与同步。
     Bases = {Type = "table", Key = "Bases", DefVal = {}},
-    -- 服务器绝对时间，客户端以 GetServerTimeNow 计算统一刷新倒计时。
-    MiningNextRefresh = {Type = "number", Key = "MiningNextRefresh", DefVal = 0},
 }

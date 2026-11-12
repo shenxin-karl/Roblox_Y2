@@ -1,4 +1,4 @@
--- 公共矿场交互几何；刷新与兑换数值统一由源配置表维护。
+-- 中央矿场交互几何；私人刷新与兑换数值统一由源配置表维护。
 local Settings = {
     GroundPath = "Decorations.MiningAreaDecorations.QuarryGround.InnerMiningSurface",
     FurnacePath = "Decorations.Forge.PublicFurnace.ProjectingStoneHearth",

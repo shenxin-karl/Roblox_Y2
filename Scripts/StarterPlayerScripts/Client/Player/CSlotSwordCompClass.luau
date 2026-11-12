@@ -5,6 +5,7 @@ local FXLoader = FX.Loader
 local Text = FX.Text
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local UIRoot = FXLoader:RequireShared("Scripts.Framework.Client.FCUIRoot")
+local ModelAnimation = FXLoader:Require(script.Parent.Parent, "CModelAnimation")
 local TranslationTexts = Text.Define("SlotSword", {
     Income = "Sword\n${value}/s",
     Upgrade = "${value}\nUpgrade {level:int} > {nextLevel:int}",
@@ -12,7 +13,6 @@ local TranslationTexts = Text.Define("SlotSword", {
     Place = "Place held finished sword",
     Remove = "Remove weapon",
     Slot = "Slot {slot:int}",
-    CollectAll = "Collect All\n${value}",
 })
 local Comp = FX.Class("CSlotSwordCompClass", "FCPlayerCompClass")
 
@@ -87,6 +87,14 @@ function Comp:TrackDisplay(display)
     view.Connections[2] = display.AttributeChanged:Connect(function()
         self:Render(display)
     end)
+    view.Connections[3] = display:GetAttributeChangedSignal("CollectSequence"):Connect(function()
+        local collect = display:FindFirstChild("CollectArea")
+        local target = collect and collect:FindFirstChild("AnimationTarget")
+        if target and target.Value then
+            view.AnimationTarget = target.Value
+            ModelAnimation.PlayPress(target.Value)
+        end
+    end)
     self:BuildView(display)
 end
 
@@ -127,16 +135,34 @@ function Comp:CreateSurface(part, face, interactive)
     return surface, label
 end
 
---- 收益面板固定朝向升级牌正前方，底边高于剑尖；只有本人能点击升级牌子。
+--- 总领取金额悬浮于按钮上方；槽位收益朝向升级牌，只有本人能点击升级牌子。
 --- @param display Model 服务端槽位剑容器。
 function Comp:BuildView(display)
     local view = self._views[display]
     local sword, sign, collect = display:FindFirstChild("Sword"), display:FindFirstChild("UpgradeSign"), display:FindFirstChild("CollectArea")
     if view and display:GetAttribute("CollectAll") then
         if collect and not view.Collect then
-            view.Collect, view.Amount = self:CreateSurface(collect, Enum.NormalId.Top, false)
-            view.Collect.CanvasSize = Vector2.new(800, 300)
-            view.Amount.Size, view.Amount.Rotation = UDim2.fromScale(0.92, 0.88), 0
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "CollectAllAmount"
+            billboard.Adornee = collect
+            billboard.Size = UDim2.fromScale(6, 1.5)
+            billboard.StudsOffsetWorldSpace = Vector3.new(0, collect.Size.Y / 2 + 2.5, 0)
+            billboard.MaxDistance = 80
+            billboard.ResetOnSpawn = false
+            local label = Instance.new("TextLabel")
+            label.Name = "Amount"
+            label.AutoLocalize = false
+            label.BackgroundTransparency = 1
+            label.Size = UDim2.fromScale(1, 1)
+            label.Font = Enum.Font.GothamBlack
+            label.TextColor3 = Color3.fromRGB(120, 255, 80)
+            label.TextStrokeColor3 = Color3.new(0, 0, 0)
+            label.TextStrokeTransparency = 0
+            label.TextScaled = true
+            label.Text = ""
+            label.Parent = billboard
+            billboard.Parent = self._uiRoot
+            view.Collect, view.Amount = billboard, label
             self:Render(display)
         end
         return
@@ -181,7 +207,7 @@ function Comp:Render(display)
             local stored = display:GetAttribute("StoredMoney")
             view.Collect.Enabled = stored ~= nil
             if stored ~= nil then
-                view.Amount.Text = Text.Tr(TranslationTexts.CollectAll, {value = GameUtility.NumberToText(stored)})
+                view.Amount.Text = Text.Tr(TranslationTexts.Collected, {value = GameUtility.NumberToText(stored)})
             end
         end
         return
@@ -213,6 +239,9 @@ function Comp:RemoveDisplay(display)
     end
     for index, connection in ipairs(view.Connections) do
         connection:Disconnect()
+    end
+    if view.AnimationTarget then
+        ModelAnimation.Stop(view.AnimationTarget)
     end
     if view.IncomeGui then
         view.IncomeGui:Destroy()

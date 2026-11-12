@@ -5,6 +5,7 @@ local Text = FX.Text
 local FCItemDescription = FXLoader:RequireShared("Scripts.Framework.Client.FCItemDescription")
 local ItemConfig = FXLoader:RequireShared("Scripts.Game.Configs.ItemConfig")
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
+local SwordRules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local PlayerDataConfig = _G.PlayerDataConfig
 local TranslationTexts = Text.Define("MainItemDescription", {
     Traits = "{description}\nMutation: {mutation}\nLuck: {luck}",
@@ -17,7 +18,7 @@ function Component:GetCompName()
     return "CMainUIComp"
 end
 
---- 绑定 Studio 主界面、真实余额与回家及锻造区传送请求，装备说明沿用现有展示。
+--- 绑定 Studio 主界面、余额、传送与升级工坊入口，装备说明沿用现有展示。
 function Component:OnReady()
     self._rootNode = FXLoader:PlayerGui("Main.HUD")
     self._moneyLabel = FXLoader:Here(self._rootNode, "Wallet.Money")
@@ -29,6 +30,10 @@ function Component:OnReady()
     end))
     self:TrackConnection(FXLoader:Here(self._rootNode, "TopNav.Shop").Activated:Connect(function()
         FX.Network:SendMsgToServer("C2S_TeleportToForge")
+    end))
+    -- 侧栏只打开工坊组件，关闭及重复打开的刷新由生成 View 负责。
+    self:TrackConnection(FXLoader:Here(self._rootNode, "SideNav.Upgrade").Activated:Connect(function()
+        self:GetOwner():RequireComponent("CUpgradeWorkshopUICompClass"):Show()
     end))
     self._itemDescription = FCItemDescription.New()
     self._itemDescription.Root.Parent = self._rootNode
@@ -89,7 +94,7 @@ function Component:RefreshSelectedTool()
     if mutationId and luck ~= nil then
         description = Text.Tr(TranslationTexts.Traits, {
             description = description,
-            mutation = Text.TrSource(_G.GameConfig.MiningMutationData[mutationId].Name),
+            mutation = Text.TrSource(SwordRules.GetMutation(mutationId).MutationName),
             luck = GameUtility.NumberToText(luck),
         })
     end

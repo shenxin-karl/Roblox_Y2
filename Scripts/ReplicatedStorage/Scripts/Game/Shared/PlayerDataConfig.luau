@@ -20,6 +20,10 @@ return {
         Type = "number", Key = "Diamonds", DefVal = 0,
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
+    UpgradeWorkshop = {
+        Type = "table", Key = "UpgradeWorkshop", DefVal = {smelt = 0, forge = 0, income = 0},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
     -- 进度随玩家保存；SlotData 以字符串槽位编号保存各槽的业务数据，不保存场景实例。
     BaseData = {
         Type = "table", Key = "BaseData",
@@ -49,6 +53,11 @@ return {
     Inventory = {
         Type = "table", Key = "Inventory", DefVal = {},
         KVTable = PlayerKVEnum.ePlayerData, Sync = false,
+    },
+    -- 私人矿场保存本轮矿石和绝对刷新时间，重进不会补回已采次数。
+    MiningData = {
+        Type = "table", Key = "MiningData", DefVal = {NextRefresh = 0, Rocks = {}},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
     Guide = {
         Type = "table", Key = "Guide",

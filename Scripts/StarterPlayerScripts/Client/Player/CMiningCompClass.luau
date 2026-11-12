@@ -1,4 +1,4 @@
--- 公共矿场界面：显示服务端刷新倒计时与最近交互，库存仍使用原生背包。
+-- 私人矿场界面：显示本人矿石和刷新倒计时，库存仍使用原生背包。
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
 local TweenService = game:GetService("TweenService")
@@ -7,6 +7,7 @@ local Text = FX.Text
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local Config = _G.GameConfig.CommonConfig
 local MiningEffects = FX.Loader:RequireFromParent(script, "CMiningEffects")
+local MiningRocks = FX.Loader:RequireFromParent(script, "CMiningRocks")
 local UIRoot = FX.Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local TranslationTexts = Text.Define("MiningInteraction", {
     Refresh = "Rocks refresh in {seconds:int}s",
@@ -26,6 +27,7 @@ end
 --- 只创建自身界面，不改 Generated；场景目标允许随流式加载出现或消失。
 function Comp:OnReady()
     self._effects = MiningEffects.New(self)
+    self._miningRocks = MiningRocks.New()
     local root = Instance.new("Frame")
     root.Name = "MiningHUD"
     root.Size = UDim2.fromScale(1, 1)
@@ -97,6 +99,11 @@ function Comp:OnReady()
             self:Refresh()
         end
     end))
+    self:WatchDataChanged(_G.PlayerDataConfig.MiningData, function(data)
+        self._miningDeadline = data.NextRefresh
+        self._miningRocks:Refresh(data)
+        self:Refresh()
+    end)
     self:Refresh()
 end
 
@@ -220,7 +227,7 @@ function Comp:MineRock()
         local root = humanoid.RootPart
         if humanoid.Health > 0 and tool.Parent == character and rock.Parent and root
             and (root.Position - rock:GetPivot().Position).Magnitude <= Settings.InteractDistance then
-            FX.Network:SendMsgToServer("C2S_MineRock", rock)
+            FX.Network:SendMsgToServer("C2S_MineRock", rock:GetAttribute("MiningRockId"))
         end
         if self._swingTrack then
             self._swingTrack:AdjustSpeed(1.25)
@@ -295,11 +302,11 @@ function Comp:RefreshToolNames()
     end
 end
 
---- 只选择已复制到本客户端的最近公共石头；最终有效性仍由服务端重验。
+--- 只选择本人本地呈现的最近矿石；最终归属、次数和距离仍由服务端重验。
 function Comp:Refresh()
     self:RefreshReward()
     self:RefreshPickaxe()
-    local deadline = FX.SyncManager:GetNumber(_G.ServerDataConfig.MiningNextRefresh)
+    local deadline = self._miningDeadline or 0
     local seconds = math.max(0, math.ceil(deadline - workspace:GetServerTimeNow()))
     self._countdown.Text = deadline > 0
         and Text.Tr(TranslationTexts.Refresh, {seconds = seconds})
@@ -348,6 +355,9 @@ function Comp:Dtor()
     self:StopSwing()
     if self._effects then
         self._effects:Destroy()
+    end
+    if self._miningRocks then
+        self._miningRocks:Destroy()
     end
     if self._toolActivated then
         self._toolActivated:Disconnect()

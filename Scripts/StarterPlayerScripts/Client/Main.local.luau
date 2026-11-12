@@ -10,6 +10,7 @@ FXLoader:Require(script.Parent, "Player.CSlotSwordCompClass")
 FXLoader:Require(script.Parent, "Player.CMiningCompClass")
 FXLoader:Require(script.Parent, "Player.CBaseOwnerMarkerCompClass")
 FXLoader:Require(script.Parent, "UI.CMainUICompClass")
+FXLoader:Require(script.Parent, "UI.CUpgradeWorkshopUICompClass")
 
 FC.PlayerObject = PlayerClass.New(Players.LocalPlayer.UserId)
 
@@ -20,4 +21,5 @@ FC.PlayerObject:AddComponent("CSlotSwordCompClass")
 FC.PlayerObject:AddComponent("CMiningCompClass")
 FC.PlayerObject:AddComponent("CBaseOwnerMarkerCompClass")
 FC.PlayerObject:AddComponent("CMainUICompClass")
+FC.PlayerObject:AddComponent("CUpgradeWorkshopUICompClass")
 FC.WaitServerReady()

@@ -4,6 +4,7 @@ local FX = _G.FX
 local FXLoader = FX.Loader
 local Fields = _G.PlayerDataConfig
 local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
+local WorkshopRules = FXLoader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local TranslationTexts = FX.Text.Define("BaseWeapon", {
     FinishedRequired = "Equip a finished sword before placing it in an empty slot.",
     BackpackFull = "Not enough backpack space to remove this weapon.",
@@ -48,6 +49,11 @@ function Comp:CreateAnchor(source, name, display)
     part.Name, part.Size, part.CFrame = name, source.Size, source.CFrame
     part.Anchored, part.CanCollide, part.CanTouch, part.CanQuery = true, false, false, false
     part.Transparency = 1
+    if name == "CollectArea" then
+        local target = Instance.new("ObjectValue")
+        target.Name, target.Value = "AnimationTarget", source
+        target.Parent = part
+    end
     part.Parent = display
     return part
 end
@@ -209,13 +215,14 @@ function Comp:Accrue()
     end
     local now = os.clock()
     local data = self:GetTable(Fields.BaseData)
+    local incomeMultiplier = WorkshopRules.GetMultiplier(self:GetTableView(Fields.UpgradeWorkshop).income)
     local changed = false
     for slotId, view in pairs(self._displays) do
         local seconds = math.floor(now - view.LastIncome)
         local sword = data.SlotData[tostring(slotId)]
         if seconds > 0 and sword and sword.ItemId == Rules.ItemId then
             view.LastIncome += seconds
-            sword.StoredMoney += Rules.GetIncome(sword.Level) * seconds
+            sword.StoredMoney += Rules.GetIncome(sword.Level) * incomeMultiplier * seconds
             changed = true
         end
     end
@@ -250,10 +257,13 @@ function Comp:Collect(slotId)
     if not sword or not view or sword.StoredMoney <= 0 or not self:IsNear(view.Collect, 2) then
         return
     end
-    self:RequireComponent("FSRewardComp"):AddRewards({
+    local success = self:RequireComponent("FSRewardComp"):AddRewards({
         {Type = "SlotSwordCollect", SlotId = slotId, Amount = sword.StoredMoney},
         {Type = "Money", Currency = "Money", Count = sword.StoredMoney},
     })
+    if success then
+        view.Model:SetAttribute("CollectSequence", (view.Model:GetAttribute("CollectSequence") or 0) + 1)
+    end
 end
 
 --- 本人走到基地前的绿块后，将所有楼层的累计收益作为同一奖励计划领取。
@@ -272,7 +282,11 @@ function Comp:CollectAll()
     end
     if total > 0 then
         table.insert(rewards, {Type = "Money", Currency = "Money", Count = total})
-        self:RequireComponent("FSRewardComp"):AddRewards(rewards)
+        local success = self:RequireComponent("FSRewardComp"):AddRewards(rewards)
+        if success then
+            local display = self._collectAllDisplay
+            display:SetAttribute("CollectSequence", (display:GetAttribute("CollectSequence") or 0) + 1)
+        end
     end
 end
 
@@ -313,7 +327,8 @@ function Comp:Publish()
         display:SetAttribute("HasSword", sword ~= nil)
         if sword then
             display:SetAttribute("Level", sword.Level)
-            display:SetAttribute("Income", Rules.GetIncome(sword.Level))
+            display:SetAttribute("Income", Rules.GetIncome(sword.Level)
+                * WorkshopRules.GetMultiplier(self:GetTableView(Fields.UpgradeWorkshop).income))
             display:SetAttribute("UpgradePrice", Rules.GetUpgradePrice(sword.Level))
             display:SetAttribute("StoredMoney", sword.StoredMoney)
         end

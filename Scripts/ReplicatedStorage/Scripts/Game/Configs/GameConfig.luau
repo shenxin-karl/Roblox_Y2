@@ -6,7 +6,7 @@ return {
         SwordInitialIncome = 10,
         SwordIncomePerLevel = 5,
         SwordUpgradePricePerLevel = 25,
-        MiningRefreshInterval = 30,
+        MiningRefreshInterval = 300,
         MiningSpawnCount = 8,
         MiningRockHits = 3,
         MiningSpawnProbability = 0.8,
@@ -177,117 +177,96 @@ return {
             UnlockPrice = 1
         }
     },
-    MiningMutationData = {
-        Normal = {
-            Id = [[Normal]],
-            Name = [[Normal]],
-            Probability = 0.8,
-            EffectPath = nil,
-            OreCountMultiplier = 1,
-            HitsMultiplier = 1,
-            OreItemId = 1001,
-            Luck = 1
-        },
-        Toxic = {
-            Id = [[Toxic]],
-            Name = [[Toxic]],
-            Probability = 0.1,
-            EffectPath = [[Assets.Effects.Aura.03_Toxic]],
-            OreCountMultiplier = 1,
-            HitsMultiplier = 1,
-            OreItemId = 1101,
-            Luck = 2
-        },
-        Frost = {
-            Id = [[Frost]],
-            Name = [[Frost]],
-            Probability = 0.05,
-            EffectPath = [[Assets.Effects.Aura.19_Frost]],
-            OreCountMultiplier = 1,
-            HitsMultiplier = 1,
-            OreItemId = 1102,
-            Luck = 3
-        },
-        Inferno = {
-            Id = [[Inferno]],
-            Name = [[Inferno]],
-            Probability = 0.03,
-            EffectPath = [[Assets.Effects.Aura.20_Inferno]],
-            OreCountMultiplier = 1,
-            HitsMultiplier = 1,
-            OreItemId = 1103,
-            Luck = 4
-        },
-        Storm = {
-            Id = [[Storm]],
-            Name = [[Storm]],
-            Probability = 0.015,
-            EffectPath = [[Assets.Effects.Aura.21_Storm]],
-            OreCountMultiplier = 1,
-            HitsMultiplier = 1,
-            OreItemId = 1104,
-            Luck = 5
-        },
-        Astral = {
-            Id = [[Astral]],
-            Name = [[Astral]],
-            Probability = 0.005,
-            EffectPath = [[Assets.Effects.Aura.25_Astral]],
-            OreCountMultiplier = 1,
-            HitsMultiplier = 1,
-            OreItemId = 1105,
-            Luck = 6
-        }
-    },
     MiningRockData = {
         [1] = {
             Id = 1,
             Name = [[Gray]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_01_Gray]],
-            ModelScale = 0.35,
-            SpawnWeight = 40
+            ModelScale = 0.4375,
+            SpawnWeight = 40,
+            MutationId = [[Normal]],
+            MutationName = [[Normal]],
+            EffectPath = nil,
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1,
+            OreItemId = 1001,
+            Luck = 1,
+            IconId = nil
         },
         [2] = {
             Id = 2,
             Name = [[Green]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_02_Green]],
-            ModelScale = 0.35,
-            SpawnWeight = 25
+            ModelScale = 0.4375,
+            SpawnWeight = 25,
+            MutationId = [[Toxic]],
+            MutationName = [[Toxic]],
+            EffectPath = [[Assets.Effects.Aura.03_Toxic]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1,
+            OreItemId = 1101,
+            Luck = 2,
+            IconId = [[rbxassetid://114769267589622]]
         },
         [3] = {
             Id = 3,
             Name = [[Blue]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_03_Blue]],
-            ModelScale = 0.35,
-            SpawnWeight = 15
+            ModelScale = 0.4375,
+            SpawnWeight = 15,
+            MutationId = [[Frost]],
+            MutationName = [[Frost]],
+            EffectPath = [[Assets.Effects.Aura.19_Frost]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1,
+            OreItemId = 1102,
+            Luck = 3,
+            IconId = [[rbxassetid://106224256982724]]
         },
         [4] = {
             Id = 4,
             Name = [[Purple]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_04_Purple]],
-            ModelScale = 0.35,
-            SpawnWeight = 10
+            ModelScale = 0.4375,
+            SpawnWeight = 10,
+            MutationId = [[Inferno]],
+            MutationName = [[Inferno]],
+            EffectPath = [[Assets.Effects.Aura.20_Inferno]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1,
+            OreItemId = 1103,
+            Luck = 4,
+            IconId = [[rbxassetid://131760910444430]]
         },
         [5] = {
             Id = 5,
             Name = [[Orange]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_05_Orange]],
-            ModelScale = 0.35,
-            SpawnWeight = 6
+            ModelScale = 0.4375,
+            SpawnWeight = 6,
+            MutationId = [[Storm]],
+            MutationName = [[Storm]],
+            EffectPath = [[Assets.Effects.Aura.21_Storm]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1,
+            OreItemId = 1104,
+            Luck = 5,
+            IconId = [[rbxassetid://120733919890929]]
         },
         [6] = {
             Id = 6,
             Name = [[Gold]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_06_Gold]],
-            ModelScale = 0.35,
-            SpawnWeight = 3
-        },
-        [7] = {
-            Id = 7,
-            Name = [[Red]],
-            ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_07_Red]],
-            ModelScale = 0.35,
-            SpawnWeight = 1
+            ModelScale = 0.4375,
+            SpawnWeight = 3,
+            MutationId = [[Astral]],
+            MutationName = [[Astral]],
+            EffectPath = [[Assets.Effects.Aura.25_Astral]],
+            OreCountMultiplier = 1,
+            HitsMultiplier = 1,
+            OreItemId = 1105,
+            Luck = 6,
+            IconId = [[rbxassetid://73900159742590]]
         }
     }
 }

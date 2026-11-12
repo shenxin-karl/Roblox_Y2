@@ -79,7 +79,7 @@ return {
             Name = [[Iron Ore]],
             Desc = [[Smelt ore into a raw sword at the public furnace.]],
             Quality = 1,
-            IconId = [[rbxassetid://0]],
+            IconId = [[rbxassetid://94892672143686]],
             DisplayModelId = nil
         },
         [1002] = {
@@ -103,7 +103,7 @@ return {
             Name = [[Toxic Iron Ore]],
             Desc = [[Smelt this ore into a raw sword with the same mutation.]],
             Quality = 1,
-            IconId = [[rbxassetid://0]],
+            IconId = [[rbxassetid://116152726903406]],
             DisplayModelId = nil
         },
         [1102] = {
@@ -111,7 +111,7 @@ return {
             Name = [[Frost Iron Ore]],
             Desc = [[Smelt this ore into a raw sword with the same mutation.]],
             Quality = 1,
-            IconId = [[rbxassetid://0]],
+            IconId = [[rbxassetid://90713160846536]],
             DisplayModelId = nil
         },
         [1103] = {
@@ -119,7 +119,7 @@ return {
             Name = [[Inferno Iron Ore]],
             Desc = [[Smelt this ore into a raw sword with the same mutation.]],
             Quality = 1,
-            IconId = [[rbxassetid://0]],
+            IconId = [[rbxassetid://121420696492616]],
             DisplayModelId = nil
         },
         [1104] = {
@@ -127,7 +127,7 @@ return {
             Name = [[Storm Iron Ore]],
             Desc = [[Smelt this ore into a raw sword with the same mutation.]],
             Quality = 1,
-            IconId = [[rbxassetid://0]],
+            IconId = [[rbxassetid://103998604666974]],
             DisplayModelId = nil
         },
         [1105] = {
@@ -135,7 +135,7 @@ return {
             Name = [[Astral Iron Ore]],
             Desc = [[Smelt this ore into a raw sword with the same mutation.]],
             Quality = 1,
-            IconId = [[rbxassetid://0]],
+            IconId = [[rbxassetid://106401756309045]],
             DisplayModelId = nil
         }
     },
