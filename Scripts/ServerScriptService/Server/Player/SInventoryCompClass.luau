@@ -4,7 +4,7 @@ local Fields = _G.PlayerDataConfig
 local Items = _G.ItemConfig
 local Comp = FX.Class("SInventoryCompClass", "FSInventoryCompClass")
 
---- 固定容量在组件创建时读取，剑只复制外观，不复制资源内执行脚本。
+--- 固定容量在组件创建时读取，矿石按掉落配置复用对应品级的外观模板。
 --- @param owner table 当前服务端玩家对象。
 function Comp:Ctor(owner)
     Comp.Super.Ctor(self, owner)
@@ -18,6 +18,10 @@ function Comp:Ctor(owner)
     self._shortcutEnabled = config.ShortcutEnabled
     self._tools = {}
     self._swordHandle = FX.Loader:Shared("Assets.Decorations.Sword.ClassicSword.Handle")
+    self._oreModels = {}
+    for grade, rockType in pairs(_G.GameConfig.MiningRockData) do
+        self._oreModels[rockType.OreItemId] = FX.Loader:Shared(rockType.ModelPath)
+    end
 end
 
 --- 与统一奖励组件共用同一私有背包字段，不新增库存存档。
@@ -45,7 +49,7 @@ function Comp:OnPlayerLogin()
     self:SyncTools()
 end
 
---- 仅为已拥有的道具创建手持外观；本轮矿石和剑没有点击使用效果。
+--- 仅为已拥有的道具创建手持外观；矿石缩放至手持尺寸并焊接，避免散落或固定角色。
 --- @param itemId number 已配置的道具 ID。
 --- @return Tool 不包含业务脚本的手持道具。
 function Comp:CreateTool(itemId)
@@ -61,10 +65,30 @@ function Comp:CreateTool(itemId)
     if Items.Data[itemId].HeldHandler == "Sword" then
         handle = self._swordHandle:Clone()
     else
-        handle = Instance.new("Part")
-        handle.Size = Vector3.new(1.2, 1, 1.2)
-        handle.Color = Color3.fromRGB(107, 110, 115)
-        handle.Material = Enum.Material.Slate
+        local model = self._oreModels[itemId]:Clone()
+        local size = model:GetExtentsSize()
+        model:ScaleTo(model:GetScale() * 1.6 / math.max(size.X, size.Y, size.Z))
+        model:PivotTo(CFrame.identity)
+        handle = model.PrimaryPart
+        handle.Transparency = 1
+        handle.Parent = tool
+        for index, node in ipairs(model:GetDescendants()) do
+            if node:IsA("BaseScript") or node:IsA("ModuleScript") then
+                node:Destroy()
+            elseif node:IsA("BasePart") then
+                node.Anchored = false
+                node.CanCollide = false
+                node.CanTouch = false
+                node.CanQuery = false
+                node.Massless = true
+                local weld = Instance.new("WeldConstraint")
+                weld.Part0 = handle
+                weld.Part1 = node
+                weld.Parent = node
+            end
+        end
+        model.Name = "OreVisual"
+        model.Parent = tool
     end
     handle.Name = "Handle"
     handle.Anchored = false

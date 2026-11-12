@@ -10,9 +10,12 @@ local Settings = FXLoader:RequireShared("Scripts.Game.Shared.ForgeSettings")
 local UIRoot = FXLoader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local Effects = FXLoader:RequireFromParent(script, "CForgeEffects")
 local ForgeView = FXLoader:Require(script.Parent.Parent, "UI.CForgeView")
+local ActionButton = FXLoader:Require(script.Parent.Parent, "UI.CActionButton")
 local TranslationTexts = Text.Define("ForgeInteraction", {
     Enter = "Forge",
     Leave = "Leave forge station",
+    Recipe = "1 raw sword → 1 finished sword",
+    Return = "Return to the courtyard",
 })
 local Comp = FX.Class("CForgeCompClass", "FCUICompClass")
 
@@ -22,7 +25,7 @@ function Comp:GetCompName()
     return "CForgeComp"
 end
 
---- 数据就绪后绑定原生锻造界面，入口仍复用现有服务端进出协议。
+--- 数据就绪后绑定原生锻造界面与右侧入口，沿用现有服务端进出协议。
 function Comp:OnReady()
     self._area = FXLoader:Workspace(Settings.AreaPath)
     self._forge = FXLoader:Workspace(Settings.StationPath)
@@ -31,18 +34,8 @@ function Comp:OnReady()
     self._renderName = "ForgeCamera_" .. self:GetPlayerId()
     self._actionName = "ForgeInput_" .. self:GetPlayerId()
     self._hiddenCharacter = {}
-    local button = Instance.new("TextButton")
-    button.Name = "ForgeInteraction"
-    button.AnchorPoint = Vector2.new(0.5, 1)
-    button.Position = UDim2.new(0.5, 0, 1, -130)
-    button.Size = UDim2.fromOffset(240, 54)
-    button.BackgroundColor3 = Color3.fromRGB(150, 77, 30)
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 20
-    button.AutoLocalize = false
-    button.Visible = false
-    button.Parent = UIRoot.Get()
+    local button, title, detail = ActionButton.New("ForgeInteraction", UIRoot.Get())
+    self._buttonTitle, self._buttonDetail = title, detail
     self._rootNode = button
     self._lastRequest = -math.huge
     self:TrackConnection(button.Activated:Connect(function()
@@ -111,7 +104,8 @@ function Comp:Refresh()
     self._rootNode.Visible = visible and not self._effects
     if self._textAssigned ~= assigned then
         self._textAssigned = assigned
-        self._rootNode.Text = Text.Tr(assigned and TranslationTexts.Leave or TranslationTexts.Enter)
+        self._buttonTitle.Text = Text.Tr(assigned and TranslationTexts.Leave or TranslationTexts.Enter)
+        self._buttonDetail.Text = Text.Tr(assigned and TranslationTexts.Return or TranslationTexts.Recipe)
     end
 end
 

@@ -208,14 +208,14 @@ function Comp:Transfer(slotId)
     end
 end
 
---- 每次按完整在线秒结算，保留不足一秒的余量，不补发离线时间。
+--- 每次按完整在线秒结算；离服时 View 已失效，使用公开副本接口完成最后结算。
 function Comp:Accrue()
     if not self._active then
         return
     end
     local now = os.clock()
     local data = self:GetTable(Fields.BaseData)
-    local incomeMultiplier = WorkshopRules.GetMultiplier(self:GetTableView(Fields.UpgradeWorkshop).income)
+    local incomeMultiplier = WorkshopRules.GetMultiplier(self:GetTable(Fields.UpgradeWorkshop).income)
     local changed = false
     for slotId, view in pairs(self._displays) do
         local seconds = math.floor(now - view.LastIncome)
@@ -310,7 +310,7 @@ function Comp:Upgrade(slotId)
     end
 end
 
---- 向所有客户端发布公开展示值，不把领钱或升级资格交给客户端。
+--- 发布公开展示值；离服结算触发数据通知时仍从公开副本读取倍率，不依赖已失效的 View。
 function Comp:Publish()
     if self._collectAllDisplay then
         local total = 0
@@ -328,7 +328,7 @@ function Comp:Publish()
         if sword then
             display:SetAttribute("Level", sword.Level)
             display:SetAttribute("Income", Rules.GetIncome(sword.Level)
-                * WorkshopRules.GetMultiplier(self:GetTableView(Fields.UpgradeWorkshop).income))
+                * WorkshopRules.GetMultiplier(self:GetTable(Fields.UpgradeWorkshop).income))
             display:SetAttribute("UpgradePrice", Rules.GetUpgradePrice(sword.Level))
             display:SetAttribute("StoredMoney", sword.StoredMoney)
         end

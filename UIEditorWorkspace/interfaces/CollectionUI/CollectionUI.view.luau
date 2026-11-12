@@ -62,7 +62,7 @@
 ]]
 local FX = _G.FX
 local FXLoader = FX.Loader
-local Text = FXLoader:RequireShared("Scripts/Game/Shared/Text")
+local Text = FXLoader:RequireShared("Scripts.Framework.Shared.Core.FXText")
 local CCollectionView = FX.Class("CCollectionView", "CUIView")
 
 local TranslationTexts = Text.Define("CollectionUI", {

@@ -192,7 +192,7 @@
 ]]
 local FX = _G.FX
 local Loader = FX.Loader
-local Text = Loader:RequireShared("Scripts/Game/Shared/Text")
+local Text = Loader:RequireShared("Scripts.Framework.Shared.Core.FXText")
 local CWelfareView = FX.Class("CWelfareView", "CUIView")
 
 local TranslationTexts = Text.Define("WelfareHub", {

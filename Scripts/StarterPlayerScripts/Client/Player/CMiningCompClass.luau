@@ -9,11 +9,13 @@ local Config = _G.GameConfig.CommonConfig
 local MiningEffects = FX.Loader:RequireFromParent(script, "CMiningEffects")
 local MiningRocks = FX.Loader:RequireFromParent(script, "CMiningRocks")
 local UIRoot = FX.Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
+local ActionButton = FX.Loader:Require(script.Parent.Parent, "UI.CActionButton")
 local TranslationTexts = Text.Define("MiningInteraction", {
-    Refresh = "Rocks refresh in {seconds:int}s",
     Preparing = "Preparing rocks...",
-    Mine = "Mine ({hits:int} hits left)",
-    Smelt = "Smelt raw sword ({count:int} ore)",
+    Mine = "Mine",
+    Smelt = "Smelt",
+    RemainingHits = "{hits:int} hits remaining",
+    OreCost = "{count:int} ore → 1 raw sword",
     Received = "Received {count:int} {name}",
 })
 local Comp = FX.Class("CMiningCompClass", "FCUICompClass")
@@ -24,7 +26,7 @@ function Comp:GetCompName()
     return "CMiningComp"
 end
 
---- 只创建自身界面，不改 Generated；场景目标允许随流式加载出现或消失。
+--- 左下角显示刷新倒计时，右侧共用挖矿与熔炼入口；场景目标允许随流式加载变化。
 function Comp:OnReady()
     self._effects = MiningEffects.New(self)
     self._miningRocks = MiningRocks.New()
@@ -34,44 +36,54 @@ function Comp:OnReady()
     root.BackgroundTransparency = 1
     root.Parent = UIRoot.Get()
     self._rootNode = root
+    local crystal = Instance.new("ImageLabel")
+    crystal.Name = "RefreshCrystal"
+    crystal.AnchorPoint = Vector2.new(0, 1)
+    crystal.Position = UDim2.new(0, 32, 1, -64)
+    crystal.Size = UDim2.fromOffset(112, 112)
+    crystal.BackgroundTransparency = 1
+    crystal.Image = _G.ItemConfig.Display[1001].IconId
+    crystal.ScaleType = Enum.ScaleType.Fit
+    crystal.Parent = root
     local countdown = Instance.new("TextLabel")
     countdown.Name = "RefreshCountdown"
-    countdown.AnchorPoint = Vector2.new(0.5, 0)
-    countdown.Position = UDim2.new(0.5, 0, 0, 75)
-    countdown.Size = UDim2.fromOffset(310, 36)
-    countdown.BackgroundColor3 = Color3.fromRGB(42, 47, 53)
-    countdown.BackgroundTransparency = 0.15
+    countdown.AnchorPoint = Vector2.new(0, 1)
+    countdown.Position = UDim2.new(0, 16, 1, -28)
+    countdown.Size = UDim2.fromOffset(144, 36)
+    countdown.BackgroundTransparency = 1
     countdown.TextColor3 = Color3.new(1, 1, 1)
     countdown.Font = Enum.Font.GothamBold
-    countdown.TextSize = 18
+    countdown.TextSize = 24
+    countdown.TextStrokeTransparency = 0.25
+    countdown.TextScaled = true
     countdown.AutoLocalize = false
+    local textSize = Instance.new("UITextSizeConstraint")
+    textSize.MinTextSize = 10
+    textSize.MaxTextSize = 24
     countdown.Parent = root
     self._countdown = countdown
     local feedback = countdown:Clone()
     feedback.Name = "MiningReward"
+    feedback.AnchorPoint = Vector2.new(0.5, 0)
     feedback.Position = UDim2.new(0.5, 0, 0, 115)
     feedback.Size = UDim2.fromOffset(460, 36)
+    feedback.BackgroundColor3 = Color3.fromRGB(42, 47, 53)
+    feedback.BackgroundTransparency = 0.15
+    feedback.TextSize = 18
+    feedback.TextScaled = false
+    feedback.TextStrokeTransparency = 1
     feedback.TextColor3 = Color3.fromRGB(120, 255, 80)
     feedback.Visible = false
     feedback.Parent = root
     self._rewardLabel = feedback
+    textSize.Parent = countdown
     FX.Network:RegServerMsgCallback("S2C_MiningReward", function(itemId, count)
         self._rewardItemId, self._rewardCount = itemId, count
         self._rewardUntil = os.clock() + 2
         self:RefreshReward()
     end)
-    local button = Instance.new("TextButton")
-    button.Name = "MiningInteraction"
-    button.AnchorPoint = Vector2.new(0.5, 1)
-    button.Position = UDim2.new(0.5, 0, 1, -195)
-    button.Size = UDim2.fromOffset(280, 54)
-    button.BackgroundColor3 = Color3.fromRGB(67, 99, 117)
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 20
-    button.AutoLocalize = false
-    button.Visible = false
-    button.Parent = root
+    local button, title, detail = ActionButton.New("MiningInteraction", root)
+    self._buttonTitle, self._buttonDetail = title, detail
     self._button = button
     self._lastRequest = -math.huge
     self:TrackConnection(button.Activated:Connect(function()
@@ -309,7 +321,7 @@ function Comp:Refresh()
     local deadline = self._miningDeadline or 0
     local seconds = math.max(0, math.ceil(deadline - workspace:GetServerTimeNow()))
     self._countdown.Text = deadline > 0
-        and Text.Tr(TranslationTexts.Refresh, {seconds = seconds})
+        and string.format("%02d:%02d", math.floor(seconds / 60), seconds % 60)
         or Text.Tr(TranslationTexts.Preparing)
     self._rock = nil
     self._nearFurnace = false
@@ -335,7 +347,8 @@ function Comp:Refresh()
     end
     self._button.Visible = self._rock ~= nil or self._nearFurnace
     if self._rock then
-        self._button.Text = Text.Tr(TranslationTexts.Mine, {hits = self._rock:GetAttribute("RemainingHits")})
+        self._buttonTitle.Text = Text.Tr(TranslationTexts.Mine)
+        self._buttonDetail.Text = Text.Tr(TranslationTexts.RemainingHits, {hits = self._rock:GetAttribute("RemainingHits")})
         -- 与 Money 相同，靠近且面向矿石时自动挥镐；持有其他道具时不抢占装备。
         local heldTool = character:FindFirstChildOfClass("Tool")
         local offset = self._rock:GetPivot().Position - root.Position
@@ -344,7 +357,8 @@ function Comp:Refresh()
             self:MineRock()
         end
     elseif self._nearFurnace then
-        self._button.Text = Text.Tr(TranslationTexts.Smelt, {count = Config.FurnaceOreCost})
+        self._buttonTitle.Text = Text.Tr(TranslationTexts.Smelt)
+        self._buttonDetail.Text = Text.Tr(TranslationTexts.OreCost, {count = Config.FurnaceOreCost})
     end
     self:RefreshToolNames()
 end

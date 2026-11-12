@@ -161,10 +161,10 @@ function View:RefreshText()
     self.LeaveButton.Text = Text.Tr(TranslationTexts.LeaveButton)
 end
 
---- 根据可用视口缩放底部操作条，窄屏不裁切触屏按钮。
+--- 根据视口短边缩放右侧敲击与离开操作区，手机保留可点击尺寸。
 --- @param viewportSize Vector2 当前相机视口的像素尺寸。
 function View:Resize(viewportSize)
-    self._scale.Scale = math.min(viewportSize.X / 740, viewportSize.Y / 500, 1.1)
+    self._scale.Scale = math.clamp(math.min(viewportSize.X, viewportSize.Y) / 720, 0.75, 1)
 end
 
 --- 组件释放时只关闭本视图和自有补间。
