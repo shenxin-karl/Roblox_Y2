@@ -7,7 +7,9 @@ require(script.Parent.FSPlayerKVTableClass)
 require(script.Parent.FSPlayerKVDBClass)
 -- DB 映射只存在于模块闭包；公开接口不得返回 DB、原始表或可写的嵌套引用。
 local playerDBMap, closing, sessionPlayers = {}, {}, {}
+local pendingClosures = {}
 local shuttingDown = false
+local closeDeadline
 local Manager = {}
 FS.PlayerKVDataManager = Manager
 
@@ -16,15 +18,23 @@ FS.PlayerKVDataManager = Manager
 function Manager:Init()
     self._timer = FX.Task:Interval(Config.AutoSaveSeconds, function()
         for id, db in pairs(playerDBMap) do
-            if db:IsLoadFinished() and not closing[id] then
+            if db:IsLoadFinished() and not db._leaving then
                 task.spawn(function()
                     if not db:Save(false) then
                         local player = Players:GetPlayerByUserId(id)
-                        if player and not FX.IsDeveloper(id) then
+                        if player and player == sessionPlayers[id] and playerDBMap[id] == db
+                            and not db._leaving and not FX.IsDeveloper(id) then
                             player:Kick("存档暂时不可用，请稍后重试")
                         end
                     end
                 end)
+            end
+        end
+    end)
+    self._closeTimer = FX.Task:Interval(1, function()
+        for id, pending in pairs(pendingClosures) do
+            if not closing[id] and os.clock() >= pending.retryAt then
+                task.spawn(self.SaveClosingPlayer, self, id)
             end
         end
     end)
@@ -50,7 +60,41 @@ function Manager:PlayerAdded(player)
     db:LoadAsync()
 end
 
---- 保存并释放离服会话，业务层不得自行清理映射或释放 DB。
+--- 单次关闭保存失败后保留原档案；确认锁丢失时停止重试，绝不覆盖新会话。
+--- @param id number 等待关闭保存的玩家 ID。
+--- @return nil
+function Manager:SaveClosingPlayer(id)
+    local pending = pendingClosures[id]
+    if not pending or closing[id] then
+        return
+    end
+    local db = playerDBMap[id]
+    if db._loading or db._recovering then
+        return
+    end
+    closing[id] = true
+    local ok, saved, reason = xpcall(function()
+        if not db:IsLoadFinished() then
+            return true
+        end
+        return db:Save(true)
+    end, debug.traceback)
+    closing[id] = nil
+    if ok and (saved or reason == "SessionLost") then
+        if reason == "SessionLost" then
+            warn("[Storage] Closing profile lost its session; unsaved progress cannot be written", id)
+        end
+        playerDBMap[id], sessionPlayers[id], pendingClosures[id] = nil, nil, nil
+        return
+    end
+    if not ok then
+        warn("[Storage] Closing save raised an error", id, saved)
+    end
+    pending.retryAt = os.clock() + pending.delay
+    pending.delay = math.min(pending.delay * 2, 15)
+end
+
+--- 离服只清理一次业务状态，保存失败进入后台队列，不丢弃尚未落盘的档案。
 --- @param player Player 离开服务器的玩家；也用于关闭服务器。
 --- @return nil
 function Manager:PlayerRemoving(player)
@@ -58,11 +102,7 @@ function Manager:PlayerRemoving(player)
     if sessionPlayers[id] ~= player then
         return
     end
-    if closing[id] then
-        while closing[id] do
-            task.wait()
-        end
-
+    if pendingClosures[id] then
         return
     end
 
@@ -73,44 +113,42 @@ function Manager:PlayerRemoving(player)
 
     closing[id] = true
     db._leaving = true
+    pendingClosures[id] = {retryAt = 0, delay = 1}
     if FS.PlayerManager then
-        FS.PlayerManager:OnPlayerLogout(id)
-    end
-
-    FS.Events.OnPlayerDataSaveStarted:Fire(id)
-    FS.RankingManager:OnPlayerDataSaveStarted(id)
-    while db._loading or db._recovering do
-        task.wait()
-    end
-    if db:IsLoadFinished() then
-        for attempt = 1, 3 do
-            if db:Save(true) then
-                break
-            end
-
-            task.wait(attempt)
+        local ok, message = xpcall(FS.PlayerManager.OnPlayerLogout, debug.traceback, FS.PlayerManager, id)
+        if not ok then
+            warn("[Storage] Player logout failed; final save will continue", id, message)
         end
     end
 
-    playerDBMap[id] = nil
-    sessionPlayers[id] = nil
+    local fired, fireMessage = xpcall(FS.Events.OnPlayerDataSaveStarted.Fire, debug.traceback,
+        FS.Events.OnPlayerDataSaveStarted, id)
+    if not fired then
+        warn("[Storage] Save notification failed; final save will continue", id, fireMessage)
+    end
+    local ok, message = xpcall(FS.RankingManager.OnPlayerDataSaveStarted, debug.traceback, FS.RankingManager, id)
+    if not ok then
+        warn("[Storage] Ranking logout failed; final save will continue", id, message)
+    end
     closing[id] = nil
+    self:SaveClosingPlayer(id)
 end
 
---- 停止新会话加载并关闭在线玩家，等待所有已离服及加载中的关闭任务。
+--- 关服最多等待 28 秒，给平台结束回调留出余量；超时仅报告，不主动丢弃待保存档案。
 --- @return nil
 function Manager:Close()
-    shuttingDown = true
-    local pending = 0
-    for playerIndex, player in ipairs(Players:GetPlayers()) do
-        pending += 1
-        task.spawn(function()
-            self:PlayerRemoving(player)
-            pending -= 1
-        end)
+    if not shuttingDown then
+        shuttingDown = true
+        closeDeadline = os.clock() + 28
+        for id, player in pairs(sessionPlayers) do
+            task.spawn(self.PlayerRemoving, self, player)
+        end
     end
-    while pending > 0 or next(closing) do
+    while next(playerDBMap) and os.clock() < closeDeadline do
         task.wait()
+    end
+    for id in pairs(playerDBMap) do
+        warn("[Storage] Shutdown deadline reached with an unsaved profile", id)
     end
 end
 

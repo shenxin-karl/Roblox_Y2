@@ -2,6 +2,7 @@ local FX, FS = _G.FX, _G.FS
 local Config = require(game:GetService("ServerScriptService").Server.Config.StorageConfig)
 local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
 local memory = game:GetService("RunService"):IsStudio() and Config.StudioMemory
 local store = not memory and DataStoreService:GetDataStore(Config.DataStoreName)
 local memoryRecords = {}
@@ -20,30 +21,71 @@ function DB:Ctor(playerId)
     self._revision = 0
 end
 
---- 加载失败绝不创建空档继续游戏；离服后的加载结果仅由管理器关闭，不通知重连玩家。
+--- 有效外服锁最多等待 60 秒并退避重试；离服取消等待，其他加载错误不创建空档继续游戏。
 --- @return nil
 function DB:LoadAsync()
     self._loading, self._loadFailed = true, false
     task.spawn(function()
-        local success, record = pcall(function()
-            return self:_Update(function(old)
-                if old ~= nil then
-                    assert(type(old) == "table" and type(old.Data) == "table", "Invalid saved profile")
-                end
-
-                old = old or { Data = {} }
-                if Config.SessionLockEnabled then
-                    local lock = old.Session
-                    if lock and lock.Id ~= self._session and os.time() - lock.Time < Config.SessionLeaseSeconds then
+        local player = Players:GetPlayerByUserId(self._playerId)
+        local deadline = os.clock() + 60
+        local delay = 1
+        local success, record
+        while true do
+            if self._leaving or not player or Players:GetPlayerByUserId(self._playerId) ~= player then
+                self._loading = false
+                return
+            end
+            local locked = false
+            success, record = pcall(function()
+                return self:_Update(function(old)
+                    -- UpdateAsync 可能在等待后重跑回调，必须重新核对原玩家和本次锁判断。
+                    locked = false
+                    if self._leaving or Players:GetPlayerByUserId(self._playerId) ~= player then
                         return nil
                     end
-                    old.Session = { Id = self._session, Time = os.time() }
-                else
-                    old.Session = nil
-                end
-                return old
+                    if old ~= nil then
+                        assert(type(old) == "table" and type(old.Data) == "table", "Invalid saved profile")
+                    end
+
+                    old = old or { Data = {} }
+                    if Config.SessionLockEnabled then
+                        local lock = old.Session
+                        if lock ~= nil then
+                            assert(type(lock) == "table" and type(lock.Id) == "string"
+                                and type(lock.Time) == "number" and lock.Time == lock.Time
+                                and math.abs(lock.Time) < math.huge, "Invalid saved session lock")
+                            if lock.Id ~= self._session and os.time() - lock.Time < Config.SessionLeaseSeconds then
+                                locked = true
+                                return nil
+                            end
+                        end
+                        old.Session = { Id = self._session, Time = os.time() }
+                    else
+                        old.Session = nil
+                    end
+                    return old
+                end)
             end)
-        end)
+            if not success or record or not locked then
+                break
+            end
+            local remaining = deadline - os.clock()
+            if remaining <= 0 then
+                break
+            end
+            -- 短轮询只检查取消条件，不请求云端；避免离服后仍睡满整个退避间隔。
+            local retryAt = os.clock() + math.min(delay + math.random() * delay * 0.25, 8, remaining)
+            repeat
+                task.wait(math.min(0.25, math.max(0, retryAt - os.clock())))
+            until os.clock() >= retryAt or self._leaving or Players:GetPlayerByUserId(self._playerId) ~= player
+            delay = math.min(delay * 2, 8)
+        end
+
+        if (not success or not record)
+            and (self._leaving or Players:GetPlayerByUserId(self._playerId) ~= player) then
+            self._loading = false
+            return
+        end
 
         if not success or not record then
             self._loading, self._loadFailed = false, true
@@ -79,7 +121,7 @@ function DB:LoadAsync()
         end
 
         self._loaded, self._loading = true, false
-        if self._leaving then
+        if self._leaving or Players:GetPlayerByUserId(self._playerId) ~= player then
             return
         end
 
@@ -103,25 +145,31 @@ function DB:_Update(transform)
     return nextRecord
 end
 
+--- 保存异常必须释放保存互斥，锁已被接管时向关闭队列报告不可重试原因。
 --- @param release boolean 离服时完成最后一次保存、释放正式服锁并停止后续写入。
 --- @return boolean 是否成功持久化本次快照。
+--- @return string? 失败原因为 SessionLost / Unavailable / Inactive。
 function DB:Save(release)
     while self._saving do
         task.wait()
     end
 
     if not self._loaded or self._released then
-        return false
+        return false, "Inactive"
     end
 
     self._saving = true
-    local snapshot = FX.Table:DeepCopy(self._data)
+    local lostSession = false
     local success, result = pcall(function()
+        local snapshot = FX.Table:DeepCopy(self._data)
         return self:_Update(function(old)
+            lostSession = false
             if not old then
+                lostSession = true
                 return nil
             end
             if Config.SessionLockEnabled and (not old.Session or old.Session.Id ~= self._session) then
+                lostSession = true
                 return nil
             end
 
@@ -136,7 +184,7 @@ function DB:Save(release)
     self._saving = false
     if not success or not result then
         warn("[Storage] Save failed", self._playerId, result)
-        return false
+        return false, success and lostSession and "SessionLost" or "Unavailable"
     end
 
     self._released = release == true

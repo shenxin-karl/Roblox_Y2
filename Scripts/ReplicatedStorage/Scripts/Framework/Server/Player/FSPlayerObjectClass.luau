@@ -282,9 +282,15 @@ function FSPlayerObjectClass:OnPlayerLogin()
     self:SyncData()
 end
 
--- 玩家登出
+--- 各组件独立登出，单个业务异常不得跳过其他组件的尾差结算和任务清理。
+--- @return nil
 function FSPlayerObjectClass:OnPlayerLogout()
-    self:CallAllCompMethod("OnPlayerLogout")
+    for name, component in pairs(self._components) do
+        local ok, message = xpcall(component.OnPlayerLogout, debug.traceback, component)
+        if not ok then
+            warn("[Player] Component logout failed", self._playerId, name, message)
+        end
+    end
 end
 
 --- 执行玩家对象的每秒更新，负责驱动组件更新并处理按周期重置的玩家数据。
