@@ -3,8 +3,25 @@ local Fields = _G.PlayerDataConfig
 local GameConfig = _G.GameConfig
 local FX = _G.FX
 local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
+local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 
 return {
+    --- 将工坊等级与金币消耗放入同一次兑换，预检失败不修改档案。
+    --- @param rewardComponent table 框架奖励组件。
+    --- @param entry table 服务端校验过的升级 ID 和旧等级。
+    --- @param tables table 本次交易待提交的表字段快照。
+    --- @return boolean 是否允许整批提交。
+    UpgradeWorkshop = function(rewardComponent, entry, tables)
+        local levels = tables.UpgradeWorkshop or rewardComponent:GetTable(Fields.UpgradeWorkshop)
+        local level = levels[entry.UpgradeId]
+        if not WorkshopRules.BasePrices[entry.UpgradeId] or level ~= entry.ExpectedLevel
+            or level < 0 or level >= WorkshopRules.MaxLevel or level % 1 ~= 0 then
+            return false
+        end
+        levels[entry.UpgradeId] = level + 1
+        tables.UpgradeWorkshop = levels
+        return true
+    end,
     --- 在同一个库存快照中将原料替换为成品，优先手持原料并保留其变异与幸运值。
     --- @param rewardComponent table 框架奖励组件。
     --- @param entry table 服务端固定的打造条目，无客户端配方。
@@ -29,6 +46,7 @@ return {
         if not traits or item.stackCount ~= 1 then
             return false
         end
+        traits.Luck *= WorkshopRules.GetMultiplier(rewardComponent:GetTableView(Fields.UpgradeWorkshop).forge)
         traits.Level, traits.StoredMoney = 1, 0
         items[tostring(grid)] = {itemId = SwordRules.ItemId, stackCount = 1, extraData = traits}
         tables.Inventory = items

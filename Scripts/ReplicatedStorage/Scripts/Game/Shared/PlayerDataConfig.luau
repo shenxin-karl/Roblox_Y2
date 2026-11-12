@@ -20,6 +20,10 @@ return {
         Type = "number", Key = "Diamonds", DefVal = 0,
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
+    UpgradeWorkshop = {
+        Type = "table", Key = "UpgradeWorkshop", DefVal = {smelt = 0, forge = 0, income = 0},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
     -- 进度随玩家保存；SlotData 以字符串槽位编号保存各槽的业务数据，不保存场景实例。
     BaseData = {
         Type = "table", Key = "BaseData",

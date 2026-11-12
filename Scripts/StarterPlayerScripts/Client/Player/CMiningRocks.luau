@@ -32,7 +32,7 @@ function Rocks:Refresh(data)
         local rock = self._rocks[id]
         if not rock and state.Hits > 0 then
             local config = _G.GameConfig.MiningRockData[state.Grade]
-            rock = self._templates[state.Grade]:Clone()
+            rock = self._templates[config.Id]:Clone()
             rock.Name = "Rock_" .. id
             rock:ScaleTo(rock:GetScale() * config.ModelScale)
             rock:PivotTo(CFrame.new(state.X, state.Y, state.Z) * CFrame.Angles(0, state.Angle, 0))
@@ -43,8 +43,8 @@ function Rocks:Refresh(data)
                 end
             end
             rock:SetAttribute("MiningRockId", id)
-            rock:SetAttribute("RockGrade", state.Grade)
-            rock:SetAttribute("MutationId", state.MutationId)
+            rock:SetAttribute("RockGrade", config.Id)
+            rock:SetAttribute("MutationId", config.MutationId)
             rock:SetAttribute("MaxHits", state.MaxHits)
             rock:SetAttribute("RemainingHits", state.Hits)
             self._rocks[id] = rock

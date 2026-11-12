@@ -17,6 +17,9 @@ return {
         -- 仅提交公共石头节点；次数、矿石奖励和兑换配方由服务端确定。
         "C2S_MineRock",
         "C2S_SmeltSword",
+        -- upgradeId: smelt/forge/income；expectedLevel: 整数 0..19；服务端决定价格与新等级。
+        "C2S_UpgradeWorkshop",
     },
-    ServerMsgID = {"S2C_ForgeSwordResult", "S2C_MiningReward"},
+    -- S2C_UpgradeWorkshopResult(upgradeId: string, success: boolean)，真实等级沿用玩家字段同步。
+    ServerMsgID = {"S2C_ForgeSwordResult", "S2C_MiningReward", "S2C_UpgradeWorkshopResult"},
 }

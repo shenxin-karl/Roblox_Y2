@@ -3,6 +3,7 @@ local FX = _G.FX
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local Config = _G.GameConfig.CommonConfig
 local Fields = _G.PlayerDataConfig
+local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local Manager = FX.Class("SMiningManagerClass", "FXObjectBaseClass")
 
 --- 启动前核对配置与矿场几何；服务端只保存矿石数据，不创建共享石头。
@@ -14,31 +15,22 @@ function Manager:Ctor()
     assert(Config.MiningSpawnProbability >= 0 and Config.MiningSpawnProbability <= 1, "Invalid MiningSpawnProbability")
     assert(Config.MiningOrePerHit > 0 and Config.MiningOrePerHit % 1 == 0, "Invalid MiningOrePerHit")
     assert(Config.FurnaceOreCost > 0 and Config.FurnaceOreCost % 1 == 0, "Invalid FurnaceOreCost")
-    self._mutations = {}
-    local probability = 0
-    for id, mutation in pairs(_G.GameConfig.MiningMutationData) do
-        assert(id == mutation.Id, "Mining mutation ID mismatch")
-        assert(mutation.Probability >= 0 and mutation.Probability <= 1, "Invalid mutation probability: " .. id)
-        local hits = Config.MiningRockHits * mutation.HitsMultiplier
-        local oreCount = Config.MiningOrePerHit * mutation.OreCountMultiplier
-        assert(hits > 0 and hits % 1 == 0, "Mutation hits must be a positive integer: " .. id)
-        assert(oreCount > 0 and oreCount % 1 == 0, "Mutation reward must be a positive integer: " .. id)
-        assert(_G.ItemConfig.Data[mutation.OreItemId].Type == "Ore", "Invalid mutation ore: " .. id)
-        assert(mutation.Luck >= 0 and mutation.Luck < math.huge, "Invalid mutation luck: " .. id)
-        probability += mutation.Probability
-        table.insert(self._mutations, mutation)
-    end
-    assert(#self._mutations > 0 and math.abs(probability - 1) < 1e-9, "Mining mutation probabilities must sum to 1")
-    table.sort(self._mutations, function(left, right)
-        return left.Id < right.Id
-    end)
     self._ground = FX.Loader:Workspace(Settings.GroundPath)
     self._furnace = FX.Loader:Workspace(Settings.FurnacePath)
     self._rockTypes = {}
     self._rockTemplates = {}
     self._rockWeight = 0
+    local mutationIds = {}
     for id, rockType in pairs(_G.GameConfig.MiningRockData) do
         assert(id == rockType.Id, "Mining rock ID mismatch")
+        assert(not mutationIds[rockType.MutationId], "Duplicate mining mutation ID")
+        mutationIds[rockType.MutationId] = true
+        local hits = Config.MiningRockHits * rockType.HitsMultiplier
+        local oreCount = Config.MiningOrePerHit * rockType.OreCountMultiplier
+        assert(hits > 0 and hits % 1 == 0, "Rock hits must be a positive integer: " .. id)
+        assert(oreCount > 0 and oreCount % 1 == 0, "Rock reward must be a positive integer: " .. id)
+        assert(_G.ItemConfig.Data[rockType.OreItemId].Type == "Ore", "Invalid rock ore: " .. id)
+        assert(rockType.Luck >= 0 and rockType.Luck < math.huge, "Invalid rock luck: " .. id)
         assert(rockType.SpawnWeight >= 0 and rockType.SpawnWeight < math.huge, "Invalid rock weight")
         assert(rockType.ModelScale > 0 and rockType.ModelScale < math.huge, "Invalid rock scale")
         local template = FX.Loader:Shared(rockType.ModelPath)
@@ -54,27 +46,8 @@ function Manager:Ctor()
     self._random = Random.new()
 end
 
---- 按稳定 ID 顺序互斥抽取一次；零概率条目不进入候选区间。
---- @return table 本块矿石整轮固定使用的变异配置。
-function Manager:RollMutation()
-    local roll = self._random:NextNumber()
-    local probability = 0
-    local lastCandidate
-    for index, mutation in ipairs(self._mutations) do
-        if mutation.Probability > 0 then
-            lastCandidate = mutation
-            probability += mutation.Probability
-            if roll < probability then
-                return mutation
-            end
-        end
-    end
-    -- 总和允许浮点误差；末尾补偿仍只落在非零概率结果上。
-    return lastCandidate
-end
-
---- 仅按品质配置权重选择模板，不再随机使用旧的五种普通石头。
---- @return table 本次刷新的矿石品质配置。
+--- 按权重抽取一次矿石，外观、变异和掉落固定使用同一条配置。
+--- @return table 本次刷新的合并矿石配置。
 function Manager:RollRockType()
     local roll = self._random:NextNumber(0, self._rockWeight)
     local weight = 0
@@ -115,12 +88,11 @@ function Manager:Refresh(player)
             local position = center + Vector3.new(math.cos(angle) * distance,
                 self._rockTemplates[rockType.Id].PrimaryPart.Size.Y * rockType.ModelScale / 2,
                 math.sin(angle) * distance)
-            local mutation = self:RollMutation()
-            local hits = Config.MiningRockHits * mutation.HitsMultiplier
+            local hits = Config.MiningRockHits * rockType.HitsMultiplier
             data.Rocks[tostring(deadline) .. "_" .. slot] = {
                 X = position.X, Y = position.Y, Z = position.Z,
                 Angle = self._random:NextNumber(0, math.pi * 2),
-                Grade = rockType.Id, MutationId = mutation.Id,
+                Grade = rockType.Id, MutationId = rockType.MutationId,
                 Hits = hits, MaxHits = hits,
             }
         end
@@ -144,7 +116,7 @@ function Manager:Mine(player, position, rock)
         return false
     end
     local reward = player:RequireComponent("FSRewardComp")
-    local mutation = _G.GameConfig.MiningMutationData[state.MutationId]
+    local mutation = _G.GameConfig.MiningRockData[state.Grade]
     local oreCount = Config.MiningOrePerHit * mutation.OreCountMultiplier
     if not player:RunDataTransaction(function()
         if not reward:AddRewards({{Type = "Item", ItemId = mutation.OreItemId, Count = oreCount}}) then
@@ -175,7 +147,7 @@ function Manager:Smelt(player, position)
         counts[item.itemId] = (counts[item.itemId] or 0) + item.stackCount
     end
     local selected
-    for index, mutation in ipairs(self._mutations) do
+    for index, mutation in ipairs(self._rockTypes) do
         if held and held.itemId == mutation.OreItemId then
             selected = mutation
             break
@@ -190,7 +162,8 @@ function Manager:Smelt(player, position)
     return player:RequireComponent("FSRewardComp"):ExchangeRewards(
         {{Type = "Item", ItemId = selected.OreItemId, Count = Config.FurnaceOreCost}},
         {{Type = "Item", ItemId = Config.FurnaceSwordItemId, Count = 1,
-            ExtraData = {MutationId = selected.Id, Luck = selected.Luck}}}
+            ExtraData = {MutationId = selected.MutationId,
+                Luck = selected.Luck * WorkshopRules.GetMultiplier(player:GetTableView(Fields.UpgradeWorkshop).smelt)}}}
     )
 end
 

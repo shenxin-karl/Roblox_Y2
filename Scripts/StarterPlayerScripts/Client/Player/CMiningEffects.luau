@@ -30,9 +30,9 @@ function Effects.New(owner)
         self._crystals[id] = assert(crystals:FindFirstChildWhichIsA("BasePart"), "Mining rock requires a crystal part")
     end
     self._mutationTemplates = {}
-    for id, mutation in pairs(_G.GameConfig.MiningMutationData) do
+    for grade, mutation in pairs(_G.GameConfig.MiningRockData) do
         if mutation.EffectPath then
-            self._mutationTemplates[id] = FX.Loader:Shared(mutation.EffectPath)
+            self._mutationTemplates[mutation.MutationId] = FX.Loader:Shared(mutation.EffectPath)
         end
     end
     self._rocks = {}
@@ -54,7 +54,7 @@ function Effects.New(owner)
     return self
 end
 
---- 克隆完整七色模型，固定碰撞体不跟随受击抖动，避免影响玩家行走。
+--- 克隆对应矿石模型，固定碰撞体不跟随受击抖动，避免影响玩家行走。
 --- @param rock Instance 流式加载到客户端的公共矿石。
 function Effects:AddRock(rock)
     if self._rocks[rock] or not rock:IsA("Model") then

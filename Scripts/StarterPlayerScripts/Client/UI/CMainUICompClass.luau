@@ -5,6 +5,7 @@ local Text = FX.Text
 local FCItemDescription = FXLoader:RequireShared("Scripts.Framework.Client.FCItemDescription")
 local ItemConfig = FXLoader:RequireShared("Scripts.Game.Configs.ItemConfig")
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
+local SwordRules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local PlayerDataConfig = _G.PlayerDataConfig
 local TranslationTexts = Text.Define("MainItemDescription", {
     Traits = "{description}\nMutation: {mutation}\nLuck: {luck}",
@@ -93,7 +94,7 @@ function Component:RefreshSelectedTool()
     if mutationId and luck ~= nil then
         description = Text.Tr(TranslationTexts.Traits, {
             description = description,
-            mutation = Text.TrSource(_G.GameConfig.MiningMutationData[mutationId].Name),
+            mutation = Text.TrSource(SwordRules.GetMutation(mutationId).MutationName),
             luck = GameUtility.NumberToText(luck),
         })
     end

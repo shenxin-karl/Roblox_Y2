@@ -2,19 +2,28 @@
 local Config = _G.GameConfig.CommonConfig
 local Rules = {ItemId = 1003, RawItemId = Config.FurnaceSwordItemId}
 
---- 旧测试物品未保存词条时视为普通原料；已保存幸运值不随调表改变。
+--- 从合并矿石配置查找武器词条对应的变异。
+--- @param mutationId string 武器词条中的变异 ID。
+--- @return table? 对应矿石配置；未知 ID 返回 nil。
+function Rules.GetMutation(mutationId)
+    for grade, rockType in pairs(_G.GameConfig.MiningRockData) do
+        if rockType.MutationId == mutationId then
+            return rockType
+        end
+    end
+    return nil
+end
+
+--- 校验武器词条；变异和幸运值必须完整，缺失时不补默认属性。
 --- @param extra table? 背包或槽位中保存的武器属性。
 --- @return table? 有效的变异和幸运值，损坏属性返回 nil。
 function Rules.GetTraits(extra)
-    if extra ~= nil and type(extra) ~= "table" then
+    if type(extra) ~= "table" then
         return nil
     end
-    local mutationId = extra and extra.MutationId or "Normal"
-    local mutation = _G.GameConfig.MiningMutationData[mutationId]
-    local luck = extra and extra.Luck
-    if luck == nil and mutation then
-        luck = mutation.Luck
-    end
+    local mutationId = extra.MutationId
+    local mutation = Rules.GetMutation(mutationId)
+    local luck = extra.Luck
     if not mutation or type(luck) ~= "number" or luck < 0 or luck >= math.huge then
         return nil
     end

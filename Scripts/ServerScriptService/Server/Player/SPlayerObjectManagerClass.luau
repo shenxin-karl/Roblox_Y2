@@ -14,6 +14,24 @@ function Manager:Ctor()
     self:RegForgeMsg()
     self:RegSlotSwordMsg()
     self:RegMiningMsg()
+    self:RegUpgradeWorkshopMsg()
+end
+
+--- 工坊升级只路由到认证请求者；每次有效 ID 请求均回执，释放客户端防重状态。
+function Manager:RegUpgradeWorkshopMsg()
+    --- 不接受客户端传入价格或新等级，未登录和已离服请求由组件拒绝。
+    --- @param userId number 引擎认证的请求者 ID。
+    --- @param upgradeId any 固定升级 ID，由服务端组件检查。
+    --- @param expectedLevel any 客户端当前等级，由服务端与存档比较。
+    FX.Network:RegClientMsgCallback("C2S_UpgradeWorkshop", function(userId, upgradeId, expectedLevel)
+        local player = self:GetPlayerObject(userId)
+        local workshop = player and player:GetComponent("SUpgradeWorkshopComp")
+        if type(upgradeId) ~= "string" or (upgradeId ~= "smelt" and upgradeId ~= "forge" and upgradeId ~= "income") then
+            return
+        end
+        local success = workshop ~= nil and workshop:Upgrade(upgradeId, expectedLevel)
+        FX.Network:SendMsgToClient(userId, "S2C_UpgradeWorkshopResult", upgradeId, success)
+    end)
 end
 
 --- 矿场协议只作用于认证请求者；客户端不能传入数量、奖励或兑换价格。

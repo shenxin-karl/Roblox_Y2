@@ -4,6 +4,7 @@ local FX = _G.FX
 local FXLoader = FX.Loader
 local Fields = _G.PlayerDataConfig
 local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
+local WorkshopRules = FXLoader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local TranslationTexts = FX.Text.Define("BaseWeapon", {
     FinishedRequired = "Equip a finished sword before placing it in an empty slot.",
     BackpackFull = "Not enough backpack space to remove this weapon.",
@@ -214,13 +215,14 @@ function Comp:Accrue()
     end
     local now = os.clock()
     local data = self:GetTable(Fields.BaseData)
+    local incomeMultiplier = WorkshopRules.GetMultiplier(self:GetTableView(Fields.UpgradeWorkshop).income)
     local changed = false
     for slotId, view in pairs(self._displays) do
         local seconds = math.floor(now - view.LastIncome)
         local sword = data.SlotData[tostring(slotId)]
         if seconds > 0 and sword and sword.ItemId == Rules.ItemId then
             view.LastIncome += seconds
-            sword.StoredMoney += Rules.GetIncome(sword.Level) * seconds
+            sword.StoredMoney += Rules.GetIncome(sword.Level) * incomeMultiplier * seconds
             changed = true
         end
     end
@@ -325,7 +327,8 @@ function Comp:Publish()
         display:SetAttribute("HasSword", sword ~= nil)
         if sword then
             display:SetAttribute("Level", sword.Level)
-            display:SetAttribute("Income", Rules.GetIncome(sword.Level))
+            display:SetAttribute("Income", Rules.GetIncome(sword.Level)
+                * WorkshopRules.GetMultiplier(self:GetTableView(Fields.UpgradeWorkshop).income))
             display:SetAttribute("UpgradePrice", Rules.GetUpgradePrice(sword.Level))
             display:SetAttribute("StoredMoney", sword.StoredMoney)
         end
