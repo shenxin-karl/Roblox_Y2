@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "25db5e75c2d34bdea3ef3f26f2929b96",
+  "kind": "Model",
+  "tags": [],
+  "uploads": [
+    {
+      "ownerType": "user",
+      "ownerId": "2563885143",
+      "sha256": "615cc8fb70bd2ee4c1a8c00d12151ba6233f933df9e3e499b1e8e6cea7800c8d",
+      "assetType": "Model",
+      "assetId": "75278256275762",
+      "uploadedAt": "2026-11-07T09:18:35.655804+00:00",
+      "grantedUniverseId": "10773636924"
+    }
+  ]
+}
