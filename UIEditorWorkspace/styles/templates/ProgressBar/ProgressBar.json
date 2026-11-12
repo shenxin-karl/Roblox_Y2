@@ -1,0 +1,390 @@
+{
+  "canvas": {
+    "height": 720,
+    "width": 1280
+  },
+  "format": "roblox-ui",
+  "id": "a2a97fe5-43f5-4a0f-b286-aa2e90627f11",
+  "name": "ProgressBar",
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [],
+            "className": "UICorner",
+            "id": "a346d099-18b1-4f84-a259-8fb4ff81d40e",
+            "name": "UICorner",
+            "properties": {
+              "CornerRadius": {
+                "offset": 6,
+                "scale": 0
+              }
+            }
+          },
+          {
+            "children": [],
+            "className": "UIStroke",
+            "id": "c28efa3c-ceb1-441b-8152-e8b732c4aff4",
+            "name": "UIStroke",
+            "properties": {
+              "Color": "#20231c",
+              "Enabled": true,
+              "Thickness": 3,
+              "Transparency": 0
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "bc42089e-74a2-4ce9-8f17-5301555a7b65",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "ImageLabel",
+                "id": "fe55fa51-dfa7-439f-ab17-7eed315fba39",
+                "name": "StudTileImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Image": "rbxassetid://82793028306773",
+                  "ImageColor3": "#ffffff",
+                  "ImageTransparency": 0.25,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "ScaleType": "Tile",
+                  "Size": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 1
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 1
+                    }
+                  },
+                  "TileSize": {
+                    "x": {
+                      "offset": 27,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 27,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 4,
+                  "AutoLocalize": true
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "fb0c2ed4-af1c-4d1b-bc74-472c55a4813f",
+                "name": "BottomEdgeImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "BackgroundColor3": "#800000",
+                  "BackgroundTransparency": 0.5,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": -5,
+                      "scale": 1
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 1
+                    },
+                    "y": {
+                      "offset": 5,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 5,
+                  "AutoLocalize": true
+                }
+              }
+            ],
+            "className": "Frame",
+            "id": "b58b3478-3fb6-408f-9341-66031d1e6de4",
+            "name": "ProgressFillImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "BackgroundColor3": "#ff2b35",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": true,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 0,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 0,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 0,
+                  "scale": 1
+                },
+                "y": {
+                  "offset": 0,
+                  "scale": 1
+                }
+              },
+              "Visible": true,
+              "ZIndex": 3,
+              "AutoLocalize": true
+            }
+          },
+          {
+            "children": [],
+            "className": "ImageLabel",
+            "id": "704808d1-4fe8-4ea3-9df0-56e2c676ab7c",
+            "name": "StudTileImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "BackgroundColor3": "#ffffff",
+              "BackgroundTransparency": 1,
+              "ClipsDescendants": false,
+              "Image": "rbxassetid://82793028306773",
+              "ImageColor3": "#ffffff",
+              "ImageTransparency": 0.25,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 0,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 0,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "ScaleType": "Tile",
+              "Size": {
+                "x": {
+                  "offset": 0,
+                  "scale": 1
+                },
+                "y": {
+                  "offset": 0,
+                  "scale": 1
+                }
+              },
+              "TileSize": {
+                "x": {
+                  "offset": 27,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 27,
+                  "scale": 0
+                }
+              },
+              "Visible": true,
+              "ZIndex": 3,
+              "AutoLocalize": true
+            }
+          },
+          {
+            "children": [],
+            "className": "Frame",
+            "id": "e3425e9b-6bc7-4857-8060-0fd5a95cd568",
+            "name": "BottomEdgeImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "BackgroundColor3": "#800000",
+              "BackgroundTransparency": 0.5,
+              "ClipsDescendants": false,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 0,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": -5,
+                  "scale": 1
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 0,
+                  "scale": 1
+                },
+                "y": {
+                  "offset": 5,
+                  "scale": 0
+                }
+              },
+              "Visible": true,
+              "ZIndex": 5,
+              "AutoLocalize": true
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "6534b6d6-5f22-4f07-a428-d8b195c2e77e",
+                "name": "TextStroke",
+                "properties": {
+                  "Color": "#000000",
+                  "Enabled": true,
+                  "Thickness": 2,
+                  "Transparency": 0
+                }
+              }
+            ],
+            "className": "TextLabel",
+            "id": "d4b99bf7-e8b4-47ab-9432-7afbc32aace6",
+            "name": "ProgressTxt",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "BackgroundColor3": "#ffffff",
+              "BackgroundTransparency": 1,
+              "ClipsDescendants": false,
+              "Font": "GothamBold",
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 0,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 0,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 0,
+                  "scale": 1
+                },
+                "y": {
+                  "offset": 0,
+                  "scale": 1
+                }
+              },
+              "Text": "进度值 / 目标值",
+              "TextColor3": "#ffffff",
+              "TextScaled": false,
+              "TextSize": 22,
+              "TextTransparency": 0,
+              "TextWrapped": true,
+              "TextXAlignment": "Center",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 6,
+              "AutoLocalize": true
+            }
+          }
+        ],
+        "className": "Frame",
+        "id": "bd92e072-271d-4336-a68f-1e4cb68a5a0e",
+        "name": "ProgressBarImg",
+        "properties": {
+          "AnchorPoint": {
+            "x": 0,
+            "y": 0
+          },
+          "BackgroundColor3": "#571018",
+          "BackgroundTransparency": 0,
+          "ClipsDescendants": true,
+          "LayoutOrder": 0,
+          "Position": {
+            "x": {
+              "offset": 380,
+              "scale": 0
+            },
+            "y": {
+              "offset": 333,
+              "scale": 0
+            }
+          },
+          "Rotation": 0,
+          "Size": {
+            "x": {
+              "offset": 520,
+              "scale": 0
+            },
+            "y": {
+              "offset": 54,
+              "scale": 0
+            }
+          },
+          "Visible": true,
+          "ZIndex": 2,
+          "AutoLocalize": true
+        }
+      }
+    ],
+    "className": "ScreenGui",
+    "id": "b9619406-a492-454f-9627-e29c82fd9e4d",
+    "name": "ProgressBarUI",
+    "properties": {
+      "DisplayOrder": 0,
+      "Enabled": true,
+      "AutoLocalize": true
+    }
+  },
+  "version": 4
+}

@@ -48,6 +48,11 @@ function Comp:CreateAnchor(source, name, display)
     part.Name, part.Size, part.CFrame = name, source.Size, source.CFrame
     part.Anchored, part.CanCollide, part.CanTouch, part.CanQuery = true, false, false, false
     part.Transparency = 1
+    if name == "CollectArea" then
+        local target = Instance.new("ObjectValue")
+        target.Name, target.Value = "AnimationTarget", source
+        target.Parent = part
+    end
     part.Parent = display
     return part
 end
@@ -250,10 +255,13 @@ function Comp:Collect(slotId)
     if not sword or not view or sword.StoredMoney <= 0 or not self:IsNear(view.Collect, 2) then
         return
     end
-    self:RequireComponent("FSRewardComp"):AddRewards({
+    local success = self:RequireComponent("FSRewardComp"):AddRewards({
         {Type = "SlotSwordCollect", SlotId = slotId, Amount = sword.StoredMoney},
         {Type = "Money", Currency = "Money", Count = sword.StoredMoney},
     })
+    if success then
+        view.Model:SetAttribute("CollectSequence", (view.Model:GetAttribute("CollectSequence") or 0) + 1)
+    end
 end
 
 --- 本人走到基地前的绿块后，将所有楼层的累计收益作为同一奖励计划领取。
@@ -272,7 +280,11 @@ function Comp:CollectAll()
     end
     if total > 0 then
         table.insert(rewards, {Type = "Money", Currency = "Money", Count = total})
-        self:RequireComponent("FSRewardComp"):AddRewards(rewards)
+        local success = self:RequireComponent("FSRewardComp"):AddRewards(rewards)
+        if success then
+            local display = self._collectAllDisplay
+            display:SetAttribute("CollectSequence", (display:GetAttribute("CollectSequence") or 0) + 1)
+        end
     end
 end
 

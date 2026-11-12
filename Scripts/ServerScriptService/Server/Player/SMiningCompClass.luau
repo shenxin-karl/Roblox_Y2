@@ -1,4 +1,4 @@
--- 玩家矿场会话：登录、存活和节流校验，公共资源与配方由矿场管理器裁定。
+-- 玩家矿场会话：独立刷新、登录、存活和节流校验，矿石与配方由服务端裁定。
 local FX = _G.FX
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local Comp = FX.Class("SMiningCompClass", "FSPlayerCompClass")
@@ -19,11 +19,20 @@ end
 --- 玩家完成握手后才允许获得矿石或兑换剑。
 function Comp:OnPlayerLogin()
     self._active = true
+    _G.SMiningManager:Refresh(self:GetPlayerObject())
+end
+
+--- 沿用玩家每秒更新，离线到期只生成当前一轮，不累计离线矿石。
+--- @param serverTime number 框架传入的服务器时间；刷新使用跨会话绝对时间。
+function Comp:OnUpdate(serverTime)
+    if self._active then
+        _G.SMiningManager:Refresh(self:GetPlayerObject())
+    end
 end
 
 --- 所有操作共用冷却，拒绝未登录、死亡、远程伪造坐标和连点请求。
 --- @param action string 由服务端协议固定的 Mine 或 Smelt。
---- @param rock any 挖矿目标，兑换时不需要。
+--- @param rock any 私人矿石的本轮编号，兑换时不需要。
 function Comp:Request(action, rock)
     local player = self:GetPlayerNode()
     local character = player and player.Character

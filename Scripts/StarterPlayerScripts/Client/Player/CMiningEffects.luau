@@ -1,4 +1,4 @@
--- Money 采矿表现：服务端石头只负责碰撞与次数，本地副本负责弹缩、碎屑和命中特效。
+-- 水晶采矿表现：服务端矿石只负责碰撞与次数，本地副本负责弹缩、同色碎片和命中特效。
 local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
 local FX = _G.FX
@@ -23,6 +23,12 @@ function Effects.New(owner)
     local self = setmetatable({}, Effects)
     self._owner = owner
     self._templates = FX.Loader:Shared("Assets.Decorations.MiningEffects")
+    self._crystals = {}
+    for id, rockType in pairs(_G.GameConfig.MiningRockData) do
+        local template = FX.Loader:Shared(rockType.ModelPath)
+        local crystals = assert(template:FindFirstChild("Crystals", true), "Mining rock requires crystals")
+        self._crystals[id] = assert(crystals:FindFirstChildWhichIsA("BasePart"), "Mining rock requires a crystal part")
+    end
     self._mutationTemplates = {}
     for id, mutation in pairs(_G.GameConfig.MiningMutationData) do
         if mutation.EffectPath then
@@ -57,11 +63,12 @@ function Effects:AddRock(rock)
     local hits = rock:GetAttribute("RemainingHits")
     local maxHits = rock:GetAttribute("MaxHits")
     local mutationId = rock:GetAttribute("MutationId")
+    local grade = rock:GetAttribute("RockGrade")
     if hits and hits <= 0 then
         self:RemoveRock(rock)
         return
     end
-    if not hits or not maxHits or not mutationId or not rock.PrimaryPart then
+    if not hits or not maxHits or not mutationId or not grade or not rock.PrimaryPart then
         -- 标签与属性可能分批复制；不等待或漏掉稍后才完整到达的矿石。
         if not self._pending[rock] then
             --- 属性或主部件到达后重新检查完整模型，不创建重复外观。
@@ -97,6 +104,7 @@ function Effects:AddRock(rock)
         Model = model, ModelScale = model:GetScale(),
         Visual = visual, Size = visual.Size, Pose = visual.CFrame,
         Hits = hits, MaxHits = maxHits,
+        Crystal = self._crystals[grade],
         Transparencies = {}, Lights = {},
     }
     self._rocks[rock] = entry
@@ -265,7 +273,7 @@ function Effects:RemoveRock(rock)
     end
 end
 
---- 沿用 Money 的闪光、冲击波、火星、破碎烟尘与碎石轨迹。
+--- 命中闪光与飞散粒子跟随水晶原色，击碎时仅保留少量浅色烟尘。
 --- @param entry table 石头原始姿态及本地外观。
 --- @param broken boolean 是否已经耗尽服务端次数。
 function Effects:PlayHitEffect(entry, broken)
@@ -295,7 +303,11 @@ function Effects:PlayHitEffect(entry, broken)
     effect.Parent = self._folder
     local radius = math.clamp(math.max(entry.Size.X, entry.Size.Y, entry.Size.Z) * 0.55, 1.5, 4)
     local origin = self._templates.ImpactOrigin:Clone()
-    local burst = math.min(radius * (broken and 1.1 or 0.85), 3.2)
+    local color = entry.Crystal.Color
+    origin.ImpactFlash.Color = ColorSequence.new(color:Lerp(Color3.new(1, 1, 1), 0.35))
+    origin.ImpactShockwave.Color = ColorSequence.new(color)
+    origin.ImpactSparks.Color = ColorSequence.new(color)
+    local burst = math.min(radius * (broken and 0.8 or 0.55), 2.4)
     origin.ImpactFlash.Size = NumberSequence.new({
         NumberSequenceKeypoint.new(0, burst * 0.45),
         NumberSequenceKeypoint.new(0.15, burst),
@@ -316,11 +328,12 @@ function Effects:PlayHitEffect(entry, broken)
         dustOrigin.Position = effect.CFrame:PointToObjectSpace(center)
         dustOrigin.Parent = effect
         local dust = self._templates.Smoke:Clone()
-        dust.Lifetime = NumberRange.new(0.3, 0.45)
-        dust.Size = NumberSequence.new(3, 7)
-        dust.Transparency = NumberSequence.new(0.25, 1)
+        dust.Color = ColorSequence.new(color:Lerp(Color3.new(1, 1, 1), 0.6))
+        dust.Lifetime = NumberRange.new(0.2, 0.3)
+        dust.Size = NumberSequence.new(1, 3)
+        dust.Transparency = NumberSequence.new(0.75, 1)
         dust.Parent = dustOrigin
-        dust:Emit(3)
+        dust:Emit(1)
     end
     local sound = self._templates.RockBreak:Clone()
     local settings = self._owner:GetTable(_G.PlayerDataConfig.Settings)
@@ -329,21 +342,36 @@ function Effects:PlayHitEffect(entry, broken)
     sound:Play()
     Debris:AddItem(effect, 3)
     local fragmentOrigin = broken and CFrame.lookAt(center, center + normal) or effect.CFrame
-    self:SpawnFragments(fragmentOrigin, entry.Size, broken)
+    self:SpawnFragments(fragmentOrigin, entry.Size, entry.Crystal, broken)
 end
 
---- 复用 Money 的碎石网格与抛物线参数，每次普通命中三片、击碎四片。
+--- 缩小原水晶部件作为碎片；复用时重设外观，避免不同矿石之间串色。
 --- @param origin CFrame 碎片生成位置与飞散朝向。
 --- @param rockSize Vector3 原始石头尺寸。
+--- @param source BasePart 当前品质模板中的水晶部件，提供形状、颜色与材质。
 --- @param broken boolean 击碎时扩大碎片及飞散范围。
-function Effects:SpawnFragments(origin, rockSize, broken)
-    local source = self._templates.Fragment
-    local count = broken and 4 or 3
+function Effects:SpawnFragments(origin, rockSize, source, broken)
+    local count = broken and 7 or 3
     local phase = math.random() * math.pi * 2
     for index = 1, count do
-        local part = table.remove(self._fragmentPool) or source:Clone()
-        local size = (0.5 + math.random() * 0.4) * (broken and 1.8 or 0.65)
+        local part = table.remove(self._fragmentPool)
+        if not part then
+            part = source:Clone()
+            part:ClearAllChildren()
+            part.Name = "CrystalFragment"
+            part.Anchored = true
+            part.CanCollide = false
+            part.CanTouch = false
+            part.CanQuery = false
+            part.CastShadow = false
+        end
+        local size = (0.6 + math.random() * 0.4) * (broken and 1.25 or 0.8)
         part.Size = source.Size * (size / math.max(source.Size.X, source.Size.Y, source.Size.Z))
+        part.Color = source.Color
+        part.Material = source.Material
+        part.MaterialVariant = source.MaterialVariant
+        part.Reflectance = source.Reflectance
+        part.LocalTransparencyModifier = 0
         part.Transparency = 0
         local rotation = CFrame.Angles(math.random() * math.pi, math.random() * math.pi, math.random() * math.pi)
         local offset = broken and Vector3.new((math.random() - 0.5) * rockSize.X * 0.7,
@@ -354,7 +382,7 @@ function Effects:SpawnFragments(origin, rockSize, broken)
         local spread = broken and (7 + math.random() * 5) or 2
         table.insert(self._fragments, {
             Part = part, Size = part.Size, Position = part.Position, Rotation = rotation,
-            Started = os.clock(), Lifetime = 0.45 + math.random() * 0.1,
+            Started = os.clock(), Lifetime = 0.55 + math.random() * 0.15,
             Velocity = Vector3.new(math.cos(angle) * spread, broken and (8 + math.random() * 3) or 5,
                 math.sin(angle) * spread) + (broken and Vector3.zero or origin.LookVector * 6),
             Spin = Vector3.new(math.random() * 10 - 5, math.random() * 10 - 5, math.random() * 10 - 5),

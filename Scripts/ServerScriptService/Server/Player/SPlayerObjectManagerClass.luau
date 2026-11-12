@@ -18,9 +18,9 @@ end
 
 --- 矿场协议只作用于认证请求者；客户端不能传入数量、奖励或兑换价格。
 function Manager:RegMiningMsg()
-    --- 公共石头必须由矿场管理器确认仍属于本轮。
+    --- 私人矿石编号必须由矿场管理器确认属于请求者本轮存档。
     --- @param userId number 引擎认证的请求者 ID。
-    --- @param rock any 客户端提交的石头节点。
+    --- @param rock any 客户端提交的本轮矿石编号。
     FX.Network:RegClientMsgCallback("C2S_MineRock", function(userId, rock)
         local player = self:GetPlayerObject(userId)
         local mining = player and player:GetComponent("SMiningComp")

@@ -6,7 +6,7 @@ return {
         SwordInitialIncome = 10,
         SwordIncomePerLevel = 5,
         SwordUpgradePricePerLevel = 25,
-        MiningRefreshInterval = 30,
+        MiningRefreshInterval = 300,
         MiningSpawnCount = 8,
         MiningRockHits = 3,
         MiningSpawnProbability = 0.8,
@@ -244,49 +244,49 @@ return {
             Id = 1,
             Name = [[Gray]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_01_Gray]],
-            ModelScale = 0.35,
+            ModelScale = 0.4375,
             SpawnWeight = 40
         },
         [2] = {
             Id = 2,
             Name = [[Green]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_02_Green]],
-            ModelScale = 0.35,
+            ModelScale = 0.4375,
             SpawnWeight = 25
         },
         [3] = {
             Id = 3,
             Name = [[Blue]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_03_Blue]],
-            ModelScale = 0.35,
+            ModelScale = 0.4375,
             SpawnWeight = 15
         },
         [4] = {
             Id = 4,
             Name = [[Purple]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_04_Purple]],
-            ModelScale = 0.35,
+            ModelScale = 0.4375,
             SpawnWeight = 10
         },
         [5] = {
             Id = 5,
             Name = [[Orange]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_05_Orange]],
-            ModelScale = 0.35,
+            ModelScale = 0.4375,
             SpawnWeight = 6
         },
         [6] = {
             Id = 6,
             Name = [[Gold]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_06_Gold]],
-            ModelScale = 0.35,
+            ModelScale = 0.4375,
             SpawnWeight = 3
         },
         [7] = {
             Id = 7,
             Name = [[Red]],
             ModelPath = [[Assets.Decorations.MiningRockGrades.CrystalGeode_07_Red]],
-            ModelScale = 0.35,
+            ModelScale = 0.4375,
             SpawnWeight = 1
         }
     }
