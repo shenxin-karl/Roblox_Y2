@@ -4,21 +4,28 @@ import { Game } from "./Game";
 import { SlotInspector } from "./Inspector";
 import { State } from "./State";
 
-export type ConfigValues = typeof configValues & {
-  initialMoney: NumberConfigValue;
+export type ConfigValues = Omit<typeof configValues, "paidMultiplierCurves"> & {
   initialUnlockedSlotCount: NumberConfigValue;
   miningRefreshInterval: NumberConfigValue;
   miningSpawnCount: NumberConfigValue;
   miningMutationProbabilityCurve: LotteryCurveValue;
   oreCollectInterval: NumberConfigValue;
-  initialPlayerLuck: NumberConfigValue;
   miningMutationLuckCurve: CurveValue;
   swordUpgradeCurves: CurveGroupValue;
+  smeltingUpgradeCurves: CurveGroupValue;
+  forgingUpgradeCurves: CurveGroupValue;
+  incomeUpgradeCurves: CurveGroupValue;
+  swordQualityIncomeCurve: CurveValue;
+  swordMutationIncomeCurve: CurveValue;
+  initialDiamonds: NumberConfigValue;
+  initialPaidMultiplierTier: NumberConfigValue;
+  dailyDiamondReward: NumberConfigValue;
+  paidMultiplierCurves: CurveGroupValue;
 };
 export type ProjectConfig = RuntimeConfig<ConfigValues>;
 
-const config = new Config(configValues) as ProjectConfig;
-const state = new State(config.initialMoney, config.initialUnlockedSlotCount, config.initialPlayerLuck);
+const config = new Config(configValues as ConfigValues) as ProjectConfig;
+const state = new State(config.initialUnlockedSlotCount, config.initialDiamonds, config.initialPaidMultiplierTier);
 const game = new Game();
 const inspector = new SlotInspector();
 

@@ -5,12 +5,15 @@ local Players = game:GetService("Players")
 local FX, FS = _G.FX, _G.FS
 local FXTask = FX.Task
 local FXTime = FX.Time
+-- 最大指数约 308，保留 13 位后编码仍小于 2^53；14 位会超出安全整数范围。
+local ScoreDigits = 13
+local BucketSize = 10 ^ ScoreDigits
 
 local FSRankingClass = FX.Class("FSRankingClass")
 FS.RankingClass = FSRankingClass
 
---- 初始化排行榜实例，保留上层榜类型标识，同时根据周期配置维护底层存储 key。
---- @param rankingType table 排行榜配置，Name 作为上层标识，ResetType 控制底层存储周期
+--- 初始化排行榜实例；云榜统一使用 13 位大数编码，玩家持久分仍保留原值。
+--- @param rankingType table 榜单配置，包含名称、周期、排序与显示规则。
 --- @return nil
 function FSRankingClass:Ctor(rankingType)
     self._rankingType = rankingType
@@ -44,7 +47,7 @@ function FSRankingClass:GetRankingType()
     return self._rankingType
 end
 
---- 根据当前时间生成底层榜单存储 key，避免不同周期的数据互相覆盖。
+--- 按周期和固定编码格式生成云榜名称。
 --- @param timeStamp number 当前服务器时间戳（秒）
 --- @return string rankingName 底层榜单存储 key
 function FSRankingClass:BuildRankingName(timeStamp)
@@ -62,7 +65,40 @@ function FSRankingClass:BuildRankingName(timeStamp)
     if FX.IsDebugMode() then
         rankingName = rankingName .. "_Dev"
     end
-    return rankingName
+    return rankingName .. "_PackedV1_D13"
+end
+
+--- 将原始分数编码为有序整数，小分数原样取整，大数保留 13 位有效数字。
+--- @param score number 非负有限的原始分数。
+--- @return number 云榜排序整数，被截去的低位差异视为同分。
+function FSRankingClass:EncodeScore(score)
+    assert(score >= 0 and score < math.huge, "Encoded ranking score must be non-negative and finite")
+    score = math.floor(score)
+    if score < BucketSize then
+        return score
+    end
+    local bucket = math.floor(math.log10(score)) - ScoreDigits + 1
+    local mantissa = math.floor(score / 10 ^ bucket)
+    -- 修正浮点对数在十次幂边界的误差，避免跨桶倒序。
+    if mantissa < BucketSize / 10 then
+        bucket -= 1
+        mantissa = math.floor(score / 10 ^ bucket)
+    elseif mantissa >= BucketSize then
+        bucket += 1
+        mantissa = math.floor(score / 10 ^ bucket)
+    end
+    return bucket * BucketSize + mantissa
+end
+
+--- 解码云榜分数，业务计算仍使用玩家原始分数。
+--- @param score number 云榜排序整数。
+--- @return number 原量级展示分数，大数保留 13 位有效数字。
+function FSRankingClass:DecodeScore(score)
+    if score < BucketSize then
+        return score
+    end
+    local bucket = math.floor(score / BucketSize)
+    return (score % BucketSize) * 10 ^ bucket
 end
 
 --- 刷新当前底层榜单存储 key；跨周期时重置缓存，避免旧周期数据串到新榜。
@@ -84,7 +120,7 @@ function FSRankingClass:RefreshRankingName()
     return true
 end
 
---- 加载当前周期的全服排行榜缓存；周期切换由管理器定时器统一触发。
+--- 加载当前周期云榜；缓存和上层接口使用解码后的分数，不暴露编码。
 --- @param self table 当前排行榜实例
 --- @return nil
 function FSRankingClass:LoadRankingData()
@@ -120,7 +156,7 @@ function FSRankingClass:LoadRankingData()
     self._rankingDataCache = {}
     for rankNo, info in ipairs(data or {}) do
         local playerId = tonumber(info.key)
-        local score = tonumber(info.value) or 0
+        local score = self:DecodeScore(tonumber(info.value) or 0)
         local name = info.nick or tostring(playerId)
         if not info.nick then
             local ok, result = pcall(Players.GetNameFromUserIdAsync, Players, playerId)
@@ -130,7 +166,7 @@ function FSRankingClass:LoadRankingData()
         end
         table.insert(self._rankingDataCache, {
             rankNo = rankNo,
-            rankScore = score * (self._rankingType.unit or 1),
+            rankScore = score,
             playerId = playerId,
             playerName = name,
         })
@@ -180,7 +216,7 @@ end
 --- 更新玩家在当前周期榜单中的分数。
 --- @param playerId number 玩家ID
 --- @param newScore number 当前周期的新分数
---- @return boolean success 是否进入榜单刷新流程
+--- @return boolean? success 是否进入榜单刷新流程；分数不足 1 或开发者跳过时返回 nil。
 function FSRankingClass:UpdatePlayerScore(playerId, newScore)
     -- 生产环境下开发者跳过排行榜
     if not FX.IsDebugMode() and FX.IsDeveloper(playerId) then
@@ -194,8 +230,7 @@ function FSRankingClass:UpdatePlayerScore(playerId, newScore)
         self:MakeRoomRankingDataDirty()
     end
 
-    local unit = self._rankingType.unit or 1
-    if newScore < unit then
+    if newScore < 1 then
         return
     end
 
@@ -215,9 +250,8 @@ function FSRankingClass:UpdatePlayerScore(playerId, newScore)
     end
 
     local player = Players:GetPlayerByUserId(playerId)
-    local scorePerUnit = newScore / unit
     self._updateRankingPlayerMap[playerId] = {
-        score = scorePerUnit,
+        score = newScore,
         name = player.DisplayName,
     }
     return true
@@ -289,17 +323,23 @@ function FSRankingClass:UpdateRankingData()
         end
     end
 end
+--- 仅在写榜边界编码；内存编码榜同样模拟云榜精度和历史最佳分规则。
 --- @param playerId number 玩家 ID。
 --- @param info table 待写入的分数、昵称。
 --- @return boolean 写入是否成功；失败保留队列以供重试。
 function FSRankingClass:SetRankValue(playerId, info)
     if memory then
-        self._memoryScores[playerId] = info
+        local score = self:EncodeScore(info.score)
+        local old = self._memoryScores[playerId]
+        if old and self._rankingType.UseHistoricalHighScore and not self:CompareRankingScore(score, old.score) then
+            return true
+        end
+        self._memoryScores[playerId] = { score = score, name = info.name }
         return true
     end
     local ok, err = pcall(function()
         DataStoreService:GetOrderedDataStore(self._rankingName):UpdateAsync(tostring(playerId), function(old)
-            local score = math.floor(info.score)
+            local score = self:EncodeScore(info.score)
             if old and self._rankingType.UseHistoricalHighScore and not self:CompareRankingScore(score, old) then
                 return old
             end

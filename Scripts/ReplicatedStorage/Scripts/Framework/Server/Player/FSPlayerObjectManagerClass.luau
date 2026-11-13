@@ -87,14 +87,28 @@ function Class:SetPlayerReady(id, isClient)
     FX.Network:SendMsgToClient(id, "S2C_ServerReady")
 end
 
+--- 先撤销协议与更新入口，再分别执行登出和析构，业务异常不能留下旧会话映射。
 --- @param id number 正在退出的玩家 ID。
+--- @return nil
 function Class:OnPlayerLogout(id)
     self._clientReady[id], self._serverReady[id] = nil, nil
     local object = self._playerMap[id]
     if object then
-        object:OnPlayerLogout()
-        self:DestroyObject(object)
         self._playerMap[id] = nil
+        local ok, message = xpcall(object.OnPlayerLogout, debug.traceback, object)
+        if not ok then
+            warn("[Player] Logout failed", id, message)
+            -- 项目重写可能在调用父类前报错，仍补齐框架逐组件清理。
+            local cleaned, cleanupMessage = xpcall(FS.PlayerObjectClass.OnPlayerLogout, debug.traceback, object)
+            if not cleaned then
+                warn("[Player] Fallback logout failed", id, cleanupMessage)
+            end
+        end
+        ok, message = xpcall(self.DestroyObject, debug.traceback, self, object)
+        self._objectMap[object:GetObjectId()] = nil
+        if not ok then
+            warn("[Player] Destruction failed", id, message)
+        end
     end
 end
 

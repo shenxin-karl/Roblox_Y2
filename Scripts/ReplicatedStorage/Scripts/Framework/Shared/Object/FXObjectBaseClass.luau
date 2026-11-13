@@ -10,9 +10,14 @@ function FXObjectBaseClass:Ctor()
     self._eventMap = {}
 end
 
+--- 组件分别析构，单个组件失败不能中断其余组件释放或玩家最终存档。
+--- @return nil
 function FXObjectBaseClass:Dtor()
-    for _, component in pairs(self._components) do
-        component:Dtor()
+    for name, component in pairs(self._components) do
+        local ok, message = xpcall(component.Dtor, debug.traceback, component)
+        if not ok then
+            warn("[Object] Component destruction failed", self._objectId, name, message)
+        end
     end
     self._components = nil
 end
