@@ -26,11 +26,7 @@
 
 ## MCP 说明与配置格式
 
-先按 [外部工具协作](../SKILL.md) 和 [GameKit 参考](gamekit.md) 发现当前 StudioGameToolkit 文档接口；首次使用显式调用该服务 `sgtk.docs.read`，传入 `file: "AGENTS.md"`，已有同修订说明时复用。
-
-从返回的技能摘要选择 XLSX 配置相关 skill，按任务读取工作流、查询、字段、记录、单元格或导出参考。包内路径取实际返回值，不维护旧 API 包的固定路径表。已知路径直接读取，不知道细节在哪时先用该服务文档搜索定位，不把服务包路径当本地路径。
-
-`documentRevision` 变化时重读入口及任务依赖。接口返回未知工具或 schema 不匹配时，按实际错误报告接入阻断，不仅因工具可发现就继续业务写入，不自动猜用旧 `sgtk.api.read` 或 `open(includeApi:true)`。以下是项目接入约束，具体参数及返回结构仍以当前服务说明和 schema 为准。
+按 [外部工具协作](../SKILL.md) 和 [GameKit 参考](gamekit.md) 使用 StudioGameToolkit 的 XLSX 配置相关技能；文档读取遵循 MCP 接口描述。以下是项目接入约束，具体参数及返回结构以当前服务说明和 schema 为准。
 
 ### 版本和结果
 
