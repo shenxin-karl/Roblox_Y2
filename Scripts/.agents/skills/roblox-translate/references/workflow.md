@@ -2,18 +2,26 @@
 
 ## 命令
 
-从 `Scripts/` 运行，其他工程替换为实际路径。记录放输入旁或用户指定的可写工作目录，不写入 CSV 元数据或 `Docs/`；正式输入无写权限时请求权限，不用副本冒充交付。
+从 `Scripts/` 运行，其他工程替换为实际路径。先查已有记录并复用其路径；本工程无记录时默认使用 `outputs/translations/translation-review.json`，不在这里另存正式输入 CSV 的副本。其他工程记录放输入旁或用户指定的可写工作目录，不写入 CSV 元数据或 `Docs/`；正式输入无写权限时请求权限，不用副本冒充交付。
 
 ```powershell
-python -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py init --csv ../GameKitWorkspace/Translation/translation-upload.csv --index ../GameKitWorkspace/Translation/translation-ai-context.json --review outputs/translations/translation-review.json
-python -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py batch --review outputs/translations/translation-review.json --start 1 --limit 10
-python -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py report --review outputs/translations/translation-review.json
-python -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py apply --review outputs/translations/translation-review.json
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py init --csv ../GameKitWorkspace/Translation/translation-upload.csv --index ../GameKitWorkspace/Translation/translation-ai-context.json --review outputs/translations/translation-review.json
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py batch --review outputs/translations/translation-review.json --start 1 --limit 10
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py report --review outputs/translations/translation-review.json
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py apply --review outputs/translations/translation-review.json
 ```
 
 - `init` 不覆盖已有记录；`batch` 返回未完成条目。row/start 是从 1 起的数据记录序号，不是 CSV 物理行号，也不用于匹配来源。
-- `report` 只读，输出全表问题、覆盖缺口和候选与实际 CSV 的差异。大报告用 UTF-8 保存后查询，不截掉未处理问题。
+- `report` 只读，输出全表问题、覆盖缺口和候选与实际 CSV 的差异。大报告可用 UTF-8 暂存到系统临时目录后查询，不截掉未处理问题；报告可从当前记录重建，不默认在仓库另存全量 JSON。
 - 退出码：0 全部完成，2 未完成或待确认，1 输入/校验/保存失败；`batch` 成功固定返回 0。
+
+## 产物与清理
+
+- **持久状态**：一份当前审查 JSON，包含脚本生成的基线与哈希，以及来源、用途、语言判断、术语、试玩与 pending。证据记录精确位置、实际所见值及相关条件，不倾倒完整工具响应，也不反复拼接每次续审的通用说明。有效历史只保留解释当前判断或未解决问题所需的部分。
+- **临时处理**：优先在会话内处理批次查询；确需文件时在系统临时目录创建本次专用子目录，放原始响应、查询批次、一次性脚本和可重建的报告。中断续接所需事实及时写入当前审查记录，不依赖临时目录长期存在。Python 辅助调用使用 `-B`，避免在技能目录生成 `__pycache__`。
+- **换输入**：新导出须保留旧记录直到新记录经校验可续接；过渡期间允许两份记录并存。将仍适用的证据、术语和未解决疑点转入新记录，重新核对身份、Source、译文及来源后才能承接，不整批复制完成标记或旧报告。完成承接后清理本次过渡文件，正常交付只留当前记录；用户要求保留历史时例外。
+- **结束核对**：包括有待确认项的交付，均检查本次新增文件。清理本次临时文件前确认需要的结论已进入记录，持久证据链接有效，并重跑 `report` 核对基线、落盘结果和 pending。历史文件仅在用户授权清理且依赖已承接时删除，不借机清理其他任务的产物。
+- **汇报**：分别给出相对本次基线的译文单元格数、涉及的 CSV 记录数及辅助文件增删；Git 文本行数不能当作文案条数。通常提供 CSV 和当前审查记录即可，只有用户要求独立报告时才额外保存。
 
 ## 身份与来源匹配
 
@@ -122,7 +130,7 @@ python -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py app
 ## 验证辅助脚本
 
 ```powershell
-python -X utf8 -m unittest discover -s .agents/skills/roblox-translate/scripts -p 'test_*.py' -v
+python -B -X utf8 -m unittest discover -s .agents/skills/roblox-translate/scripts -p 'test_*.py' -v
 ```
 
 测试只操作临时样例，无 Roblox 运行、整表翻译或云端上传。
