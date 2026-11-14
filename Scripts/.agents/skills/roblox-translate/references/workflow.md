@@ -8,12 +8,14 @@
 python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py init --csv ../GameKitWorkspace/Translation/translation-upload.csv --index ../GameKitWorkspace/Translation/translation-ai-context.json --review outputs/translations/translation-review.json
 python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py batch --review outputs/translations/translation-review.json --start 1 --limit 10
 python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py report --review outputs/translations/translation-review.json
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py compact --review outputs/translations/translation-review.json
 python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py apply --review outputs/translations/translation-review.json
 ```
 
 - `init` 不覆盖已有记录；`batch` 返回未完成条目。row/start 是从 1 起的数据记录序号，不是 CSV 物理行号，也不用于匹配来源。
 - `report` 只读，输出全表问题、覆盖缺口和候选与实际 CSV 的差异。大报告可用 UTF-8 暂存到系统临时目录后查询，不截掉未处理问题；报告可从当前记录重建，不默认在仓库另存全量 JSON。
 - 退出码：0 全部完成，2 未完成或待确认，1 输入/校验/保存失败；`batch` 成功固定返回 0。
+- `compact` 只精简当前记录，不写 CSV 或索引；成功返回 0 及前后字节/行数，不代表翻译审查完成。迁移前验证记录，逐字段确认还原结果完全一致，保存时检查并发修改。
 
 ## 产物与清理
 
@@ -36,6 +38,10 @@ python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py 
 **有 Key 的索引没有 Source 快照。** 必须检查实际定义、节点或配置，将所见原文填入各来源的 `observed_source`；仅 Key 相同不能证明索引新鲜，不能直接复制旧模板。
 
 ## 编辑审查 JSON
+
+磁盘格式 v2 将重复的证据句段集中于 `evidence_pool`，各项 `evidence.parts` 使用稳定的内容标识引用；每条文案占一行，方便 Git 按条查看差异。旧版 v1 仍可读取，`init`、`apply`、`compact` 保存时自动使用 v2。不要手动展开整份 JSON 或用普通 `json.dump` 覆盖，否则会重新产生大量重复文本与行数。
+
+`batch` 显示还原后的完整证据。批量维护时导入 `translation_review`，用 `read_json(path)` 取得下述展开结构，局部更新后用 `atomic_write(path, json_bytes(state), expected=original_bytes)` 保存；先保留原文件字节用于冲突检查。`read_json` 返回兼容的 v1 内存结构，`json_bytes` 自动去重并编码为 v2；不要手改版本、证据池或引用。相同片段复用只改变存储，不代表不同条目或语言已经完成语义判断。
 
 只编辑下例中的审查字段及顶层 `glossary`。`baseline_b64`、`baseline_sha256`、`applied_sha256`、`index_sha256`、路径、version、rows 的顺序/row/identity、sources.location 不手改。
 

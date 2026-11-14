@@ -322,6 +322,56 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(run('report', '--review', str(self.state))[0], 0)
         self.assertEqual(run('init', '--csv', str(self.csv), '--index', str(self.index), '--review', str(self.state))[0], 1)
 
+    def test_compaction_preserves_legacy_evidence_reports_and_csv(self):
+        state = self.fixture([{'Key': str(n), 'Source': 'Open', 'ja': '開く', 'en-us': 'Open'}
+                              for n in range(8)])
+        shared = '已读取定义与调用位置，参数及显示条件有实际来源；' * 8
+        for n, record in enumerate(state['rows']):
+            self.finish(state, n)
+            for lang, cell in record['languages'].items():
+                cell['evidence'] = f'{lang}: {n}\n' + shared + ' 保留末尾\r\n'
+        state['rows'][0]['languages']['ja'].update(reviewed=False, pending='Need candidate preview')
+        # Simulate the old fully expanded format, including its original baseline.
+        original = (json.dumps(state, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+        self.state.write_bytes(original)
+        csv_before = self.csv.read_bytes()
+        report_before = review.report_file(self.state)
+        stats = review.compact(self.state)
+        self.assertLess(stats['bytes_after'], stats['bytes_before'] / 2)
+        self.assertEqual(review.read_json(self.state), state)
+        self.assertEqual(review.report_file(self.state), report_before)
+        self.assertEqual(self.csv.read_bytes(), csv_before)
+        packed = self.state.read_bytes()
+        review.compact(self.state)
+        self.assertEqual(self.state.read_bytes(), packed)
+        review.apply(self.state)
+        self.assertEqual(self.state.read_bytes(), packed)
+        self.assertEqual(review.batch(self.state, 1, 1)[0]['review'], state['rows'][0])
+
+    def test_invalid_evidence_reference_blocks_apply(self):
+        state = self.fixture([{'Key': 'A', 'Source': 'Open', 'ja': '開く', 'en-us': 'Open'}])
+        self.finish(state)
+        packed = review.pack_review(state)
+        packed['rows'][0]['languages']['ja']['evidence'] = {'parts': [{'ref': 'missing'}]}
+        self.state.write_text(json.dumps(packed), encoding='utf-8')
+        csv_before = self.csv.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'evidence reference'):
+            review.apply(self.state)
+        self.assertEqual(self.csv.read_bytes(), csv_before)
+
+    def test_compaction_refuses_concurrent_review_edit(self):
+        self.fixture([{'Key': 'A', 'Source': 'Open'}])
+        real_fsync = review.os.fsync
+
+        def concurrent_edit(fd):
+            real_fsync(fd)
+            self.state.write_bytes(b'concurrent edit')
+
+        with patch.object(review.os, 'fsync', side_effect=concurrent_edit):
+            with self.assertRaisesRegex(ValueError, 'changed during save'):
+                review.compact(self.state)
+        self.assertEqual(self.state.read_bytes(), b'concurrent edit')
+
 
 if __name__ == '__main__':
     unittest.main()

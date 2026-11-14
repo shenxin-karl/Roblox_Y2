@@ -172,7 +172,104 @@ def mechanical(table):
 
 
 def read_json(path):
-    return json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    return expand_review(json.loads(Path(path).read_text(encoding='utf-8-sig')))
+
+
+def map_evidence(value, convert):
+    if isinstance(value, dict):
+        return {k: convert(v) if k == 'evidence' else map_evidence(v, convert)
+                for k, v in value.items()}
+    if isinstance(value, list):
+        return [map_evidence(v, convert) for v in value]
+    return value
+
+
+def expand_review(value):
+    if not isinstance(value, dict) or value.get('version') != 2:
+        return value
+    pool = value.get('evidence_pool')
+    if not isinstance(pool, dict) or not all(isinstance(v, str) for v in pool.values()):
+        raise ValueError('Invalid evidence pool')
+
+    def expand(evidence):
+        if isinstance(evidence, str):
+            return evidence
+        if not isinstance(evidence, dict) or set(evidence) != {'parts'} or not isinstance(evidence['parts'], list):
+            raise ValueError('Invalid evidence reference')
+        parts = []
+        for part in evidence['parts']:
+            if isinstance(part, str):
+                parts.append(part)
+            elif (isinstance(part, dict) and set(part) == {'ref'}
+                  and isinstance(part['ref'], str) and part['ref'] in pool):
+                parts.append(pool[part['ref']])
+            else:
+                raise ValueError('Missing or invalid evidence reference')
+        return ''.join(parts)
+
+    result = map_evidence({k: v for k, v in value.items() if k != 'evidence_pool'}, expand)
+    result['version'] = 1
+    return result
+
+
+def pack_review(value):
+    counts = Counter()
+    patterns = (r'[^\n]*\n|[^\n]+$', r'[^；;。]*[；;。]|[^；;。]+$',
+                r'[0-9]+|[^0-9：，]*[：，]|[^0-9：，]+')
+
+    def chunks(text, level=0):
+        yield text
+        if level < len(patterns):
+            parts = re.findall(patterns[level], text)
+            for part in parts:
+                children = chunks(part, level + 1)
+                if part == text:
+                    next(children)  # Do not count the same unsplit text twice.
+                yield from children
+
+    def count(text):
+        if isinstance(text, str):
+            counts.update(chunks(text))
+        return text
+
+    map_evidence(value, count)
+    # Each reference costs about 28 bytes; include the pool entry overhead too.
+    shared = {part for part, n in counts.items()
+              if n > 1 and (n - 1) * len(part.encode('utf-8')) > 28 * n + 24}
+    pool = {}
+
+    def references(text, level=0):
+        if text in shared:
+            key = digest(text.encode('utf-8'))[:16]
+            if key in pool and pool[key] != text:
+                raise ValueError('Evidence identifier collision')
+            pool[key] = text
+            yield {'ref': key}
+        elif level < len(patterns):
+            for part in re.findall(patterns[level], text):
+                yield from references(part, level + 1)
+        else:
+            yield text
+
+    def pack(text):
+        if not isinstance(text, str):
+            return text
+        parts, literal = [], ''
+        for part in references(text):
+            if isinstance(part, dict):
+                if literal:
+                    parts.append(literal)
+                    literal = ''
+                parts.append(part)
+            else:
+                literal += part
+        if literal:
+            parts.append(literal)
+        return {'parts': parts} if any(isinstance(p, dict) for p in parts) else text
+
+    result = map_evidence(value, pack)
+    result.update(version=2, evidence_pool=pool)
+    return result
 
 
 def match_sources(table, entries):
@@ -233,6 +330,19 @@ def atomic_write(path, raw, expected=None):
 
 
 def json_bytes(value):
+    if isinstance(value, dict) and value.get('version') == 1 and 'baseline_b64' in value and 'rows' in value:
+        packed = pack_review(value)
+        # One row per line makes unrelated rows stable in Git; evidence stays shared.
+        header = {k: v for k, v in packed.items() if k not in ('rows', 'evidence_pool')}
+        lines = [json.dumps(header, ensure_ascii=False, indent=2)[:-2] + ',']
+        lines.append('  "evidence_pool": {')
+        lines.append(',\n'.join('    ' + json.dumps(k) + ': ' + json.dumps(v, ensure_ascii=False)
+                               for k, v in sorted(packed['evidence_pool'].items())))
+        lines.append('  },\n  "rows": [')
+        lines.append(',\n'.join('    ' + json.dumps(row, ensure_ascii=False, separators=(',', ':'))
+                               for row in packed['rows']))
+        lines.append('  ]\n}')
+        return ('\n'.join(lines) + '\n').encode('utf-8')
     return (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
 
 
@@ -399,6 +509,22 @@ def batch(state_path, start, limit):
             if record['row'] >= start and record['row'] in outstanding][:limit]
 
 
+def compact(state_path):
+    state_path = Path(state_path)
+    original = state_path.read_bytes()
+    before = report_file(state_path)
+    state = read_json(state_path)
+    raw = json_bytes(state)
+    if expand_review(json.loads(raw)) != state:
+        raise ValueError('Compaction changed review content')
+    after = report_file(state_path)
+    if before != after:
+        raise ValueError('Inputs changed during compaction')
+    atomic_write(state_path, raw, expected=original)
+    return {'bytes_before': len(original), 'bytes_after': len(raw),
+            'lines_before': len(original.splitlines()), 'lines_after': len(raw.splitlines())}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -406,7 +532,7 @@ def main():
     p.add_argument('--csv', required=True)
     p.add_argument('--index', required=True)
     p.add_argument('--review', required=True)
-    for name in ('report', 'apply', 'batch'):
+    for name in ('report', 'apply', 'batch', 'compact'):
         p = sub.add_parser(name)
         p.add_argument('--review', required=True)
         if name == 'batch':
@@ -421,10 +547,12 @@ def main():
             if args.start < 1 or args.limit < 1:
                 raise ValueError('start and limit must be positive')
             result = batch(args.review, args.start, args.limit)
+        elif args.command == 'compact':
+            result = compact(args.review)
         else:
             result = (apply if args.command == 'apply' else report_file)(args.review)
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        if args.command != 'batch' and not result['complete']:
+        if args.command not in ('batch', 'compact') and not result['complete']:
             return 2
     except (ValueError, OSError, KeyError, TypeError) as exc:
         print(json.dumps({'error': str(exc)}, ensure_ascii=False))
