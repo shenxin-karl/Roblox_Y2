@@ -2,14 +2,14 @@
 
 ## 命令
 
-从 `Scripts/` 运行，其他工程替换为实际路径。先查已有记录并复用其路径；本工程无记录时默认使用 `outputs/translations/translation-review.json`，不在这里另存正式输入 CSV 的副本。其他工程记录放输入旁或用户指定的可写工作目录，不写入 CSV 元数据或 `Docs/`；正式输入无写权限时请求权限，不用副本冒充交付。
+从 `Scripts/` 运行，其他工程替换为实际路径。本工程当前审查记录为 `../GameKitWorkspace/Translation/translation-review.json`，与正式 CSV、索引同目录；续审先对这份记录运行 `report`，不按日期或修改时间选择历史快照。无记录时才在该路径建档，不另存正式输入 CSV 的副本。其他工程记录放输入旁或用户指定的可写工作目录，不写入 CSV 元数据或 `Docs/`；正式输入无写权限时请求权限，不用副本冒充交付。
 
 ```powershell
-python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py init --csv ../GameKitWorkspace/Translation/translation-upload.csv --index ../GameKitWorkspace/Translation/translation-ai-context.json --review outputs/translations/translation-review.json
-python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py batch --review outputs/translations/translation-review.json --start 1 --limit 10
-python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py report --review outputs/translations/translation-review.json
-python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py compact --review outputs/translations/translation-review.json
-python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py apply --review outputs/translations/translation-review.json
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py init --csv ../GameKitWorkspace/Translation/translation-upload.csv --index ../GameKitWorkspace/Translation/translation-ai-context.json --review ../GameKitWorkspace/Translation/translation-review.json
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py batch --review ../GameKitWorkspace/Translation/translation-review.json --start 1 --limit 10
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py report --review ../GameKitWorkspace/Translation/translation-review.json
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py compact --review ../GameKitWorkspace/Translation/translation-review.json
+python -B -X utf8 .agents/skills/roblox-translate/scripts/translation_review.py apply --review ../GameKitWorkspace/Translation/translation-review.json
 ```
 
 - `init` 不覆盖已有记录；`batch` 返回未完成条目。row/start 是从 1 起的数据记录序号，不是 CSV 物理行号，也不用于匹配来源。

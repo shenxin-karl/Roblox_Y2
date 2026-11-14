@@ -10,7 +10,7 @@ description: 仅在用户显式调用时补译并审查 Roblox 翻译 CSV 的全
 ## 输入和边界
 
 - 读取工作区 AGENTS.md 和 [本地化](../roblox-localization/SKILL.md)。本任务可按用户授权维护译文，普通编码任务仍不改翻译产物。
-- 输入须为同次导出的 `translation-upload.csv` 和 `translation-ai-context.json`。本工程正式目录为 Git 根的 `GameKitWorkspace/Translation/`，不混用旧 `Scripts/outputs/translations/` 的文件；其他工程先定位实际导出目录。缺文件则记录阻断，不重新导出覆盖审查输入。
+- 输入须为同次导出的 `translation-upload.csv` 和 `translation-ai-context.json`。本工程正式目录为 Git 根的 `GameKitWorkspace/Translation/`，当前审查记录为同目录的 `translation-review.json`；不在 `Scripts/` 另存输入副本或新建审查目录，不用历史快照代替当前记录。其他工程先定位实际导出目录。缺文件则记录阻断，不重新导出覆盖审查输入。
 - 只改已有语言列的单元格。表头、行数、顺序及 Key、Source、Context、Example、Game Locations、`… translator type` 等非译文列不变；索引只读，不新增语言、排序、去重或上传云端。源文案有问题时报告，不修改代码、配置、UI 节点或 Generated。
 - 显式调用 `$roblox-translate` 授权为文案核验进行必要的 Studio 测试或试玩，仍遵守项目与会话边界；自动选中本 skill 或维护 skill 本身不构成试玩授权。静态证据足够时不试玩。
 
