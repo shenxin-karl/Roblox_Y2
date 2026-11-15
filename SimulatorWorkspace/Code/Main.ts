@@ -10,7 +10,7 @@ export type ConfigValues = Omit<typeof configValues, "paidMultiplierCurves"> & {
   miningSpawnCount: NumberConfigValue;
   miningMutationProbabilityCurve: LotteryCurveValue;
   oreCollectInterval: NumberConfigValue;
-  miningMutationLuckCurve: CurveValue;
+  smeltingLuckWeightCurve: CurveValue;
   swordUpgradeCurves: CurveGroupValue;
   smeltingUpgradeCurves: CurveGroupValue;
   forgingUpgradeCurves: CurveGroupValue;

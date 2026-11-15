@@ -1,6 +1,6 @@
-import { BaseAction, sampleCurve } from "@game-simulator/framework";
+import { BaseAction } from "@game-simulator/framework";
 import type { BaseActionOptions, CurveValue, MacroActionBlocker } from "@game-simulator/framework";
-import { calculateBaseIncome, calculateForgeProbabilities, calculatePlayerUpgradeEffect, calculatePlayerUpgradePrice, calculateSlotUnlockPrice, calculateSwordUpgradePlan, calculateSwordUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
+import { calculateBaseIncome, calculateForgeProbabilities, calculatePlayerUpgradeEffect, calculatePlayerUpgradePrice, calculateSlotUnlockPrice, calculateSmeltingLuckDistribution, calculateSwordUpgradePlan, calculateSwordUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
 import type { ProjectConfig } from "./Main";
 import type { ForgeResultState, MiningOreState, State, SwordState } from "./State";
 
@@ -109,15 +109,15 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
     if (!ore) {
       return { kind: "oreNotFound", reason: "没有可获取的矿石" };
     }
-    const input = this.config.miningMutationLuckCurve.input;
-    if (!Number.isInteger(ore.mutationId) || ore.mutationId < (input.min ?? -Infinity) ||
-        ore.mutationId > (input.max ?? Infinity)) {
-      return { kind: "invalidMutation", reason: "矿石变异不在原料幸运曲线范围内" };
+    const level = this.state.playerUpgradeLevels.smelting;
+    if (!Number.isInteger(level) || level < 1 || !Number.isInteger(this.state.playerLuck) || this.state.playerLuck < 1) {
+      return { kind: "invalidLuck", reason: "熔炼和人物幸运须为正整数" };
     }
-    const luck = sampleCurve(this.config.miningMutationLuckCurve, ore.mutationId)
-      + calculatePlayerUpgradeEffect(this.config, "smelting", this.state.playerUpgradeLevels.smelting);
-    if (!Number.isInteger(luck) || luck < 1 || !Number.isInteger(this.state.playerLuck) || this.state.playerLuck < 1) {
-      return { kind: "invalidLuck", reason: "原料和人物幸运须为正整数" };
+    const distribution = calculateSmeltingLuckDistribution(this.config.smeltingLuckWeightCurve, level);
+    const totalWeight = distribution.reduce((total, item) => total + item.weight, 0);
+    if (distribution.some((item) => !Number.isFinite(item.weight) || item.weight < 0) ||
+        !Number.isFinite(totalWeight) || totalWeight <= 0) {
+      return { kind: "invalidSmeltingWeights", reason: "熔炼权重须为非负有限数，且总权重大于零" };
     }
     return null;
   }
@@ -127,8 +127,16 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
       return false;
     }
     const ore = this.getBestOre()!;
-    const materialLuck = sampleCurve(this.config.miningMutationLuckCurve, ore.mutationId)
-      + calculatePlayerUpgradeEffect(this.config, "smelting", this.state.playerUpgradeLevels.smelting);
+    const distribution = calculateSmeltingLuckDistribution(this.config.smeltingLuckWeightCurve, this.state.playerUpgradeLevels.smelting);
+    let rollWeight = this.rng.randomFloat01() * distribution.reduce((total, item) => total + item.weight, 0);
+    let materialLuck = distribution[distribution.length - 1].luck;
+    for (const item of distribution) {
+      rollWeight -= item.weight;
+      if (rollWeight < 0) {
+        materialLuck = item.luck;
+        break;
+      }
+    }
     const playerLuck = this.state.playerLuck;
     const targetOffset = this.payload?.slotId !== undefined ? this.state.forgeTargetOffset : 1;
     let quality = Math.max(1, playerLuck - 4);

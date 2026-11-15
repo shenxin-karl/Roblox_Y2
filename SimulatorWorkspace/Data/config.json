@@ -115,38 +115,44 @@
       }
     }
   },
-  "miningMutationLuckCurve": {
+  "smeltingLuckWeightCurve": {
     "kind": "curve",
     "input": {
-      "key": "mutationId",
+      "key": "luckOffset",
       "valueType": "number",
       "rounding": "none",
-      "min": 1,
-      "max": 6
+      "min": -2,
+      "max": 2
     },
     "formula": {
       "kind": "Power",
       "base": 0,
       "multiplier": {
-        "kind": "constant",
-        "value": 1
+        "kind": "linear",
+        "ranges": [
+          { "fromInput": -2, "toInput": -2, "fromValue": 10, "toValue": 10 },
+          { "fromInput": -1, "toInput": -1, "fromValue": 20, "toValue": 20 },
+          { "fromInput": 0, "toInput": 0, "fromValue": 40, "toValue": 40 },
+          { "fromInput": 1, "toInput": 1, "fromValue": 20, "toValue": 20 },
+          { "fromInput": 2, "toInput": 2, "fromValue": 10, "toValue": 10 }
+        ]
       },
       "power": {
         "kind": "constant",
-        "value": 1
+        "value": 0
       },
       "rounding": "none"
     },
     "editor": {
-      "displayName": "矿石变异对应原料幸运",
+      "displayName": "熔炼原料幸运抽取权重（临时数值）",
       "folder": "手动打造",
       "display": {
         "kind": "curve",
-        "xLabel": "变异 ID",
-        "yLabel": "原料幸运 W",
+        "xLabel": "原料幸运相对熔炼等级的偏移",
+        "yLabel": "抽取权重",
         "sampleRange": {
-          "min": 1,
-          "max": 6,
+          "min": -2,
+          "max": 2,
           "step": 1
         }
       }

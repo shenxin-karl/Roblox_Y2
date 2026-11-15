@@ -5,6 +5,14 @@ import type { SlotState, SwordState } from "./State";
 
 export type PlayerUpgradeKind = "smelting" | "forging" | "income";
 
+/** 以熔炼等级为中心读取五档权重；保留各档，低于最低幸运的产出统一为 1。 */
+export function calculateSmeltingLuckDistribution(curve: CurveValue, level: number): { luck: number; weight: number }[] {
+  return [-2, -1, 0, 1, 2].map((offset) => ({
+    luck: Math.max(1, level + offset),
+    weight: sampleCurve(curve, offset),
+  }));
+}
+
 /** 按升级项读取费用曲线组；收益倍率升级额外包含效果列，不修改配置。 */
 export function getPlayerUpgradeCurves(config: ProjectConfig, kind: PlayerUpgradeKind): CurveGroupValue {
   const keys = { smelting: "smeltingUpgradeCurves", forging: "forgingUpgradeCurves", income: "incomeUpgradeCurves" } as const;
