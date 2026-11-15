@@ -105,20 +105,21 @@ export class SlotInspector extends BaseInspector<ProjectConfig, State> {
       upgrade.Visible = slot.unlocked;
       hint.Visible = slot.unlocked;
       const replaceBlocker = this.getActionBlocker(new QueueSwordReplacementAction(slot.id));
-      replace.Disabled = replaceBlocker !== null;
+      const recommended = (this.game as Game).isSlotReplacementRecommended(slot.id);
+      replace.Disabled = !recommended || replaceBlocker !== null;
       const queueIndex = state.pendingReplacementSlotIds.indexOf(slot.id);
       replace.Text = queueIndex >= 0 ? "已加入置换队列 (R)" : "一键置换升级 (R)";
       const executionBlocker = this.getActionBlocker(new ReplaceSwordAction(slot.id));
       hint.Text = queueIndex >= 0
         ? `目标 +${state.forgeTargetOffset} · 排队 #${queueIndex + 1}\n${executionBlocker?.reason ?? "待执行一次"}`
-        : `目标 +${state.forgeTargetOffset} · ${executionBlocker?.reason ?? "可置换"}`;
+        : `目标 +${state.forgeTargetOffset} · ${recommended ? executionBlocker?.reason ?? "可置换" : "仅推荐置换槽位可置换"}`;
       const blocker = this.getActionBlocker(new UnlockSlotAction(slot.id));
       unlock.Disabled = blocker !== null;
       unlock.Text = slot.unlocked ? "已解锁" : "解锁 (W)";
       const sword = state.swords.find((item) => item.id === slot.swordId);
       const upgradeBlocker = this.getActionBlocker((this.game as Game).createSlotUpgradeAction(slot.id));
       upgrade.Disabled = upgradeBlocker !== null;
-      upgrade.Text = sword ? "一键升级 (W)" : "获取并升级 (W)";
+      upgrade.Text = sword ? "一键升级 (W)" : queueIndex >= 0 ? "排队中 (W)" : "获取并升级 (W)";
       if (slot.unlocked) {
         details.Text = `槽位 ${slot.id}\n${sword ? `品质 ${sword.quality}，Lv.${sword.level}` : "空槽位"}\n金钱：${state.money.toFixed(2)}`;
         if (sword && !upgradeBlocker) {
@@ -146,10 +147,7 @@ export class SlotInspector extends BaseInspector<ProjectConfig, State> {
       if (!slot) {
         return;
       }
-      const action = new QueueSwordReplacementAction(slot.id);
-      if (!this.getActionBlocker(action) && this.consumeAction(action, [`槽位 ${slot.id} 加入一次性置换队列`])) {
-        this.game.UpdateUI?.();
-      }
+      (this.game as Game).queueSwordReplacement(slot.id);
       update(this.state);
     };
     upgrade.OnClick = () => {

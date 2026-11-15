@@ -9,7 +9,7 @@
         "kind": "number",
         "control": "number",
         "min": 0,
-        "max": 30,
+        "max": 36,
         "step": 1
       }
     }
@@ -21,7 +21,7 @@
       "valueType": "number",
       "rounding": "none",
       "min": 1,
-      "max": 30
+      "max": 36
     },
     "formula": {
       "kind": "Power",
@@ -45,7 +45,7 @@
         "yLabel": "解锁价格",
         "sampleRange": {
           "min": 1,
-          "max": 30,
+          "max": 36,
           "step": 1
         }
       }
@@ -221,7 +221,8 @@
       "key": "level",
       "valueType": "number",
       "rounding": "none",
-      "min": 1
+      "min": 1,
+      "max": 32
     },
     "columns": [
       {
@@ -249,7 +250,7 @@
         "xLabel": "当前等级",
         "sampleRange": {
           "min": 1,
-          "max": 10,
+          "max": 32,
           "step": 1
         },
         "columns": {
@@ -266,7 +267,8 @@
       "key": "level",
       "valueType": "number",
       "rounding": "none",
-      "min": 1
+      "min": 1,
+      "max": 32
     },
     "columns": [
       {
@@ -294,7 +296,7 @@
         "xLabel": "当前等级",
         "sampleRange": {
           "min": 1,
-          "max": 10,
+          "max": 32,
           "step": 1
         },
         "columns": {
@@ -311,7 +313,8 @@
       "key": "level",
       "valueType": "number",
       "rounding": "none",
-      "min": 1
+      "min": 1,
+      "max": 32
     },
     "columns": [
       {
@@ -355,7 +358,7 @@
         "xLabel": "当前等级",
         "sampleRange": {
           "min": 1,
-          "max": 10,
+          "max": 32,
           "step": 1
         },
         "columns": {
@@ -375,7 +378,8 @@
       "key": "quality",
       "valueType": "number",
       "rounding": "none",
-      "min": -3
+      "min": 1,
+      "max": 36
     },
     "formula": {
       "kind": "BaseExp",
@@ -398,8 +402,8 @@
         "xLabel": "品质",
         "yLabel": "金币/秒",
         "sampleRange": {
-          "min": -3,
-          "max": 20,
+          "min": 1,
+          "max": 36,
           "step": 1
         }
       }

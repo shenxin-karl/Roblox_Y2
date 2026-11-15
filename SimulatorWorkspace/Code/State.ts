@@ -34,6 +34,7 @@ export type StateValues = {
   paidMultiplierTier: number;
   lastDiamondRewardDay: number;
   autoBuyPaidMultiplier: boolean;
+  autoUnlockSlots: boolean;
 };
 
 export class State extends BaseState<StateValues> {
@@ -52,17 +53,18 @@ export class State extends BaseState<StateValues> {
   diamonds: number;
   paidMultiplierTier: number;
   lastDiamondRewardDay = 0;
-  autoBuyPaidMultiplier = false;
+  autoBuyPaidMultiplier = true;
+  autoUnlockSlots = false;
 
   constructor(
-    private readonly initialUnlockedSlotCount: number,
-    private readonly initialDiamonds: number,
-    private readonly initialPaidMultiplierTier: number,
+    initialUnlockedSlotCount: number,
+    initialDiamonds: number,
+    initialPaidMultiplierTier: number,
   ) {
     super();
     this.diamonds = initialDiamonds;
     this.paidMultiplierTier = initialPaidMultiplierTier;
-    this.slots = Array.from({ length: 30 }, (_, index) => ({
+    this.slots = Array.from({ length: 36 }, (_, index) => ({
       id: index + 1,
       unlocked: index < initialUnlockedSlotCount,
       swordId: null,
@@ -80,6 +82,7 @@ export class State extends BaseState<StateValues> {
       paidMultiplierTier: "已购付费倍率档位",
       lastDiamondRewardDay: "最近赠送钻石的模拟日",
       autoBuyPaidMultiplier: "自动购买付费倍率",
+      autoUnlockSlots: "自动解锁槽位",
       slots: "槽位",
       "slots[].id": "槽位 ID",
       "slots[].unlocked": "已解锁",
@@ -124,6 +127,7 @@ export class State extends BaseState<StateValues> {
       paidMultiplierTier: this.paidMultiplierTier,
       lastDiamondRewardDay: this.lastDiamondRewardDay,
       autoBuyPaidMultiplier: this.autoBuyPaidMultiplier,
+      autoUnlockSlots: this.autoUnlockSlots,
       slots: this.slots.map((slot) => ({ ...slot })),
       miningOres: this.miningOres.map((ore) => ({ ...ore })),
       miningRefreshElapsedSeconds: this.miningRefreshElapsedSeconds,
@@ -139,30 +143,23 @@ export class State extends BaseState<StateValues> {
   }
 
   loadJSON(values: StateValues): void {
-    this.money = values.money ?? 0;
-    this.diamonds = values.diamonds ?? this.initialDiamonds;
-    this.paidMultiplierTier = values.paidMultiplierTier ?? this.initialPaidMultiplierTier;
-    this.lastDiamondRewardDay = values.lastDiamondRewardDay ?? 0;
-    this.autoBuyPaidMultiplier = values.autoBuyPaidMultiplier ?? false;
-    this.slots = values.slots.map((slot) => ({
-      id: slot.id,
-      unlocked: slot.unlocked ?? slot.id <= this.initialUnlockedSlotCount,
-      swordId: slot.swordId ?? null,
-    }));
-    this.miningOres = (values.miningOres ?? []).map((ore) => ({ ...ore }));
-    this.miningRefreshElapsedSeconds = values.miningRefreshElapsedSeconds ?? 0;
-    this.oreCollectElapsedSeconds = values.oreCollectElapsedSeconds ?? 0;
-    this.playerLuck = values.playerLuck ?? 1;
-    this.swords = (values.swords ?? []).map((sword) => ({ ...sword, level: sword.level ?? 1 }));
-    this.currentSwordId = values.currentSwordId ?? null;
+    this.money = values.money;
+    this.diamonds = values.diamonds;
+    this.paidMultiplierTier = values.paidMultiplierTier;
+    this.lastDiamondRewardDay = values.lastDiamondRewardDay;
+    this.autoBuyPaidMultiplier = values.autoBuyPaidMultiplier;
+    this.autoUnlockSlots = values.autoUnlockSlots;
+    this.slots = values.slots.map((slot) => ({ ...slot }));
+    this.miningOres = values.miningOres.map((ore) => ({ ...ore }));
+    this.miningRefreshElapsedSeconds = values.miningRefreshElapsedSeconds;
+    this.oreCollectElapsedSeconds = values.oreCollectElapsedSeconds;
+    this.playerLuck = values.playerLuck;
+    this.swords = values.swords.map((sword) => ({ ...sword }));
+    this.currentSwordId = values.currentSwordId;
     this.lastForgeResult = values.lastForgeResult ? { ...values.lastForgeResult } : null;
-    this.pendingReplacementSlotIds = [...(values.pendingReplacementSlotIds ?? [])];
-    this.playerUpgradeLevels = {
-      smelting: values.playerUpgradeLevels?.smelting ?? 1,
-      forging: values.playerUpgradeLevels?.forging ?? 1,
-      income: values.playerUpgradeLevels?.income ?? 1,
-    };
-    this.forgeTargetOffset = values.forgeTargetOffset ?? 1;
+    this.pendingReplacementSlotIds = [...values.pendingReplacementSlotIds];
+    this.playerUpgradeLevels = { ...values.playerUpgradeLevels };
+    this.forgeTargetOffset = values.forgeTargetOffset;
   }
 
   advanceOneSecond(): void {

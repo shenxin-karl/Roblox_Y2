@@ -2,7 +2,7 @@ import { BaseAction, sampleCurve } from "@game-simulator/framework";
 import type { BaseActionOptions, CurveValue, MacroActionBlocker } from "@game-simulator/framework";
 import { calculateBaseIncome, calculateForgeProbabilities, calculatePlayerUpgradeEffect, calculatePlayerUpgradePrice, calculateSlotUnlockPrice, calculateSwordUpgradePlan, calculateSwordUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
 import type { ProjectConfig } from "./Main";
-import type { ForgeResultState, MiningOreState, SlotState, State, SwordState } from "./State";
+import type { ForgeResultState, MiningOreState, State, SwordState } from "./State";
 
 type UnlockSlotPayload = { slotId: number };
 
@@ -74,12 +74,11 @@ type ForgeSwordPayload = { slotId?: number };
 export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, ProjectConfig> {
   constructor(
     options: Omit<BaseActionOptions<ForgeSwordPayload>, "type" | "payload"> = {},
-    private readonly legacyAutoPlace = false,
     slotId?: number,
   ) {
     super({
       ...options,
-      type: slotId !== undefined ? "replaceSword" : legacyAutoPlace ? "autoForgeSword" : "forgeSword",
+      type: slotId !== undefined ? "replaceSword" : "forgeSword",
       payload: slotId !== undefined ? { slotId } : undefined,
     });
   }
@@ -132,7 +131,7 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
       + calculatePlayerUpgradeEffect(this.config, "smelting", this.state.playerUpgradeLevels.smelting);
     const playerLuck = this.state.playerLuck;
     const targetOffset = this.payload?.slotId !== undefined ? this.state.forgeTargetOffset : 1;
-    let quality = playerLuck - 4;
+    let quality = Math.max(1, playerLuck - 4);
     let hammerCount = 0;
     let outcome: ForgeResultState["outcome"] = "targetReached";
     while (quality < playerLuck + targetOffset) {
@@ -167,9 +166,7 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
       };
       this.state.swords.push(sword);
       swordId = sword.id;
-      if (this.legacyAutoPlace) {
-        slotId = this.placeLegacySword(sword);
-      } else if (this.payload?.slotId !== undefined) {
+      if (this.payload?.slotId !== undefined) {
         const target = this.state.slots.find((item) => item.id === this.payload!.slotId)!;
         const equipped = this.state.swords.find((item) => item.id === target.swordId);
         if (!equipped || sword.quality > equipped.quality) {
@@ -189,42 +186,13 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
     return true;
   }
 
-  // 仅用于已有 autoForgeSword 时间线回放，新手动打造不自动放置。
-  private placeLegacySword(sword: SwordState): number | null {
-    let target: SlotState | undefined;
-    let lowestQuality = Infinity;
-    for (const slot of this.state.slots) {
-      if (!slot.unlocked) {
-        continue;
-      }
-      if (slot.swordId === null) {
-        target = slot;
-        break;
-      }
-      const equipped = this.state.swords.find((item) => item.id === slot.swordId)!;
-      if (equipped.quality < lowestQuality) {
-        target = slot;
-        lowestQuality = equipped.quality;
-      }
-    }
-    if (!target || (target.swordId !== null && sword.quality <= lowestQuality)) {
-      return null;
-    }
-    const replacedSwordId = target.swordId;
-    target.swordId = sword.id;
-    if (replacedSwordId !== null) {
-      this.state.swords = this.state.swords.filter((item) => item.id !== replacedSwordId);
-    }
-    return target.id;
-  }
 }
 
 BaseAction.register("forgeSword", (value) => new ForgeSwordAction(value));
-BaseAction.register("autoForgeSword", (value) => new ForgeSwordAction(value, true));
 
 export class ReplaceSwordAction extends ForgeSwordAction {
   constructor(slotId: number, options: Omit<BaseActionOptions<ForgeSwordPayload>, "type" | "payload"> = {}) {
-    super(options, false, slotId);
+    super(options, slotId);
   }
 
   Apply(): boolean {
@@ -428,6 +396,14 @@ export class UpgradePlayerAction extends BaseAction<UpgradePlayerPayload, State,
     if (level + 1 > (curves.input.max ?? Infinity)) {
       return { kind: "playerUpgradeMaxLevel", reason: "已满级" };
     }
+    const order = ["income", "forging", "smelting"] as const;
+    const levels = this.state.playerUpgradeLevels;
+    const roundLevel = Math.min(...order.map((item) => levels[item]));
+    const next = order.find((item) => levels[item] === roundLevel)!;
+    if (kind !== next) {
+      const titles = { income: "收益倍率", forging: "武器锻造", smelting: "熔炼幸运" };
+      return { kind: "playerUpgradeOrder", reason: `请先将${titles[next]}升至 ${roundLevel + 1} 级` };
+    }
     if (this.state.money < calculatePlayerUpgradePrice(curves, level)) {
       return { kind: "moneyNotEnough", reason: "金钱不足" };
     }
@@ -562,3 +538,27 @@ export class SetAutoBuyPaidMultiplierAction extends BaseAction<AutoBuyPaidMultip
 
 BaseAction.register("setAutoBuyPaidMultiplier", (value) =>
   new SetAutoBuyPaidMultiplierAction(value.payload?.enabled as boolean, value));
+
+type AutoUnlockSlotsPayload = { enabled: boolean };
+
+export class SetAutoUnlockSlotsAction extends BaseAction<AutoUnlockSlotsPayload, State, ProjectConfig> {
+  constructor(enabled: boolean, options: Omit<BaseActionOptions<AutoUnlockSlotsPayload>, "type" | "payload"> = {}) {
+    super({ ...options, type: "setAutoUnlockSlots", payload: { enabled } });
+  }
+
+  GetBlocker(): MacroActionBlocker | null {
+    return typeof this.payload?.enabled !== "boolean" || this.payload.enabled === this.state.autoUnlockSlots
+      ? { kind: "autoUnlockUnchanged", reason: "自动解锁状态未改变" } : null;
+  }
+
+  Apply(): boolean {
+    if (this.GetBlocker()) {
+      return false;
+    }
+    this.state.autoUnlockSlots = this.payload!.enabled;
+    return true;
+  }
+}
+
+BaseAction.register("setAutoUnlockSlots", (value) =>
+  new SetAutoUnlockSlotsAction(value.payload?.enabled as boolean, value));

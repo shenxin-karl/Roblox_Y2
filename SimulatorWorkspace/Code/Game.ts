@@ -1,19 +1,19 @@
 import { Game as BaseGame, UIButton, UILabel, UIPanel } from "@game-simulator/framework";
 import type { DailyScheduleContext } from "@game-simulator/framework";
-import { BuyPaidMultiplierAction, ClaimDailyDiamondsAction, ClaimOfflineIncomeAction, InitializeMiningOresAction, QueueSwordReplacementAction, RefreshMiningOresAction, ReplaceSwordAction, SetAutoBuyPaidMultiplierAction, UnlockSlotAction, UpgradePlayerAction, UpgradeSwordMaxAction } from "./Actions";
-import { calculatePaidMultiplier, calculatePlayerUpgradeEffect, calculatePlayerUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
+import { BuyPaidMultiplierAction, ClaimDailyDiamondsAction, ClaimOfflineIncomeAction, InitializeMiningOresAction, QueueSwordReplacementAction, RefreshMiningOresAction, ReplaceSwordAction, SetAutoBuyPaidMultiplierAction, SetAutoUnlockSlotsAction, UnlockSlotAction, UpgradePlayerAction, UpgradeSwordMaxAction } from "./Actions";
+import { calculateBaseIncome, calculatePaidMultiplier, calculatePlayerUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
 import type { ProjectConfig } from "./Main";
 import type { State } from "./State";
 
 export class Game extends BaseGame<ProjectConfig, State> {
   readonly UIRoot = new UIPanel();
-  private readonly slotLabels: { id: UILabel; button: UIButton }[] = [];
+  private readonly slotLabels: { id: UILabel; mutation: UILabel; button: UIButton; statKeys: UILabel; statValues: UILabel; levelKey: UILabel; levelValue: UILabel; income: UILabel; queue: UILabel }[] = [];
   private readonly oreSummaryLabel: UILabel;
   private readonly paidSummaryLabel: UILabel;
-  private readonly paidTiersLabel: UILabel;
   private readonly buyPaidMultiplierButton: UIButton;
   private readonly autoBuyPaidMultiplierButton: UIButton;
-  private readonly dailyDiamondsLabel: UILabel;
+  private readonly replaceRecommendedButton: UIButton;
+  private readonly autoUnlockSlotsButton: UIButton;
   private readonly playerUpgradeButtons: { kind: PlayerUpgradeKind; title: string; button: UIButton }[] = [];
   private selectedSlotId: number | null = null;
 
@@ -21,23 +21,24 @@ export class Game extends BaseGame<ProjectConfig, State> {
     super();
     this.UIRoot.Name = "GameRoot";
     this.UIRoot.Width = 972;
-    this.UIRoot.Height = 520;
+    this.UIRoot.Height = 528;
     this.UIRoot.BackgroundColor = "transparent";
     this.UIRoot.BorderColor = "transparent";
 
     this.oreSummaryLabel = new UILabel(this.UIRoot, {
-      Name: "OreSummary", X: 12, Y: 8, Width: 948, Height: 24,
-      FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Top",
+      Name: "OreSummary", X: 12, Y: 34, Width: 948, Height: 18,
+      FontSize: 12, HorizontalAlign: "Left",
     });
+    this.oreSummaryLabel.RichText = true;
 
     const upgrades = [
-      { kind: "smelting", title: "熔炼幸运" },
-      { kind: "forging", title: "武器锻造" },
       { kind: "income", title: "收益倍率" },
+      { kind: "forging", title: "武器锻造" },
+      { kind: "smelting", title: "熔炼幸运" },
     ] as const;
     upgrades.forEach(({ kind, title }, index) => {
       const button = new UIButton(this.UIRoot, {
-        Name: `PlayerUpgrade_${kind}`, X: 12 + index * 320, Y: 40, Width: 308, Height: 64, FontSize: 12,
+        Name: `PlayerUpgrade_${kind}`, X: 12 + index * 212, Y: 60, Width: 204, Height: 30, FontSize: 11, TextWrap: false,
       });
       button.OnClick = () => {
         const action = new UpgradePlayerAction(kind);
@@ -52,8 +53,8 @@ export class Game extends BaseGame<ProjectConfig, State> {
     this.state.slots.forEach((slot, index) => {
       const button = new UIButton(this.UIRoot, {
         Name: `Slot${slot.id}`,
-        X: 12 + (index % 10) * 96,
-        Y: 112 + Math.floor(index / 10) * 96,
+        X: 12 + (index % 9) * 108,
+        Y: 108 + Math.floor(index / 9) * 96,
         Width: 84,
         Height: 84,
         Text: "未解锁",
@@ -75,26 +76,52 @@ export class Game extends BaseGame<ProjectConfig, State> {
         Name: "Id",
         X: 6,
         Y: 4,
-        Width: 72,
+        Width: 28,
         Height: 16,
         FontSize: 10,
         HorizontalAlign: "Left",
         VerticalAlign: "Top",
         TextColor: "#526782",
       });
-      this.slotLabels.push({ id, button });
+      const mutation = new UILabel(button, {
+        Name: "Mutation", X: 36, Y: 4, Width: 42, Height: 16,
+        FontSize: 10, HorizontalAlign: "Right", VerticalAlign: "Top",
+      });
+      const statKeys = new UILabel(button, {
+        Name: "StatKeys", X: 24, Y: 20, Width: 12, Height: 16,
+        FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Middle",
+      });
+      const statValues = new UILabel(button, {
+        Name: "StatValues", X: 40, Y: 20, Width: 40, Height: 16,
+        FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Middle",
+      });
+      statKeys.RichText = true;
+      statValues.RichText = true;
+      const levelKey = new UILabel(button, {
+        Name: "LevelKey", X: 24, Y: 38, Width: 12, Height: 16,
+        FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Middle", TextColor: "#285e3c",
+      });
+      const levelValue = new UILabel(button, {
+        Name: "LevelValue", X: 40, Y: 38, Width: 40, Height: 16,
+        FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Middle", TextColor: "#285e3c",
+      });
+      const income = new UILabel(button, {
+        Name: "Income", X: 24, Y: 56, Width: 56, Height: 16, FontSize: 12,
+        HorizontalAlign: "Left", VerticalAlign: "Middle",
+      });
+      const queue = new UILabel(button, {
+        Name: "Queue", X: 4, Y: 72, Width: 76, Height: 10, FontSize: 9,
+        Text: "", TextColor: "#795611",
+      });
+      this.slotLabels.push({ id, mutation, button, statKeys, statValues, levelKey, levelValue, income, queue });
     });
 
     this.paidSummaryLabel = new UILabel(this.UIRoot, {
-      Name: "PaidMultiplierSummary", X: 12, Y: 404, Width: 444, Height: 32,
-      HorizontalAlign: "Left",
-    });
-    this.paidTiersLabel = new UILabel(this.UIRoot, {
-      Name: "PurchasedPaidTiers", X: 12, Y: 444, Width: 948, Height: 32,
-      FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Top",
+      Name: "PaidMultiplierSummary", X: 12, Y: 8, Width: 948, Height: 24,
+      FontSize: 12, HorizontalAlign: "Left",
     });
     this.buyPaidMultiplierButton = new UIButton(this.UIRoot, {
-      Name: "BuyPaidMultiplier", X: 468, Y: 404, Width: 276, Height: 32, FontSize: 12,
+      Name: "BuyPaidMultiplier", X: 648, Y: 60, Width: 240, Height: 30, FontSize: 11, TextWrap: false,
     });
     this.buyPaidMultiplierButton.OnClick = () => {
       const action = new BuyPaidMultiplierAction();
@@ -104,17 +131,37 @@ export class Game extends BaseGame<ProjectConfig, State> {
       this.UpdateUI();
     };
     this.autoBuyPaidMultiplierButton = new UIButton(this.UIRoot, {
-      Name: "AutoBuyPaidMultiplier", X: 756, Y: 404, Width: 204, Height: 32, FontSize: 12,
+      Name: "AutoBuyPaidMultiplier", X: 896, Y: 60, Width: 64, Height: 30, FontSize: 10, TextWrap: false,
     });
     this.autoBuyPaidMultiplierButton.OnClick = () => {
       this.consumeAction(new SetAutoBuyPaidMultiplierAction(!this.state.autoBuyPaidMultiplier));
       this.tryAutoBuyPaidMultiplier();
       this.UpdateUI();
     };
-    this.dailyDiamondsLabel = new UILabel(this.UIRoot, {
-      Name: "DailyDiamonds", X: 12, Y: 484, Width: 948, Height: 24,
-      FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Top", TextColor: "#526782",
+    this.replaceRecommendedButton = new UIButton(this.UIRoot, {
+      Name: "ReplaceRecommended", X: 12, Y: 488, Width: 132, Height: 30,
+      FontSize: 12, Text: "一键置换", ButtonColor: "#fff0b3",
+      TextColor: "#795611", BorderColor: "#d9b64c",
     });
+    this.replaceRecommendedButton.OnClick = () => {
+      for (const slotId of this.getRecommendedReplacementSlotIds()) {
+        const action = new QueueSwordReplacementAction(slotId);
+        if (!this.getActionBlocker(action)) {
+          this.consumeAction(action, [`推荐槽位 ${slotId} 加入置换升级队列`]);
+        }
+      }
+      this.executeNextReplacement();
+      this.UpdateUI();
+    };
+    this.autoUnlockSlotsButton = new UIButton(this.UIRoot, {
+      Name: "AutoUnlockSlots", X: 156, Y: 488, Width: 156, Height: 30,
+      FontSize: 12, TextWrap: false,
+    });
+    this.autoUnlockSlotsButton.OnClick = () => {
+      this.consumeAction(new SetAutoUnlockSlotsAction(!this.state.autoUnlockSlots));
+      this.tryAutoUnlockSlots();
+      this.UpdateUI();
+    };
   }
 
   BuildEditorUI(): void {
@@ -123,6 +170,7 @@ export class Game extends BaseGame<ProjectConfig, State> {
     }
     this.grantDailyDiamonds(this.getScheduleContext()?.day ?? 1);
     this.tryAutoBuyPaidMultiplier();
+    this.tryAutoUnlockSlots();
     this.UpdateUI();
   }
 
@@ -134,6 +182,7 @@ export class Game extends BaseGame<ProjectConfig, State> {
     }
     this.grantDailyDiamonds(context.day);
     this.tryAutoBuyPaidMultiplier();
+    this.tryAutoUnlockSlots();
   }
 
   private grantDailyDiamonds(day: number): void {
@@ -152,6 +201,19 @@ export class Game extends BaseGame<ProjectConfig, State> {
     }
   }
 
+  private tryAutoUnlockSlots(): void {
+    while (this.state.autoUnlockSlots) {
+      const slot = this.state.slots.find((item) => !item.unlocked);
+      if (!slot) {
+        break;
+      }
+      const action = new UnlockSlotAction(slot.id);
+      if (this.getActionBlocker(action) || !this.consumeAction(action, [`自动解锁槽位 ${slot.id}`], "system")) {
+        break;
+      }
+    }
+  }
+
   handleShortcutKey(key: string): void {
     if ((key !== "R" && key !== "W") || this.selectedSlotId === null) {
       return;
@@ -160,29 +222,45 @@ export class Game extends BaseGame<ProjectConfig, State> {
       this.upgradeSlot(this.selectedSlotId);
       return;
     }
-    const action = new QueueSwordReplacementAction(this.selectedSlotId);
-    if (!this.getActionBlocker(action)) {
-      this.consumeAction(action, [`槽位 ${this.selectedSlotId} 加入一次性置换队列`]);
+    this.queueSwordReplacement(this.selectedSlotId);
+  }
+
+  queueSwordReplacement(slotId: number): void {
+    if (!this.isSlotReplacementRecommended(slotId)) {
+      return;
     }
+    const action = new QueueSwordReplacementAction(slotId);
+    if (!this.getActionBlocker(action)) {
+      this.consumeAction(action, [`槽位 ${slotId} 加入一次性置换队列`]);
+    }
+    this.executeNextReplacement();
     this.UpdateUI();
   }
 
-  createSlotUpgradeAction(slotId: number): UnlockSlotAction | ReplaceSwordAction | UpgradeSwordMaxAction {
+  isSlotReplacementRecommended(slotId: number): boolean {
+    const slot = this.state.slots.find((item) => item.id === slotId);
+    return slot?.unlocked === true && this.state.swords.some((sword) =>
+      sword.id === slot.swordId && sword.quality <= this.state.playerUpgradeLevels.forging);
+  }
+
+  private getRecommendedReplacementSlotIds(): number[] {
+    return this.state.slots.filter((slot) => this.isSlotReplacementRecommended(slot.id)).map((slot) => slot.id);
+  }
+
+  createSlotUpgradeAction(slotId: number): UnlockSlotAction | QueueSwordReplacementAction | UpgradeSwordMaxAction {
     const slot = this.state.slots.find((item) => item.id === slotId);
     if (!slot?.unlocked) {
       return new UnlockSlotAction(slotId);
     }
-    return slot.swordId === null ? new ReplaceSwordAction(slotId) : new UpgradeSwordMaxAction(slotId);
+    return slot.swordId === null ? new QueueSwordReplacementAction(slotId) : new UpgradeSwordMaxAction(slotId);
   }
 
   upgradeSlot(slotId: number): void {
     const action = this.createSlotUpgradeAction(slotId);
-    if (!this.getActionBlocker(action) && this.consumeAction(action, [`槽位 ${slotId} 执行一键解锁、获取或升级`])) {
-      if (action instanceof ReplaceSwordAction) {
-        const upgrade = new UpgradeSwordMaxAction(slotId);
-        if (!this.getActionBlocker(upgrade)) {
-          this.consumeAction(upgrade, [`一键升级槽位 ${slotId} 内的新武器`]);
-        }
+    if (!this.getActionBlocker(action)) {
+      this.consumeAction(action, [`槽位 ${slotId} 执行一键解锁、排队获取或升级`]);
+      if (action instanceof QueueSwordReplacementAction) {
+        this.executeNextReplacement();
       }
     }
     this.UpdateUI();
@@ -190,24 +268,31 @@ export class Game extends BaseGame<ProjectConfig, State> {
 
   advanceOneSecond(): void {
     this.tryAutoBuyPaidMultiplier();
+    this.tryAutoUnlockSlots();
+    this.executeNextReplacement();
+  }
+
+  private executeNextReplacement(): void {
     const slotId = this.state.pendingReplacementSlotIds[0];
     if (slotId === undefined) {
       return;
     }
     const action = new ReplaceSwordAction(slotId);
-    if (!this.getActionBlocker(action)) {
-      this.consumeAction(action, [`执行队首槽位 ${slotId} 的一次置换请求，完成后出队`]);
+    if (!this.getActionBlocker(action) && this.consumeAction(action, [`执行队首槽位 ${slotId} 的一次置换请求，完成后出队`])) {
+      const upgrade = new UpgradeSwordMaxAction(slotId);
+      if (!this.getActionBlocker(upgrade)) {
+        this.consumeAction(upgrade, [`一键升级槽位 ${slotId} 内的武器`]);
+      }
     }
   }
 
   UpdateUI(): void {
     const tier = this.state.paidMultiplierTier;
     const curves = this.config.paidMultiplierCurves;
-    const multiplier = calculatePaidMultiplier(this.config, tier);
-    this.paidSummaryLabel.Text = `付费金币倍率 ×${multiplier} ｜ 钻石 ${this.state.diamonds} ｜ 已购第 ${tier} 档`;
+    const income = calculateBaseIncome(this.config, this.state.slots, this.state.swords, this.state.playerUpgradeLevels.income, tier);
     const purchasedTiers = Array.from({ length: tier - curves.input.min! + 1 }, (_, index) =>
       `×${calculatePaidMultiplier(this.config, curves.input.min! + index)}`);
-    this.paidTiersLabel.Text = `已购档位：${purchasedTiers.join(" → ")}（新手默认 ×${calculatePaidMultiplier(this.config, this.config.initialPaidMultiplierTier)}）`;
+    this.paidSummaryLabel.Text = `收益 ${income.toFixed(2)}/s ｜ 付费倍率 ${purchasedTiers.join(" ")} ｜ 钻石 ${this.state.diamonds}`;
     const next = getNextPaidMultiplier(this.config, tier);
     const buyBlocker = this.getActionBlocker(new BuyPaidMultiplierAction());
     this.buyPaidMultiplierButton.Disabled = buyBlocker !== null;
@@ -215,21 +300,28 @@ export class Game extends BaseGame<ProjectConfig, State> {
     this.buyPaidMultiplierButton.TextColor = "#6d4817";
     this.buyPaidMultiplierButton.BorderColor = "#d9b979";
     this.buyPaidMultiplierButton.Text = next
-      ? `购买下一档 ×${next.multiplier}：${next.price} 钻${buyBlocker ? `（${buyBlocker.reason}）` : ""}`
+      ? `付费 ×${next.multiplier} · ${next.price} 钻${buyBlocker ? "（不足）" : ""}`
       : "付费倍率已满档";
-    this.autoBuyPaidMultiplierButton.Text = `自动购买付费倍率：${this.state.autoBuyPaidMultiplier ? "开启" : "关闭"}`;
-    this.autoBuyPaidMultiplierButton.ButtonColor = this.state.autoBuyPaidMultiplier ? "#bbdfd4" : "#ddd4f2";
-    this.autoBuyPaidMultiplierButton.TextColor = this.state.autoBuyPaidMultiplier ? "#24564d" : "#4e416e";
-    this.autoBuyPaidMultiplierButton.BorderColor = this.state.autoBuyPaidMultiplier ? "#8bbfaf" : "#bba8da";
-    this.dailyDiamondsLabel.Text = `每日赠送 ${this.config.dailyDiamondReward} 钻｜最近已发：第 ${this.state.lastDiamondRewardDay} 个模拟日｜钻石不受倍率加成`;
-    const mutationNames = ["无变异", "变异1", "变异2", "变异3", "变异4", "变异5"];
+    this.autoBuyPaidMultiplierButton.Text = `自动${this.state.autoBuyPaidMultiplier ? "开" : "关"}`;
+    this.autoBuyPaidMultiplierButton.ButtonColor = this.state.autoBuyPaidMultiplier ? "#bbdfd4" : "#e9eef5";
+    this.autoBuyPaidMultiplierButton.TextColor = this.state.autoBuyPaidMultiplier ? "#24564d" : "#526782";
+    this.autoBuyPaidMultiplierButton.BorderColor = this.state.autoBuyPaidMultiplier ? "#8bbfaf" : "#c6d1e1";
+    this.autoUnlockSlotsButton.Text = `自动解锁：${this.state.autoUnlockSlots ? "开" : "关"}`;
+    this.autoUnlockSlotsButton.ButtonColor = this.state.autoUnlockSlots ? "#bbdfd4" : "#e9eef5";
+    this.autoUnlockSlotsButton.TextColor = this.state.autoUnlockSlots ? "#24564d" : "#526782";
+    this.autoUnlockSlotsButton.BorderColor = this.state.autoUnlockSlots ? "#8bbfaf" : "#c6d1e1";
+    const recommendedSlotIds = this.getRecommendedReplacementSlotIds();
+    this.replaceRecommendedButton.Disabled = !recommendedSlotIds.some((slotId) =>
+      this.getActionBlocker(new QueueSwordReplacementAction(slotId)) === null);
+    const mutationNames = ["变异0", "变异1", "变异2", "变异3", "变异4", "变异5"];
+    const mutationColors = ["#64748b", "#28834b", "#2872c4", "#8542bd", "#b87908", "#c23c51"];
     const oreCounts = new Map<number, number>();
     for (const ore of this.state.miningOres) {
       oreCounts.set(ore.mutationId, (oreCounts.get(ore.mutationId) ?? 0) + 1);
     }
     const oreSummary = [...oreCounts].sort(([a], [b]) => a - b)
-      .map(([id, count]) => `${mutationNames[id - 1] ?? `变异${id - 1}`} x ${count}`).join(" · ");
-    this.oreSummaryLabel.Text = oreSummary ? `矿石 ${this.state.miningOres.length}｜${oreSummary}` : "矿石：暂无";
+      .map(([id, count]) => `<span color="${mutationColors[id - 1]}">${mutationNames[id - 1]} ×${count}</span>`).join(" · ");
+    this.oreSummaryLabel.Text = oreSummary ? `<b>矿石 ${this.state.miningOres.length}</b>｜${oreSummary}` : "矿石：暂无";
     this.playerUpgradeButtons.forEach(({ kind, title, button }) => {
       const level = this.state.playerUpgradeLevels[kind];
       const blocker = this.getActionBlocker(new UpgradePlayerAction(kind));
@@ -243,27 +335,42 @@ export class Game extends BaseGame<ProjectConfig, State> {
       button.TextColor = palette.text;
       button.BorderColor = palette.border;
       if (blocker && blocker.kind !== "moneyNotEnough") {
-        button.Text = `${title} Lv.${level}\n${blocker.reason}`;
+        button.Text = `${title} L${level} · ${blocker.kind === "playerUpgradeOrder" ? "待前项升级" : blocker.reason}`;
         return;
       }
       const curves = getPlayerUpgradeCurves(this.config, kind);
-      const effect = calculatePlayerUpgradeEffect(this.config, kind, level);
-      const nextEffect = calculatePlayerUpgradeEffect(this.config, kind, level + 1);
-      const preview = kind === "income"
-        ? `×${effect.toFixed(2)} → ×${nextEffect.toFixed(2)}`
-        : kind === "forging"
-          ? `人物幸运 ${this.state.playerLuck} → ${this.state.playerLuck + nextEffect - effect}`
-          : `原料幸运 +${effect} → +${nextEffect}`;
-      button.Text = `${title} Lv.${level}\n${preview}\n${calculatePlayerUpgradePrice(curves, level)}金币${blocker ? "（不足）" : ""}`;
+      button.Text = `${title} L${level} · ${calculatePlayerUpgradePrice(curves, level)}金币${blocker ? "（不足）" : ""}`;
     });
     this.slotLabels.forEach((labels, index) => {
       const slot = this.state.slots[index];
       const sword = this.state.swords.find((item) => item.id === slot.swordId);
+      const recommendReplacement = recommendedSlotIds.includes(slot.id);
       labels.id.Text = `${slot.id}`;
-      labels.button.Text = slot.unlocked ? (sword ? `品质 ${sword.quality}\nLv.${sword.level}` : "已解锁") : "未解锁";
-      labels.button.ButtonColor = slot.unlocked ? (sword ? "#cbdffb" : "#e1ecfb") : "#e9eef5";
-      labels.button.TextColor = slot.unlocked ? (sword ? "#234b7a" : "#486588") : "#5b6b82";
-      labels.button.BorderColor = slot.id === this.selectedSlotId ? "#f79009" : slot.unlocked ? "#a6c1e5" : "#c6d1e1";
+      const income = calculateBaseIncome(this.config, [slot], this.state.swords, this.state.playerUpgradeLevels.income, tier);
+      const hasSword = slot.unlocked && sword !== undefined;
+      labels.mutation.Visible = hasSword;
+      labels.mutation.Text = hasSword ? mutationNames[sword.mutationId - 1] : "";
+      labels.mutation.TextColor = hasSword ? mutationColors[sword.mutationId - 1] : "#64748b";
+      labels.button.Text = slot.unlocked ? (sword ? "" : "空槽位") : "未解锁";
+      labels.statKeys.Visible = hasSword;
+      labels.statValues.Visible = hasSword;
+      labels.levelKey.Visible = hasSword;
+      labels.levelValue.Visible = hasSword;
+      labels.income.Visible = hasSword;
+      labels.statKeys.Text = hasSword ? '<span color="#7c3db5">Q</span>' : "";
+      labels.statValues.Text = hasSword ? `<span color="#7c3db5">${sword.quality}</span>` : "";
+      labels.levelKey.Text = hasSword ? "L" : "";
+      labels.levelValue.Text = hasSword ? `${sword.level}` : "";
+      labels.statKeys.TextColor = "#285e3c";
+      labels.statValues.TextColor = "#285e3c";
+      labels.income.Text = hasSword ? `${income.toFixed(2)}/s` : "";
+      labels.income.TextColor = "#a66f00";
+      const queued = slot.unlocked && this.state.pendingReplacementSlotIds.includes(slot.id);
+      labels.queue.Visible = queued || recommendReplacement;
+      labels.queue.Text = queued ? "排队中" : recommendReplacement ? "推荐置换" : "";
+      labels.button.ButtonColor = recommendReplacement ? "#fff0b3" : slot.unlocked ? (sword ? "#bde5cc" : "#e0f2e5") : "#e1ecfb";
+      labels.button.TextColor = recommendReplacement ? "#795611" : slot.unlocked ? "#285e3c" : "#36577f";
+      labels.button.BorderColor = slot.id === this.selectedSlotId ? "#f79009" : recommendReplacement ? "#d9b64c" : slot.unlocked ? "#91c7a3" : "#a6c1e5";
     });
   }
 }
