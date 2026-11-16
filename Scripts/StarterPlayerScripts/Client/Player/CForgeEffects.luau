@@ -1,6 +1,7 @@
 -- 锻造表现：仅克隆外观并在本地挥锤，不修改装备、材料或地图原模型。
 local FX = _G.FX
 local FXLoader = FX.Loader
+local WeaponVisual = FXLoader:RequireShared("Scripts.Game.Shared.WeaponVisual")
 local Effects = {}
 Effects.__index = Effects
 
@@ -65,6 +66,7 @@ function Effects.New(station)
     self._gripX = handle.Size.X * 0.44
     self._swordHeight = desktop.Size.Y / 2 + swordTemplate.Size.Y / 2 + 0.03
     local contactHeight = self._swordHeight + swordTemplate.Size.Y / 2
+    self._desktopHalfHeight, self._contactHeight = desktop.Size.Y / 2, contactHeight
     self._grip = CFrame.new(self._gripX - headOffset.X,
         contactHeight + headHalfHeight - headOffset.Y, -headOffset.Z)
     for index, node in ipairs(self._hammer:GetDescendants()) do
@@ -75,36 +77,16 @@ function Effects.New(station)
     end
     self._hammer.Parent = self._root
 
-    self._sword = swordTemplate:Clone()
-    self._sword.Name = "ForgeSword"
-    self._sword.Anchored, self._sword.CanCollide, self._sword.CanTouch, self._sword.CanQuery = true, false, false, false
-    self._sword.CFrame = self._base * CFrame.new(-0.35, self._swordHeight, 0.8)
-        * CFrame.Angles(0, -math.pi / 2, 0)
-    for index, node in ipairs(self._sword:GetDescendants()) do
-        if node:IsA("Sound") or node:IsA("BaseScript") then
-            node:Destroy()
-        end
-    end
-    self._sword.Parent = self._root
-    -- 独立白炽层短闪后淡出，保留原剑贴图；不再用 Highlight 把模型染成橙色。
-    self._bladeFlash = self._sword:Clone()
-    self._bladeFlash.Name = "BladeWhiteFlash"
-    self._bladeFlash.Material = Enum.Material.Neon
-    self._bladeFlash.Color = PerfectColor
-    self._bladeFlash.Reflectance = 0
-    self._bladeFlash.Transparency = 1
-    self._bladeFlash.CastShadow = false
-    local flashMesh = FXLoader:Here(self._bladeFlash, "Mesh")
-    flashMesh.TextureId = ""
-    flashMesh.Scale *= 1.008
-    self._bladeFlash.Parent = self._root
+    self:SetQuality(1)
+    self:SetWeaponVisible(false)
 
     local anchor = Instance.new("Part")
     anchor.Name = "ImpactPoint"
     anchor.Anchored, anchor.CanCollide, anchor.CanTouch, anchor.CanQuery = true, false, false, false
     anchor.Size = Vector3.new(0.1, 0.1, 0.1)
     anchor.Transparency = 1
-    anchor.CFrame = self._base * CFrame.new(0, contactHeight + 0.03, 0.8)
+    anchor.CFrame = self._base * CFrame.new(0, self._contactHeight + 0.03, 0.8)
+    self._impactAnchor = anchor
     anchor.Parent = self._root
     -- 火星由白热尖端与橙色细尾构成，沿飞行方向拉长，而不是星形贴图向上冒。
     for index = 1, 40 do
@@ -151,6 +133,60 @@ function Effects.New(station)
         end
     end
     return self
+end
+
+--- 品质变化时替换本地剑外观，白闪使用同一模型的无贴图副本。
+--- @param quality number 服务端同步的当前品质。
+function Effects:SetQuality(quality)
+    if self._quality == quality then
+        return
+    end
+    self._quality = quality
+    if self._sword then
+        self._sword:Destroy()
+        self._bladeFlash:Destroy()
+    end
+    self._sword = WeaponVisual.Create(quality, 4)
+    self._sword.Name = "ForgeSword"
+    self._swordHeight = self._desktopHalfHeight + self._sword.Size.Z / 2 + 0.03
+    local contactHeight = self._swordHeight + self._sword.Size.Z / 2
+    self._grip += Vector3.new(0, contactHeight - self._contactHeight, 0)
+    self._contactHeight = contactHeight
+    if self._impactAnchor then
+        self._impactAnchor.CFrame = self._base * CFrame.new(0, contactHeight + 0.03, 0.8)
+    end
+    WeaponVisual.SetCFrame(self._sword, self._base * CFrame.new(-0.35, self._swordHeight, 0.8)
+        * CFrame.Angles(0, -math.pi / 2, 0) * CFrame.Angles(math.pi / 2, 0, 0))
+    self._sword.Parent = self._root
+    self._bladeFlash = self._sword:Clone()
+    self._bladeFlash.Name = "BladeWhiteFlash"
+    self._flashParts = {}
+    for index, node in ipairs(self._bladeFlash:GetDescendants()) do
+        if node:IsA("BasePart") then
+            node.Material, node.Color, node.Reflectance = Enum.Material.Neon, PerfectColor, 0
+            node.Transparency, node.CastShadow = 1, false
+            if node:IsA("MeshPart") then
+                node.TextureID = ""
+            end
+            table.insert(self._flashParts, node)
+        elseif node:IsA("SurfaceAppearance") then
+            node:Destroy()
+        end
+    end
+    self._bladeFlash.Parent = self._root
+end
+
+--- 仅在存在服务端锻造进度时显示武器，空台、损毁或领取后隐藏武器和闪白层。
+--- @param visible boolean 是否存在尚未领取且未损毁的锻造武器。
+function Effects:SetWeaponVisible(visible)
+    for index, node in ipairs(self._sword:GetDescendants()) do
+        if node:IsA("BasePart") then
+            node.LocalTransparencyModifier = visible and 0 or 1
+        end
+    end
+    for index, part in ipairs(self._flashParts) do
+        part.LocalTransparencyModifier = visible and 0 or 1
+    end
 end
 
 --- 木牌界面只绑定本人副本，不改变其他玩家看到的场景原牌。
@@ -298,7 +334,9 @@ function Effects:Update(deltaTime)
     end
     self:UpdateSparks(sparkDelta)
     local flash = math.max(0, 1 - math.max(0, self._pulseAge - 0.025) / (self._powerful and 0.14 or 0.1))
-    self._bladeFlash.Transparency = 1 - math.sqrt(flash)
+    for index, part in ipairs(self._flashParts) do
+        part.Transparency = 1 - math.sqrt(flash)
+    end
     self._light.Brightness = flash * flash * (self._powerful and 3.5 or 2)
     self._bloom.Intensity = flash * (self._powerful and 0.28 or 0.18)
 end

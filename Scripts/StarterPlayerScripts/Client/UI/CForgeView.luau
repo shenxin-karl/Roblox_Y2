@@ -1,28 +1,33 @@
--- 基础锻造木板：展示固定配方和服务端确认的成品结果。
+-- 锻造木板：展示服务端同步的品质、幸运、单锤概率和出炉结果。
 local TweenService = game:GetService("TweenService")
 local FX = _G.FX
 local FXLoader = FX.Loader
 local Text = FX.Text
 local TranslationTexts = Text.Define("ForgeView", {
-    Title = "Forge finished sword",
-    Station = "Forge station {station:int}",
-    Strikes = "Finished swords",
-    Ready = "Ready to forge",
-    SuccessEffect = "Finished sword received",
-    GreatSuccessEffect = "Great success effect",
-    Broken = "Broken",
-    Damaged = "Damaged",
-    Unchanged = "Unchanged",
-    Success = "Success",
-    GreatSuccess = "Great success",
-    Notice = "1 raw sword → 1 level 1 finished sword",
-    Hint = "Press F to forge a finished sword.",
-    Failed = "Forge failed. Check raw swords and backpack space.",
-    Busy = "Forging...",
-    StrikeButton = "F · Strike",
-    GreatStrikeButton = "G · Great success preview",
-    LeaveButton = "E · Leave",
+    Title = "武器锻造",
+    Station = "{station:int} 号锻造台",
+    Strikes = "敲击次数",
+    Ready = "需要剑胚才能锻造，请先到熔炉熔炼矿石。",
+    SuccessEffect = "已获得成品武器",
+    GreatSuccessEffect = "大成功效果",
+    Broken = "锻造终止：保留当前品质",
+    Damaged = "受损",
+    Unchanged = "品质不变",
+    Success = "锻造成功",
+    GreatSuccess = "大成功",
+    Notice = "品质 {quality:int} · 玩家幸运 {player:int} · 材料幸运 {material:int}",
+    Hint = "F：敲击 · G：出炉 · E：暂停并离开",
+    Failed = "没有可用的剑胚，请先到熔炉熔炼矿石。",
+    Busy = "锻造中…",
+    StrikeButton = "F · 敲击",
+    GreatStrikeButton = "G · 武器出炉",
+    LeaveButton = "E · 离开",
+    Destroyed = "武器已损毁，未获得成品。",
+    Finished = "武器已出炉，装备后可放入基地。",
+    PendingClaim = "武器已完成，请腾出背包空间后按 G 领取。",
+    Probabilities = "成功 {success}% · 不变 {unchanged}% · 终止 {broken}% · 损毁 {destroy}%",
 })
+local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local OutcomeNames = {"Broken", "Damaged", "Unchanged", "Success", "GreatSuccess"}
 local View = {}
 View.__index = View
@@ -51,9 +56,13 @@ function View.New(root)
     end
     self.StrikeButton = FXLoader:Here(self._controls, "Strike")
     self.GreatStrikeButton = FXLoader:Here(self._controls, "GreatStrike")
-    self.GreatStrikeButton.Visible = false
+    self.GreatStrikeButton.Visible = true
+    self.GreatStrikeButton.Position = UDim2.fromOffset(0, 144)
+    self.GreatStrikeButton.Size = UDim2.fromOffset(300, 50)
     FXLoader:Here(self._panel, "Outcomes").Visible = false
     self.LeaveButton = FXLoader:Here(self._controls, "Leave")
+    self.LeaveButton.Position = UDim2.fromOffset(0, 206)
+    self._controls.Size = UDim2.fromOffset(300, 264)
     self._hint = FXLoader:Here(self._controls, "Hint")
     self._tweens = {}
     self._count, self._stationId = 0, 0
@@ -106,7 +115,7 @@ function View:SetBusy(busy)
     self:RefreshText()
 end
 
---- 仅在服务端确认获得成品后更新数量和命中反馈。
+--- 服务端确认本次敲击后播放命中反馈，实际品质与结果沿用同步数据。
 --- @param powerful boolean 是否显示大成功的视觉预览。
 --- @param count number 当前进入会话已经落下的锤数。
 function View:Impact(powerful, count)
@@ -128,7 +137,7 @@ function View:Impact(powerful, count)
     flashTween:Play()
 end
 
---- 交易失败时保留成品数量，并提示玩家检查材料及容量。
+--- 服务端拒绝剑胚时说明材料来源，不将缺少材料误报为背包容量问题。
 function View:ShowFailure()
     self._failed = true
     self:RefreshText()
@@ -140,7 +149,10 @@ function View:RefreshText()
     self._labels.Station.Text = Text.Tr(TranslationTexts.Station, {station = self._stationId})
     self._labels.Count.Text = tostring(self._count)
     self._labels.CountCaption.Text = Text.Tr(TranslationTexts.Strikes)
-    self._labels.Notice.Text = Text.Tr(TranslationTexts.Notice)
+    local data = self._forgeData
+    self._labels.Notice.Text = data and data.Quality and Text.Tr(TranslationTexts.Notice, {
+        quality = data.Quality, player = data.PlayerLuck, material = data.Luck,
+    }) or ""
     local resultKey = TranslationTexts.Ready
     local resultColor = Color3.fromRGB(255, 241, 217)
     if self._failed then
@@ -150,15 +162,42 @@ function View:RefreshText()
         resultKey = self._powerful and TranslationTexts.GreatSuccessEffect or TranslationTexts.SuccessEffect
         resultColor = self._powerful and Color3.fromRGB(221, 166, 255) or Color3.fromRGB(128, 215, 255)
     end
+    if data and data.Outcome then
+        if data.Active and data.Finished then
+            resultKey = TranslationTexts.PendingClaim
+        elseif data.Outcome == "Destroyed" then
+            resultKey = TranslationTexts.Destroyed
+        elseif data.Outcome == "Broken" then
+            resultKey = TranslationTexts.Broken
+        elseif data.Outcome == "Finished" then
+            resultKey = TranslationTexts.Finished
+        elseif data.Outcome == "Unchanged" then
+            resultKey = TranslationTexts.Unchanged
+        elseif data.Outcome == "Success" then
+            resultKey = TranslationTexts.Success
+        end
+    end
     self._labels.Result.Text = Text.Tr(resultKey)
     self._labels.Result.TextColor3 = resultColor
     for index, name in ipairs(OutcomeNames) do
         self._outcomes[name].Text = Text.Tr(TranslationTexts[name])
     end
     self._hint.Text = Text.Tr(self._busy and TranslationTexts.Busy or TranslationTexts.Hint)
+    if data and data.Active and not data.Finished and not self._busy then
+        local probabilities = Rules.GetForgeProbabilities(data.Luck, data.PlayerLuck, data.Quality)
+        self._hint.Text = Text.Tr(TranslationTexts.Probabilities, probabilities)
+    end
     self.StrikeButton.Text = Text.Tr(TranslationTexts.StrikeButton)
     self.GreatStrikeButton.Text = Text.Tr(TranslationTexts.GreatStrikeButton)
     self.LeaveButton.Text = Text.Tr(TranslationTexts.LeaveButton)
+end
+
+--- 只展示同步的进度；不在客户端抽取或预测锻造结果。
+--- @param data table 服务端同步的锻造状态。
+function View:SetForgeData(data)
+    self._forgeData = data
+    self._count = data.HammerCount or 0
+    self:RefreshText()
 end
 
 --- 根据视口短边缩放右侧敲击与离开操作区，手机保留可点击尺寸。

@@ -8,7 +8,7 @@ local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local SwordRules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local PlayerDataConfig = _G.PlayerDataConfig
 local TranslationTexts = Text.Define("MainItemDescription", {
-    Traits = "{description}\nMutation: {mutation}\nLuck: {luck}",
+    Traits = "{description}\n变异：{mutation}\n幸运：{luck}",
 })
 local Component = FX.Class("CMainUICompClass", "FCUICompClass")
 
@@ -69,7 +69,7 @@ end
 --- 常驻 HUD 与道具说明使用相同缩放，顶部、侧栏与钱包保持各自的屏幕锚点。
 function Component:RefreshLayout()
     local size = self._rootNode.AbsoluteSize
-    local scale = math.min(size.X / 1174, size.Y / 622)
+    local scale = math.min(size.X / 1280, size.Y / 720, 1.25)
     for index, name in ipairs({"TopNav", "SideNav", "Wallet"}) do
         FXLoader:Here(self._rootNode, name .. ".ResponsiveScale").Scale = scale
     end

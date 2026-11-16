@@ -12,10 +12,10 @@ local Effects = FXLoader:RequireFromParent(script, "CForgeEffects")
 local ForgeView = FXLoader:Require(script.Parent.Parent, "UI.CForgeView")
 local ActionButton = FXLoader:Require(script.Parent.Parent, "UI.CActionButton")
 local TranslationTexts = Text.Define("ForgeInteraction", {
-    Enter = "Forge",
-    Leave = "Leave forge station",
-    Recipe = "1 raw sword → 1 finished sword",
-    Return = "Return to the courtyard",
+    Enter = "前往锻造台",
+    Leave = "离开锻造台",
+    Recipe = "使用剑胚逐锤锻造，可随时出炉。",
+    Return = "返回庭院",
 })
 local Comp = FX.Class("CForgeCompClass", "FCUICompClass")
 
@@ -57,6 +57,19 @@ function Comp:OnReady()
     self:TrackConnection(self._view.StrikeButton.Activated:Connect(function()
         self:Strike(false)
     end))
+    self:TrackConnection(self._view.GreatStrikeButton.Activated:Connect(function()
+        self:FinishSword()
+    end))
+    self:WatchDataChanged(Fields.ForgeData, function()
+        local data = self:GetTable(Fields.ForgeData)
+        self._view:SetForgeData(data)
+        if self._effects then
+            if data.Quality then
+                self._effects:SetQuality(data.Quality)
+            end
+            self._effects:SetWeaponVisible(data.Active == true and data.Outcome ~= "Destroyed")
+        end
+    end)
     FX.Network:RegServerMsgCallback("S2C_ForgeSwordResult", function(stationId, success)
         if self._effects and self._stationId == stationId then
             if success then
@@ -151,9 +164,15 @@ function Comp:TryOpenView(stationId)
     self._mainHUD.Visible = false
     camera.CameraType = Enum.CameraType.Scriptable
     self._view:Open(effects:GetBoardPanel(), stationId)
+    local data = self:GetTable(Fields.ForgeData)
+    self._view:SetForgeData(data)
+    if data.Quality then
+        effects:SetQuality(data.Quality)
+    end
+    effects:SetWeaponVisible(data.Active == true and data.Outcome ~= "Destroyed")
     ContextActionService:BindActionAtPriority(self._actionName, function(actionName, inputState, inputObject)
         return self:HandlePreviewInput(actionName, inputState, inputObject)
-    end, false, 3000, Enum.KeyCode.F, Enum.KeyCode.E,
+    end, false, 3000, Enum.KeyCode.F, Enum.KeyCode.G, Enum.KeyCode.E,
         Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonB,
         Enum.PlayerActions.CharacterForward, Enum.PlayerActions.CharacterBackward,
         Enum.PlayerActions.CharacterLeft, Enum.PlayerActions.CharacterRight, Enum.PlayerActions.CharacterJump)
@@ -173,6 +192,8 @@ function Comp:HandlePreviewInput(actionName, inputState, inputObject)
         local key = inputObject.KeyCode
         if key == Enum.KeyCode.F or key == Enum.KeyCode.ButtonR2 then
             self:Strike(false)
+        elseif key == Enum.KeyCode.G then
+            self:FinishSword()
         elseif key == Enum.KeyCode.E or key == Enum.KeyCode.ButtonB then
             self:RequestLeave()
         end
@@ -180,8 +201,15 @@ function Comp:HandlePreviewInput(actionName, inputState, inputObject)
     return Enum.ContextActionResult.Sink
 end
 
---- 落锤时请求服务端兑换；成品数量只在收到成功结果后增加。
---- @param powerful boolean 沿用动画接口，本次基础锻造固定使用普通敲击。
+--- 主动出炉沿用服务端进度与容量校验，挥锤期间不提交收手请求。
+function Comp:FinishSword()
+    if self._effects and not self._effects:IsBusy() then
+        FX.Network:SendMsgToServer("C2S_FinishSword")
+    end
+end
+
+--- 落锤时只请求一次服务端敲击，结果由同步进度与回执驱动。
+--- @param powerful boolean 沿用动画接口，实际锻造固定使用普通敲击。
 function Comp:Strike(powerful)
     if self._effects and self._effects:Strike(powerful, function()
         FX.Network:SendMsgToServer("C2S_ForgeSword")

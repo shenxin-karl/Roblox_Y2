@@ -48,8 +48,10 @@ function Component:UpdateState()
         local price = Rules.GetPrice(upgradeId, level)
         entries[upgradeId] = {
             level = level,
-            currentValue = "×" .. GameUtility.NumberToText(Rules.GetMultiplier(level)),
-            nextValue = "×" .. GameUtility.NumberToText(Rules.GetMultiplier(level + 1)),
+            currentValue = upgradeId == "income" and "×" .. GameUtility.NumberToText(Rules.GetMultiplier(level))
+                or tostring(Rules.GetLuck(level)),
+            nextValue = maxed and "" or (upgradeId == "income" and "×" .. GameUtility.NumberToText(Rules.GetMultiplier(level + 1))
+                or tostring(Rules.GetLuck(level + 1))),
             price = price,
             canUpgrade = not maxed and money >= price,
             maxed = maxed,

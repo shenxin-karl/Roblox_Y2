@@ -1,5 +1,7 @@
--- 剑的临时成长规则；数值来自源 XLSX 导出的通用配置，不改变槽位解锁等级。
+-- 武器品质、逐锤概率与收益规则；静态武器映射来自 XLSX，成长曲线来自模拟器。
+local FX = _G.FX
 local Config = _G.GameConfig.CommonConfig
+local Numerical = FX.Loader:RequireShared("Scripts.Game.Configs.NumericalConfig")
 local Rules = {ItemId = 1003, RawItemId = Config.FurnaceSwordItemId}
 
 --- 从合并矿石配置查找武器词条对应的变异。
@@ -24,10 +26,10 @@ function Rules.GetTraits(extra)
     local mutationId = extra.MutationId
     local mutation = Rules.GetMutation(mutationId)
     local luck = extra.Luck
-    if not mutation or type(luck) ~= "number" or luck < 0 or luck >= math.huge then
+    if not mutation or type(luck) ~= "number" or luck < 1 or luck >= math.huge or luck % 1 ~= 0 then
         return nil
     end
-    return {MutationId = mutationId, Luck = luck}
+    return {MutationId = mutationId, Luck = luck, Quality = extra.Quality}
 end
 
 --- 校验背包与槽位之间转移的武器成长，拒绝损坏存档参与交易。
@@ -37,22 +39,51 @@ function Rules.IsValid(sword)
     return type(sword) == "table" and type(sword.Level) == "number"
         and sword.Level >= 1 and sword.Level % 1 == 0 and sword.Level < math.huge
         and type(sword.StoredMoney) == "number" and sword.StoredMoney >= 0
-        and sword.StoredMoney < math.huge and Rules.GetIncome(sword.Level) < math.huge
+        and sword.StoredMoney < math.huge and Rules.GetTraits(sword) ~= nil
+        and type(sword.Quality) == "number" and _G.GameConfig.WeaponData[sword.Quality] ~= nil
+        and Rules.GetIncome(sword) < math.huge
         and Rules.GetUpgradePrice(sword.Level) < math.huge
 end
 
---- 按剑本身等级计算每秒收益，槽位编号不参与成长。
---- @param level number 剑的当前等级。
---- @return number 未格式化的每秒金币数。
-function Rules.GetIncome(level)
-    return Config.SwordInitialIncome + (level - 1) * Config.SwordIncomePerLevel
+--- 基础秒收益按系数的品质次方计算，再乘武器等级与变异；玩家倍率由调用方加入。
+--- @param sword table 含 Quality、Level、MutationId 的成品属性。
+--- @return number 未格式化的单把秒收益。
+function Rules.GetIncome(sword)
+    return Config.SwordIncomeCoefficient ^ sword.Quality
+        * FX.CurveSampler:SampleCurveGroupColumn(Numerical.swordUpgradeCurves, "levelMultiplier", sword.Level)
+        * Rules.GetMutation(sword.MutationId).IncomeMultiplier
 end
 
---- 临时采用线性费用，客户端只展示服务端发布的结果。
+--- 从模拟器导出的武器升级曲线读取当前等级对应费用。
 --- @param level number 升级前剑的等级。
 --- @return number 升到下一级需要的金币数。
 function Rules.GetUpgradePrice(level)
-    return level * Config.SwordUpgradePricePerLevel
+    return FX.CurveSampler:SampleCurveGroupColumn(Numerical.swordUpgradeCurves, "upgradeCost", level)
+end
+
+--- 按锻造设计返回互斥的单锤百分比；好坏料只在成功与破损之间转移概率。
+--- @param weaponLuck number 原料幸运 W。
+--- @param playerLuck number 开始打造时的人物幸运 P。
+--- @param quality number 当前品质 Q，范围 P-4 到 P+3。
+--- @return table success、unchanged、broken、destroy 四项百分比。
+function Rules.GetForgeProbabilities(weaponLuck, playerLuck, quality)
+    local index = quality - playerLuck + 5
+    local success = ({94, 93, 91, 88, 70, 50, 30, 10})[index]
+    local unchanged = ({5, 5, 5, 5, 5, 15, 25, 40})[index]
+    local destroy = ({0, 0, 0, 0, 3, 5, 10, 15})[index]
+    if quality >= playerLuck then
+        local difference = math.clamp(weaponLuck - playerLuck, -10, 10)
+        success = difference > 0 and math.min(success * (1 + 0.2 * difference), 100 - unchanged - destroy)
+            or success * (1 + 0.05 * difference)
+    end
+    return {success = success, unchanged = unchanged, broken = 100 - unchanged - destroy - success, destroy = destroy}
+end
+
+--- 出售仅回收武器自身一分钟收益和未领金币，不受玩家及付费倍率影响。
+--- @param sword table 已校验的成品属性。
+--- @return number 本次回收金币。
+function Rules.GetSellPrice(sword)
+    return Rules.GetIncome(sword) * Config.SwordSellIncomeSeconds + sword.StoredMoney
 end
 
 return Rules

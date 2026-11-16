@@ -34,23 +34,54 @@ return {
     },
   },
   oreCollectInterval = 30,
-  miningMutationLuckCurve = {
+  smeltingLuckWeightCurve = {
     kind = "curve",
     input = {
       rounding = "none",
-      min = 1,
-      max = 6,
+      min = 0,
+      max = 4,
     },
     formula = {
       kind = "Power",
       base = 0,
       multiplier = {
-        kind = "constant",
-        value = 1,
+        kind = "linear",
+        ranges = {
+          {
+            fromInput = 0,
+            toInput = 0,
+            fromValue = 10,
+            toValue = 10,
+          },
+          {
+            fromInput = 1,
+            toInput = 1,
+            fromValue = 20,
+            toValue = 20,
+          },
+          {
+            fromInput = 2,
+            toInput = 2,
+            fromValue = 40,
+            toValue = 40,
+          },
+          {
+            fromInput = 3,
+            toInput = 3,
+            fromValue = 20,
+            toValue = 20,
+          },
+          {
+            fromInput = 4,
+            toInput = 4,
+            fromValue = 10,
+            toValue = 10,
+          },
+        },
       },
       power = {
         kind = "constant",
-        value = 1,
+        value = 0,
       },
       rounding = "none",
     },

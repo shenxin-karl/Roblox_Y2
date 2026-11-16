@@ -14,6 +14,12 @@ return {
         "C2S_UpgradeSlotSword",
         -- 在本人已占用的锻造台消耗一把原料剑，配方由服务端确定。
         "C2S_ForgeSword",
+        "C2S_FinishSword",
+        "C2S_SellSword",
+        -- requestId: 递增整数；boosted: 是否用钻石双倍领取；价格和倍率不由客户端提交。
+        "C2S_ClaimOfflineIncome",
+        "C2S_OfferRawSword",
+        "C2S_ReplyRawSword",
         -- 仅提交公共石头节点；次数、矿石奖励和兑换配方由服务端确定。
         "C2S_MineRock",
         "C2S_SmeltSword",
@@ -21,5 +27,6 @@ return {
         "C2S_UpgradeWorkshop",
     },
     -- S2C_UpgradeWorkshopResult(upgradeId: string, success: boolean)，真实等级沿用玩家字段同步。
-    ServerMsgID = {"S2C_ForgeSwordResult", "S2C_MiningReward", "S2C_UpgradeWorkshopResult"},
+    ServerMsgID = {"S2C_ForgeSwordResult", "S2C_MiningReward", "S2C_UpgradeWorkshopResult", "S2C_RawSwordOffer",
+        "S2C_OfflineIncomeResult"},
 }

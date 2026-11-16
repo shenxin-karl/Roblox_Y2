@@ -2,6 +2,8 @@
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
+local Rules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
+local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local Comp = FX.Class("SForgeCompClass", "FSPlayerCompClass")
 
 --- 每次登录重新分配会话，不将台位写入存档。
@@ -11,9 +13,10 @@ function Comp:Ctor(owner)
     self._manager = _G.SForgeManager
     self._lastRequest = -math.huge
     self._lastForge = -math.huge
+    self._random = Random.new()
 end
 
---- 本人占用且靠近锻造台才可将一把原料剑兑换为等级一成品，失败不扣材料。
+--- 每次请求只敲一锤，原料先进入持久化进度；所有概率与结果均由服务端裁定。
 function Comp:ForgeSword()
     local character, humanoid = self:GetLivingCharacter()
     local station = self._station
@@ -21,12 +24,79 @@ function Comp:ForgeSword()
         return
     end
     self._lastForge = os.clock()
-    local success = false
     if station.OwnerUserId == self:GetPlayerId()
         and (humanoid.RootPart.Position - station.Arrival.Position).Magnitude <= 8 then
-        success = self:RequireComponent("FSRewardComp"):AddRewards({{Type = "ForgeSword"}})
+        local data = self:GetTable(Fields.ForgeData)
+        if not data.Active then
+            local inventory = self:RequireComponent("FSInventoryComp")
+            local items = self:GetTable(Fields.Inventory)
+            local grid = inventory:GetEquippedGrid()
+            if not grid or not items[tostring(grid)] or items[tostring(grid)].itemId ~= Rules.RawItemId then
+                grid = inventory:FindItemById(Rules.RawItemId)
+            end
+            local item = grid and items[tostring(grid)]
+            local traits = item and Rules.GetTraits(item.extraData)
+            if not traits or item.stackCount ~= 1 then
+                FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, false)
+                return
+            end
+            local luck = WorkshopRules.GetLuck(self:GetTableView(Fields.UpgradeWorkshop).forge)
+            data = {Active = true, Finished = false, MutationId = traits.MutationId,
+                Luck = traits.Luck, PlayerLuck = luck, Quality = math.max(1, luck - 4), HammerCount = 0}
+            items[tostring(grid)] = nil
+            if not self:GetPlayerObject():RunDataTransaction(function()
+                return self:SetTable(Fields.Inventory, items) and self:SetTable(Fields.ForgeData, data)
+            end) then
+                return
+            end
+        end
+        if data.Finished then
+            self:FinishSword()
+            return
+        end
+        local probabilities = Rules.GetForgeProbabilities(data.Luck, data.PlayerLuck, data.Quality)
+        local roll = self._random:NextNumber(0, 100)
+        data.HammerCount += 1
+        if roll < probabilities.success then
+            data.Quality += 1
+            data.Outcome = "Success"
+            data.Finished = data.Quality >= data.PlayerLuck + 4
+        elseif roll < probabilities.success + probabilities.unchanged then
+            data.Outcome = "Unchanged"
+        elseif roll < probabilities.success + probabilities.unchanged + probabilities.broken then
+            data.Outcome, data.Finished = "Broken", true
+        else
+            data.Outcome, data.Active, data.Finished = "Destroyed", false, true
+        end
+        self:SetTable(Fields.ForgeData, data)
+        if data.Finished and data.Active then
+            self:FinishSword()
+        end
+        FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, true)
     end
-    FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, success)
+end
+
+--- 主动出炉或领取已结束成品；满背包时保留原结果，不能再次抽取概率。
+--- @return boolean 是否成功领取一把成品。
+function Comp:FinishSword()
+    if not self._active then
+        return false
+    end
+    local data = self:GetTable(Fields.ForgeData)
+    if not data.Active then
+        return false
+    end
+    data.Finished = true
+    self:SetTable(Fields.ForgeData, data)
+    return self:GetPlayerObject():RunDataTransaction(function()
+        if not self:RequireComponent("FSRewardComp"):AddRewards({{Type = "Item", ItemId = Rules.ItemId, Count = 1,
+            ExtraData = {MutationId = data.MutationId, Luck = data.Luck, Quality = data.Quality, Level = 1, StoredMoney = 0}}}) then
+            return false
+        end
+        data.Active = false
+        data.Outcome = data.Outcome == "Broken" and "Broken" or "Finished"
+        return self:SetTable(Fields.ForgeData, data)
+    end)
 end
 
 --- 返回玩家组件协作名。

@@ -24,6 +24,20 @@ return {
         Type = "table", Key = "UpgradeWorkshop", DefVal = {smelt = 0, forge = 0, income = 0},
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
+    -- 锻造进度与原料一起持久化；离开台位只暂停，不重抽或退料。
+    ForgeData = {
+        Type = "table", Key = "ForgeData", DefVal = {Active = false},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
+    -- 收益快照每次在线更新，Pending保留至领取；不补矿石与锻造。
+    OfflineIncome = {
+        Type = "table", Key = "OfflineIncome", DefVal = {Timestamp = 0, Rate = 0, Pending = 0},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
+    PaidMultiplierTier = {
+        Type = "number", Key = "PaidMultiplierTier", DefVal = 1,
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
     -- 进度随玩家保存；SlotData 以字符串槽位编号保存各槽的业务数据，不保存场景实例。
     BaseData = {
         Type = "table", Key = "BaseData",

@@ -150,7 +150,8 @@ return {
             Level = 1,
             StoredMoney = 0,
             MutationId = [[Normal]],
-            Luck = 1
+            Luck = 1,
+            Quality = 1
         },
         RawSword = {
             MutationId = [[Normal]],

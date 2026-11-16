@@ -9,10 +9,11 @@ local TranslationTexts = FX.Text.Define("BaseWeapon", {
     FinishedRequired = "Equip a finished sword before placing it in an empty slot.",
     BackpackFull = "Not enough backpack space to remove this weapon.",
 })
-local SwordHandle = FXLoader:Shared("Assets.Decorations.Sword.ClassicSword.Handle")
+local WeaponVisual = FXLoader:RequireShared("Scripts.Game.Shared.WeaponVisual")
+local Numerical = FXLoader:RequireShared("Scripts.Game.Configs.NumericalConfig")
 local Comp = FX.Class("SSlotSwordCompClass", "FSPlayerCompClass")
 
---- 持有本次会话的显示与节流，不保存实例或离线计时戳。
+--- 持有本次会话的显示与节流；离线收益快照通过独立玩家字段保存。
 --- @param owner table 当前服务端玩家对象。
 function Comp:Ctor(owner)
     Comp.Super.Ctor(self, owner)
@@ -30,6 +31,13 @@ end
 --- 首次赠剑由奖励框架提交；角色重生不走赠送入口。
 function Comp:OnPlayerLogin()
     self._active = true
+    local offline = self:GetTable(Fields.OfflineIncome)
+    local now = os.time()
+    if offline.Timestamp > 0 then
+        offline.Pending += offline.Rate * math.clamp(now - offline.Timestamp, 0, _G.GameConfig.CommonConfig.OfflineMaxSeconds)
+    end
+    offline.Timestamp = now
+    self:SetTable(Fields.OfflineIncome, offline)
     self:RequireComponent("FSRewardComp"):AddRewards({{Type = "StarterSlotSword"}})
     self:WatchDataChanged(Fields.BaseId, function()
         self:RefreshSlots()
@@ -37,6 +45,13 @@ function Comp:OnPlayerLogin()
     self:WatchDataChanged(Fields.BaseData, function()
         self:RefreshSlots()
     end)
+    self:WatchDataChanged(Fields.UpgradeWorkshop, function()
+        self:Publish()
+    end)
+    self:WatchDataChanged(Fields.PaidMultiplierTier, function()
+        self:Publish()
+    end)
+    self:SnapshotIncome()
 end
 
 --- 为现有牌子和绿区创建透明展示锚点，不修改地图编辑器管理的实例。
@@ -70,11 +85,10 @@ function Comp:CreateDisplay(slotId, slot, base)
     display.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
     display:SetAttribute("OwnerUserId", self:GetPlayerId())
     display:SetAttribute("SlotId", slotId)
-    local sword = SwordHandle:Clone()
+    local sword = WeaponVisual.Create(self:GetSword(slotId).Quality, 4)
     sword.Name = "Sword"
     sword.Anchored, sword.CanCollide, sword.CanTouch, sword.CanQuery = true, false, false, false
-    sword.CFrame = top.CFrame * CFrame.new(0, top.Size.Y / 2 + sword.Size.Z / 2 + 0.5, 0)
-        * CFrame.Angles(math.pi / 2, 0, 0)
+    WeaponVisual.SetCFrame(sword, top.CFrame * CFrame.new(0, top.Size.Y / 2 + sword.Size.Y / 2 + 0.1, 0))
     sword.Parent = display
     local sign = self:CreateAnchor(FXLoader:Here(standard, "InformationSign.WritingFace"), "UpgradeSign", display)
     -- SurfaceGui 按钮依赖可查询面；略微前移，避免原牌子挡住点击射线。
@@ -222,7 +236,7 @@ function Comp:Accrue()
         local sword = data.SlotData[tostring(slotId)]
         if seconds > 0 and sword and sword.ItemId == Rules.ItemId then
             view.LastIncome += seconds
-            sword.StoredMoney += Rules.GetIncome(sword.Level) * incomeMultiplier * seconds
+            sword.StoredMoney += Rules.GetIncome(sword) * incomeMultiplier * self:GetPaidMultiplier() * seconds
             changed = true
         end
     end
@@ -327,12 +341,35 @@ function Comp:Publish()
         display:SetAttribute("HasSword", sword ~= nil)
         if sword then
             display:SetAttribute("Level", sword.Level)
-            display:SetAttribute("Income", Rules.GetIncome(sword.Level)
-                * WorkshopRules.GetMultiplier(self:GetTable(Fields.UpgradeWorkshop).income))
+            display:SetAttribute("Income", Rules.GetIncome(sword)
+                * WorkshopRules.GetMultiplier(self:GetTable(Fields.UpgradeWorkshop).income) * self:GetPaidMultiplier())
             display:SetAttribute("UpgradePrice", Rules.GetUpgradePrice(sword.Level))
             display:SetAttribute("StoredMoney", sword.StoredMoney)
+            display:SetAttribute("Quality", sword.Quality)
         end
     end
+end
+
+--- 付费档位表示最终倍率，历史档位不重复连乘。
+--- @return number 当前有效付费金币倍率。
+function Comp:GetPaidMultiplier()
+    return FX.CurveSampler:SampleCurveGroupColumn(Numerical.paidMultiplierCurves, "multiplier",
+        self:GetNumber(Fields.PaidMultiplierTier))
+end
+
+--- 保存当前基地总秒收益和服务端时间；背包武器不参与离线计算。
+function Comp:SnapshotIncome()
+    local rate = 0
+    local data = self:GetTable(Fields.BaseData)
+    for slotId, sword in pairs(data.SlotData) do
+        if data.UnlockedSlots[slotId] and Rules.IsValid(sword) then
+            rate += Rules.GetIncome(sword)
+        end
+    end
+    rate *= WorkshopRules.GetMultiplier(self:GetTable(Fields.UpgradeWorkshop).income) * self:GetPaidMultiplier()
+    local offline = self:GetTable(Fields.OfflineIncome)
+    offline.Timestamp, offline.Rate = os.time(), rate
+    self:SetTable(Fields.OfflineIncome, offline)
 end
 
 --- 复用框架每秒更新，积累后自动领取；不用客户端领钱协议或独立保存循环。
@@ -345,12 +382,17 @@ function Comp:OnUpdate(serverTime)
         for slotId in pairs(self._displays) do
             self:Collect(slotId)
         end
+        self:SnapshotIncome()
     end
 end
 
 --- 离服结算最后完整在线秒并清理本组件的展示，未领金额仍由框架保存。
 function Comp:OnPlayerLogout()
+    if not self._active then
+        return
+    end
     self:Accrue()
+    self:SnapshotIncome()
     self._active = false
     if self._collectAllDisplay then
         self._collectAllDisplay:Destroy()

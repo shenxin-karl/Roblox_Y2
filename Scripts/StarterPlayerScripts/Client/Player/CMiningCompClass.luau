@@ -11,12 +11,12 @@ local MiningRocks = FX.Loader:RequireFromParent(script, "CMiningRocks")
 local UIRoot = FX.Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local ActionButton = FX.Loader:Require(script.Parent.Parent, "UI.CActionButton")
 local TranslationTexts = Text.Define("MiningInteraction", {
-    Preparing = "Preparing rocks...",
-    Mine = "Mine",
-    Smelt = "Smelt",
-    RemainingHits = "{hits:int} hits remaining",
-    OreCost = "{count:int} ore → 1 raw sword",
-    Received = "Received {count:int} {name}",
+    Preparing = "矿石准备中…",
+    Mine = "挖矿",
+    Smelt = "制作剑胚",
+    RemainingHits = "还需敲击 {hits:int} 次",
+    OreCost = "投入 {count:int} 个矿石 → 1 把剑胚",
+    Received = "获得 {count:int} 个{name}",
 })
 local Comp = FX.Class("CMiningCompClass", "FCUICompClass")
 
@@ -36,31 +36,38 @@ function Comp:OnReady()
     root.BackgroundTransparency = 1
     root.Parent = UIRoot.Get()
     self._rootNode = root
+    local refreshGroup = Instance.new("Frame")
+    refreshGroup.Name = "RefreshGroup"
+    refreshGroup.AnchorPoint = Vector2.new(0, 1)
+    refreshGroup.Size = UDim2.fromOffset(96, 108)
+    refreshGroup.BackgroundTransparency = 1
+    refreshGroup.Parent = root
+    self._refreshGroup = refreshGroup
+    self._refreshScale = Instance.new("UIScale")
+    self._refreshScale.Name = "ResponsiveScale"
+    self._refreshScale.Parent = refreshGroup
     local crystal = Instance.new("ImageLabel")
     crystal.Name = "RefreshCrystal"
     crystal.AnchorPoint = Vector2.new(0, 1)
-    crystal.Position = UDim2.new(0, 32, 1, -64)
-    crystal.Size = UDim2.fromOffset(112, 112)
+    crystal.Position = UDim2.fromOffset(8, 80)
+    crystal.Size = UDim2.fromOffset(80, 80)
     crystal.BackgroundTransparency = 1
     crystal.Image = _G.ItemConfig.Display[1001].IconId
     crystal.ScaleType = Enum.ScaleType.Fit
-    crystal.Parent = root
+    crystal.Parent = refreshGroup
     local countdown = Instance.new("TextLabel")
     countdown.Name = "RefreshCountdown"
     countdown.AnchorPoint = Vector2.new(0, 1)
-    countdown.Position = UDim2.new(0, 16, 1, -28)
-    countdown.Size = UDim2.fromOffset(144, 36)
+    countdown.Position = UDim2.fromOffset(0, 108)
+    countdown.Size = UDim2.fromOffset(96, 28)
     countdown.BackgroundTransparency = 1
     countdown.TextColor3 = Color3.new(1, 1, 1)
     countdown.Font = Enum.Font.GothamBold
-    countdown.TextSize = 24
+    countdown.TextSize = 20
     countdown.TextStrokeTransparency = 0.25
-    countdown.TextScaled = true
+    countdown.TextScaled = false
     countdown.AutoLocalize = false
-    local textSize = Instance.new("UITextSizeConstraint")
-    textSize.MinTextSize = 10
-    textSize.MaxTextSize = 24
-    countdown.Parent = root
+    countdown.Parent = refreshGroup
     self._countdown = countdown
     local feedback = countdown:Clone()
     feedback.Name = "MiningReward"
@@ -76,7 +83,6 @@ function Comp:OnReady()
     feedback.Visible = false
     feedback.Parent = root
     self._rewardLabel = feedback
-    textSize.Parent = countdown
     FX.Network:RegServerMsgCallback("S2C_MiningReward", function(itemId, count)
         self._rewardItemId, self._rewardCount = itemId, count
         self._rewardUntil = os.clock() + 2
@@ -116,7 +122,22 @@ function Comp:OnReady()
         self._miningRocks:Refresh(data)
         self:Refresh()
     end)
+    self:TrackConnection(root:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+        self:RefreshLayout()
+    end))
+    self:WatchDataChanged(_G.PlayerDataConfig.ForgeStation, function()
+        self:Refresh()
+    end)
+    self:RefreshLayout()
     self:Refresh()
+end
+
+--- 倒计时沿用 Y1 的设计分辨率整体缩放，保持左下角锚点及边距。
+function Comp:RefreshLayout()
+    local size = self._rootNode.AbsoluteSize
+    local scale = math.min(size.X / 1280, size.Y / 720, 1.25)
+    self._refreshScale.Scale = scale
+    self._refreshGroup.Position = UDim2.new(0, 20 * scale, 1, -24 * scale)
 end
 
 --- 仅显示服务器已入包的矿石数量，语言切换沿用矿场刷新，不预测奖励。
@@ -316,6 +337,8 @@ end
 
 --- 只选择本人本地呈现的最近矿石；最终归属、次数和距离仍由服务端重验。
 function Comp:Refresh()
+    local forging = self:GetNumber(_G.PlayerDataConfig.ForgeStation) > 0
+    self._rootNode.Visible = not forging
     self:RefreshReward()
     self:RefreshPickaxe()
     local deadline = self._miningDeadline or 0
@@ -328,7 +351,7 @@ function Comp:Refresh()
     local character = self:GetPlayerCharacter()
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     local root = humanoid and humanoid.RootPart
-    if root and humanoid.Health > 0 then
+    if not forging and root and humanoid.Health > 0 then
         local nearestDistance = Settings.InteractDistance
         for index, rock in ipairs(CollectionService:GetTagged(Settings.RockTag)) do
             local hits = rock:GetAttribute("RemainingHits")

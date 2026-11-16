@@ -13,7 +13,12 @@ return {
         MiningOrePerHit = 1,
         MiningOreItemId = 1001,
         FurnaceOreCost = 5,
-        FurnaceSwordItemId = 1002
+        FurnaceSwordItemId = 1002,
+        SwordSellIncomeSeconds = 60,
+        OfflineMaxSeconds = 7200,
+        GiftDistance = 15,
+        SwordIncomeCoefficient = 1.2,
+        OfflineDoubleClaimDiamondCost = 10
     },
     BaseSlotData = {
         [1] = {
@@ -191,7 +196,8 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1001,
             Luck = 1,
-            IconId = nil
+            IconId = nil,
+            IncomeMultiplier = 1
         },
         [2] = {
             Id = 2,
@@ -206,7 +212,8 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1101,
             Luck = 2,
-            IconId = [[rbxassetid://114769267589622]]
+            IconId = [[rbxassetid://114769267589622]],
+            IncomeMultiplier = 1
         },
         [3] = {
             Id = 3,
@@ -221,7 +228,8 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1102,
             Luck = 3,
-            IconId = [[rbxassetid://106224256982724]]
+            IconId = [[rbxassetid://106224256982724]],
+            IncomeMultiplier = 1
         },
         [4] = {
             Id = 4,
@@ -236,7 +244,8 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1103,
             Luck = 4,
-            IconId = [[rbxassetid://131760910444430]]
+            IconId = [[rbxassetid://131760910444430]],
+            IncomeMultiplier = 1
         },
         [5] = {
             Id = 5,
@@ -251,7 +260,8 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1104,
             Luck = 5,
-            IconId = [[rbxassetid://120733919890929]]
+            IconId = [[rbxassetid://120733919890929]],
+            IncomeMultiplier = 1
         },
         [6] = {
             Id = 6,
@@ -266,7 +276,250 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1105,
             Luck = 6,
-            IconId = [[rbxassetid://73900159742590]]
+            IconId = [[rbxassetid://73900159742590]],
+            IncomeMultiplier = 1
+        }
+    },
+    WeaponData = {
+        [1] = {
+            Quality = 1,
+            Name = [[Wooden Practice Sword]],
+            ModelPath = [[Assets.WeaponList.01_WoodenPracticeSword]],
+            IconId = [[rbxassetid://130937278026319]]
+        },
+        [2] = {
+            Quality = 2,
+            Name = [[Stone Shortsword]],
+            ModelPath = [[Assets.WeaponList.02_StoneShortsword]],
+            IconId = [[rbxassetid://108597490544442]]
+        },
+        [3] = {
+            Quality = 3,
+            Name = [[Novice Iron Sword]],
+            ModelPath = [[Assets.WeaponList.03_NoviceIronSword]],
+            IconId = [[rbxassetid://72237625079956]]
+        },
+        [4] = {
+            Quality = 4,
+            Name = [[Patched Blunt Sword]],
+            ModelPath = [[Assets.WeaponList.04_PatchedBluntSword]],
+            IconId = [[rbxassetid://125830210960773]]
+        },
+        [5] = {
+            Quality = 5,
+            Name = [[Militia Longsword]],
+            ModelPath = [[Assets.WeaponList.05_MilitiaLongsword]],
+            IconId = [[rbxassetid://114045323972770]]
+        },
+        [6] = {
+            Quality = 6,
+            Name = [[Bronze Shortblade]],
+            ModelPath = [[Assets.WeaponList.06_BronzeShortblade]],
+            IconId = [[rbxassetid://99330775612862]]
+        },
+        [7] = {
+            Quality = 7,
+            Name = [[Riveted Iron Sword]],
+            ModelPath = [[Assets.WeaponList.07_RivetedIronSword]],
+            IconId = [[rbxassetid://131868171969550]]
+        },
+        [8] = {
+            Quality = 8,
+            Name = [[Refined Steel Sword]],
+            ModelPath = [[Assets.WeaponList.08_RefinedSteelSword]],
+            IconId = [[rbxassetid://116034100288426]]
+        },
+        [9] = {
+            Quality = 9,
+            Name = [[Hunters Curved Blade]],
+            ModelPath = [[Assets.WeaponList.09_HuntersCurvedBlade]],
+            IconId = [[rbxassetid://135969773394825]]
+        },
+        [10] = {
+            Quality = 10,
+            Name = [[Rangers Sword]],
+            ModelPath = [[Assets.WeaponList.10_RangersSword]],
+            IconId = [[rbxassetid://125283606330778]]
+        },
+        [11] = {
+            Quality = 11,
+            Name = [[Kingdom Standard Sword]],
+            ModelPath = [[Assets.WeaponList.11_KingdomStandardSword]],
+            IconId = [[rbxassetid://108326404150386]]
+        },
+        [12] = {
+            Quality = 12,
+            Name = [[Clockwork Sword]],
+            ModelPath = [[Assets.WeaponList.12_ClockworkSword]],
+            IconId = [[rbxassetid://103953466062807]]
+        },
+        [13] = {
+            Quality = 13,
+            Name = [[Knights Oath Sword]],
+            ModelPath = [[Assets.WeaponList.13_KnightsOathSword]],
+            IconId = [[rbxassetid://96537449126562]]
+        },
+        [14] = {
+            Quality = 14,
+            Name = [[Silvermoon Rapier]],
+            ModelPath = [[Assets.WeaponList.14_SilvermoonRapier]],
+            IconId = [[rbxassetid://122953578656643]]
+        },
+        [15] = {
+            Quality = 15,
+            Name = [[Coral Tide Sword]],
+            ModelPath = [[Assets.WeaponList.15_CoralTideSword]],
+            IconId = [[rbxassetid://102131029134524]]
+        },
+        [16] = {
+            Quality = 16,
+            Name = [[Forest Guardian Sword]],
+            ModelPath = [[Assets.WeaponList.16_ForestGuardianSword]],
+            IconId = [[rbxassetid://117235351346762]]
+        },
+        [17] = {
+            Quality = 17,
+            Name = [[Crimson Sigil Sword]],
+            ModelPath = [[Assets.WeaponList.17_CrimsonSigilSword]],
+            IconId = [[rbxassetid://98478818025954]]
+        },
+        [18] = {
+            Quality = 18,
+            Name = [[Amber Honeycomb Sword]],
+            ModelPath = [[Assets.WeaponList.18_AmberHoneycombSword]],
+            IconId = [[rbxassetid://77482879723436]]
+        },
+        [19] = {
+            Quality = 19,
+            Name = [[Dune Scimitar]],
+            ModelPath = [[Assets.WeaponList.19_DuneScimitar]],
+            IconId = [[rbxassetid://112295423717119]]
+        },
+        [20] = {
+            Quality = 20,
+            Name = [[Peacock Brocade Sword]],
+            ModelPath = [[Assets.WeaponList.20_PeacockBrocadeSword]],
+            IconId = [[rbxassetid://134249709704975]]
+        },
+        [21] = {
+            Quality = 21,
+            Name = [[Frostblade]],
+            ModelPath = [[Assets.WeaponList.21_Frostblade]],
+            IconId = [[rbxassetid://101055048406495]]
+        },
+        [22] = {
+            Quality = 22,
+            Name = [[Thunder Knight Sword]],
+            ModelPath = [[Assets.WeaponList.22_ThunderKnightSword]],
+            IconId = [[rbxassetid://121825748470994]]
+        },
+        [23] = {
+            Quality = 23,
+            Name = [[Red Lion Greatsword]],
+            ModelPath = [[Assets.WeaponList.23_RedLionGreatsword]],
+            IconId = [[rbxassetid://106748583820642]]
+        },
+        [24] = {
+            Quality = 24,
+            Name = [[Molten Warblade]],
+            ModelPath = [[Assets.WeaponList.24_MoltenWarblade]],
+            IconId = [[rbxassetid://98047870388881]]
+        },
+        [25] = {
+            Quality = 25,
+            Name = [[Starfall Crystal Blade]],
+            ModelPath = [[Assets.WeaponList.25_StarfallCrystalBlade]],
+            IconId = [[rbxassetid://86151138671766]]
+        },
+        [26] = {
+            Quality = 26,
+            Name = [[Rift Sword]],
+            ModelPath = [[Assets.WeaponList.26_RiftSword]],
+            IconId = [[rbxassetid://111554858232315]]
+        },
+        [27] = {
+            Quality = 27,
+            Name = [[Iron Fortress Siegebreaker]],
+            ModelPath = [[Assets.WeaponList.27_IronFortressSiegebreaker]],
+            IconId = [[rbxassetid://76092898026896]]
+        },
+        [28] = {
+            Quality = 28,
+            Name = [[White Fang Earthsplitter]],
+            ModelPath = [[Assets.WeaponList.28_WhiteFangEarthsplitter]],
+            IconId = [[rbxassetid://103414728704722]]
+        },
+        [29] = {
+            Quality = 29,
+            Name = [[Obsidian Dragonslayer]],
+            ModelPath = [[Assets.WeaponList.29_ObsidianDragonslayer]],
+            IconId = [[rbxassetid://87879843381923]]
+        },
+        [30] = {
+            Quality = 30,
+            Name = [[Radiant Judgment Sword]],
+            ModelPath = [[Assets.WeaponList.30_RadiantJudgmentSword]],
+            IconId = [[rbxassetid://103588504050882]]
+        },
+        [31] = {
+            Quality = 31,
+            Name = [[Crucible Reforged Sword]],
+            ModelPath = [[Assets.WeaponList.31_CrucibleReforgedSword]],
+            IconId = [[rbxassetid://109926671801450]]
+        },
+        [32] = {
+            Quality = 32,
+            Name = [[Emerald Beetle King Sword]],
+            ModelPath = [[Assets.WeaponList.32_EmeraldBeetleKingSword]],
+            IconId = [[rbxassetid://88511767540141]]
+        },
+        [33] = {
+            Quality = 33,
+            Name = [[Abyssal King Sword]],
+            ModelPath = [[Assets.WeaponList.33_AbyssalKingSword]],
+            IconId = [[rbxassetid://136604115713990]]
+        },
+        [34] = {
+            Quality = 34,
+            Name = [[Dragon Emperors Inferno]],
+            ModelPath = [[Assets.WeaponList.34_DragonEmperorsInferno]],
+            IconId = [[rbxassetid://120990344165085]]
+        },
+        [35] = {
+            Quality = 35,
+            Name = [[Deepsea Anchor Greatsword]],
+            ModelPath = [[Assets.WeaponList.35_DeepseaAnchorGreatsword]],
+            IconId = [[rbxassetid://95601433702588]]
+        },
+        [36] = {
+            Quality = 36,
+            Name = [[Sun And Moon Sword]],
+            ModelPath = [[Assets.WeaponList.36_SunAndMoonSword]],
+            IconId = [[rbxassetid://92493992558823]]
+        },
+        [37] = {
+            Quality = 37,
+            Name = [[Crimson Jade Mountain Sword]],
+            ModelPath = [[Assets.WeaponList.37_CrimsonJadeMountainSword]],
+            IconId = [[rbxassetid://70846185851636]]
+        },
+        [38] = {
+            Quality = 38,
+            Name = [[Genesis Throne Sword]],
+            ModelPath = [[Assets.WeaponList.38_GenesisThroneSword]],
+            IconId = [[rbxassetid://95727474697037]]
+        },
+        [39] = {
+            Quality = 39,
+            Name = [[Titan Crusher]],
+            ModelPath = [[Assets.WeaponList.39_TitanCrusher]],
+            IconId = [[rbxassetid://72675675283734]]
+        },
+        [40] = {
+            Quality = 40,
+            Name = [[Worldsend Greatsword]],
+            ModelPath = [[Assets.WeaponList.40_WorldsendGreatsword]],
+            IconId = [[rbxassetid://84820570103940]]
         }
     }
 }

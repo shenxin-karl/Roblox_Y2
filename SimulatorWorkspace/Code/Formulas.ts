@@ -5,11 +5,11 @@ import type { SlotState, SwordState } from "./State";
 
 export type PlayerUpgradeKind = "smelting" | "forging" | "income";
 
-/** 以熔炼等级为中心读取五档权重；保留各档，低于最低幸运的产出统一为 1。 */
+/** 五档使用0～4索引采样权重，对应幸运偏移-2～+2；低于最低幸运的产出统一为1。 */
 export function calculateSmeltingLuckDistribution(curve: CurveValue, level: number): { luck: number; weight: number }[] {
   return [-2, -1, 0, 1, 2].map((offset) => ({
     luck: Math.max(1, level + offset),
-    weight: sampleCurve(curve, offset),
+    weight: sampleCurve(curve, offset + 2),
   }));
 }
 

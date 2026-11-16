@@ -2,6 +2,7 @@
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local Items = _G.ItemConfig
+local WeaponVisual = FX.Loader:RequireShared("Scripts.Game.Shared.WeaponVisual")
 local Comp = FX.Class("SInventoryCompClass", "FSInventoryCompClass")
 
 --- 固定容量在组件创建时读取，矿石按掉落配置复用对应品级的外观模板。
@@ -17,7 +18,6 @@ function Comp:Ctor(owner)
     }
     self._shortcutEnabled = config.ShortcutEnabled
     self._tools = {}
-    self._swordHandle = FX.Loader:Shared("Assets.Decorations.Sword.ClassicSword.Handle")
     self._oreModels = {}
     for grade, rockType in pairs(_G.GameConfig.MiningRockData) do
         self._oreModels[rockType.OreItemId] = FX.Loader:Shared(rockType.ModelPath)
@@ -49,10 +49,11 @@ function Comp:OnPlayerLogin()
     self:SyncTools()
 end
 
---- 仅为已拥有的道具创建手持外观；矿石缩放至手持尺寸并焊接，避免散落或固定角色。
+--- 创建手持外观；剑沿模型 Y 轴直立握持，握点落在剑柄，避免额外旋转使剑身沿手臂横放。
 --- @param itemId number 已配置的道具 ID。
+--- @param extra table? 武器实例词条，用于选择品质模型和图标。
 --- @return Tool 不包含业务脚本的手持道具。
-function Comp:CreateTool(itemId)
+function Comp:CreateTool(itemId, extra)
     local tool = Instance.new("Tool")
     tool.CanBeDropped = false
     tool.Enabled = false
@@ -63,7 +64,11 @@ function Comp:CreateTool(itemId)
     end
     local handle
     if Items.Data[itemId].HeldHandler == "Sword" then
-        handle = self._swordHandle:Clone()
+        local quality = extra and extra.Quality or 1
+        tool.TextureId = _G.GameConfig.WeaponData[quality].IconId
+        handle = WeaponVisual.Create(quality, 4)
+        tool:SetAttribute("Quality", quality)
+        tool.Grip = CFrame.new(0, -1.4, 0)
     else
         local model = self._oreModels[itemId]:Clone()
         local size = model:GetExtentsSize()
@@ -100,7 +105,7 @@ function Comp:CreateTool(itemId)
     return tool
 end
 
---- 数据提交后只更新变动格子，避免矿石堆叠时反复收起玩家装备。
+--- 数据提交后只更新变动格子；武器品质改变时重建模型，避免沿用旧外观和名称。
 function Comp:SyncTools()
     if not self._active or not self._shortcutEnabled then
         return
@@ -115,6 +120,8 @@ function Comp:SyncTools()
         local entry = data[grid]
         local tool = self._tools[grid]
         if tool and (not entry or tool:GetAttribute("FrameworkItemId") ~= entry.itemId
+            or (Items.Data[entry.itemId].HeldHandler == "Sword"
+                and tool:GetAttribute("Quality") ~= (entry.extraData and entry.extraData.Quality or 1))
             or (tool.Parent ~= backpack and tool.Parent ~= player.Character)) then
             tool:Destroy()
             self._tools[grid] = nil
@@ -122,13 +129,17 @@ function Comp:SyncTools()
         end
         if entry then
             if not tool then
-                tool = self:CreateTool(entry.itemId)
+                tool = self:CreateTool(entry.itemId, entry.extraData)
                 self._tools[grid] = tool
-                tool.Name = Items.Display[entry.itemId].Name
+                local quality = entry.extraData and entry.extraData.Quality
+                local name = quality and _G.GameConfig.WeaponData[quality].Name or Items.Display[entry.itemId].Name
+                tool.Name = name
+                tool:SetAttribute("DisplayNameSource", name)
                 tool.Parent = backpack
             end
             tool:SetAttribute("FrameworkGrid", grid)
             tool:SetAttribute("WeaponLevel", entry.extraData and entry.extraData.Level)
+            tool:SetAttribute("StoredMoney", entry.extraData and entry.extraData.StoredMoney)
             tool:SetAttribute("MutationId", entry.extraData and entry.extraData.MutationId)
             tool:SetAttribute("Luck", entry.extraData and entry.extraData.Luck)
             tool:SetAttribute("FrameworkStackCount", entry.stackCount)

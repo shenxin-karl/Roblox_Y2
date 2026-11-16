@@ -15,6 +15,36 @@ function Manager:Ctor()
     self:RegSlotSwordMsg()
     self:RegMiningMsg()
     self:RegUpgradeWorkshopMsg()
+    self:RegEconomyMsg()
+end
+
+--- 经济操作只转发引擎认证的请求者，不允许指定扣款方或奖励金额。
+function Manager:RegEconomyMsg()
+    local routes = {C2S_SellSword = "Sell",
+        C2S_OfferRawSword = "OfferGift", C2S_ReplyRawSword = "ReplyGift"}
+    for message, method in pairs(routes) do
+        FX.Network:RegClientMsgCallback(message, function(userId, first, second)
+            local player = self:GetPlayerObject(userId)
+            local economy = player and player:GetComponent("SEconomyComp")
+            if economy then
+                economy[method](economy, first, second)
+            end
+        end)
+    end
+    --- 离线领取只提交请求编号与单双倍选择，所有有效请求均回执以解除界面等待。
+    --- @param userId number 引擎认证的玩家身份。
+    --- @param requestId any 客户端递增请求编号，仅用于对应回执。
+    --- @param boosted any 是否选择消耗钻石的双倍领取。
+    FX.Network:RegClientMsgCallback("C2S_ClaimOfflineIncome", function(userId, requestId, boosted)
+        if type(requestId) ~= "number" or requestId < 1 or requestId > 2147483647 or requestId % 1 ~= 0
+            or type(boosted) ~= "boolean" then
+            return
+        end
+        local player = self:GetPlayerObject(userId)
+        local economy = player and player:GetComponent("SEconomyComp")
+        local success = economy ~= nil and economy:ClaimOffline(boosted)
+        FX.Network:SendMsgToClient(userId, "S2C_OfflineIncomeResult", requestId, success)
+    end)
 end
 
 --- 工坊升级只路由到认证请求者；每次有效 ID 请求均回执，释放客户端防重状态。
@@ -73,6 +103,15 @@ end
 
 --- 锻造请求只转发给认证请求者，不接收目标玩家、台位或坐标。
 function Manager:RegForgeMsg()
+    --- 主动出炉只处理请求者持久化的锻造进度，不接受客户端品质。
+    --- @param userId number 引擎认证的玩家身份。
+    FX.Network:RegClientMsgCallback("C2S_FinishSword", function(userId)
+        local player = self:GetPlayerObject(userId)
+        local forge = player and player:GetComponent("SForgeComp")
+        if forge then
+            forge:FinishSword()
+        end
+    end)
     --- 只对请求者的台位和背包进行锻造，不接受客户端配方或成品参数。
     --- @param userId number 引擎认证的请求者 ID。
     FX.Network:RegClientMsgCallback("C2S_ForgeSword", function(userId)

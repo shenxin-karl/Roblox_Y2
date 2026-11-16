@@ -163,7 +163,7 @@ function Manager:Smelt(player, position)
         {{Type = "Item", ItemId = selected.OreItemId, Count = Config.FurnaceOreCost}},
         {{Type = "Item", ItemId = Config.FurnaceSwordItemId, Count = 1,
             ExtraData = {MutationId = selected.MutationId,
-                Luck = selected.Luck * WorkshopRules.GetMultiplier(player:GetTableView(Fields.UpgradeWorkshop).smelt)}}}
+                Luck = WorkshopRules.RollMaterialLuck(player:GetTableView(Fields.UpgradeWorkshop).smelt, self._random)}}}
     )
 end
 

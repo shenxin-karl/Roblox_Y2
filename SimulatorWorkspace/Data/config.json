@@ -118,11 +118,11 @@
   "smeltingLuckWeightCurve": {
     "kind": "curve",
     "input": {
-      "key": "luckOffset",
+      "key": "luckTierIndex",
       "valueType": "number",
       "rounding": "none",
-      "min": -2,
-      "max": 2
+      "min": 0,
+      "max": 4
     },
     "formula": {
       "kind": "Power",
@@ -130,11 +130,11 @@
       "multiplier": {
         "kind": "linear",
         "ranges": [
-          { "fromInput": -2, "toInput": -2, "fromValue": 10, "toValue": 10 },
-          { "fromInput": -1, "toInput": -1, "fromValue": 20, "toValue": 20 },
-          { "fromInput": 0, "toInput": 0, "fromValue": 40, "toValue": 40 },
+          { "fromInput": 0, "toInput": 0, "fromValue": 10, "toValue": 10 },
           { "fromInput": 1, "toInput": 1, "fromValue": 20, "toValue": 20 },
-          { "fromInput": 2, "toInput": 2, "fromValue": 10, "toValue": 10 }
+          { "fromInput": 2, "toInput": 2, "fromValue": 40, "toValue": 40 },
+          { "fromInput": 3, "toInput": 3, "fromValue": 20, "toValue": 20 },
+          { "fromInput": 4, "toInput": 4, "fromValue": 10, "toValue": 10 }
         ]
       },
       "power": {
@@ -148,11 +148,11 @@
       "folder": "手动打造",
       "display": {
         "kind": "curve",
-        "xLabel": "原料幸运相对熔炼等级的偏移",
+        "xLabel": "档位索引（0～4 对应幸运偏移 -2～+2）",
         "yLabel": "抽取权重",
         "sampleRange": {
-          "min": -2,
-          "max": 2,
+          "min": 0,
+          "max": 4,
           "step": 1
         }
       }
