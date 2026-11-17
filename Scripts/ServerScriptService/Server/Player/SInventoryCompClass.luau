@@ -3,6 +3,7 @@ local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local Items = _G.ItemConfig
 local WeaponVisual = FX.Loader:RequireShared("Scripts.Game.Shared.WeaponVisual")
+local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Comp = FX.Class("SInventoryCompClass", "FSInventoryCompClass")
 
 --- 固定容量在组件创建时读取，矿石按掉落配置复用对应品级的外观模板。
@@ -51,7 +52,7 @@ end
 
 --- 创建手持外观；剑沿模型 Y 轴直立握持，握点落在剑柄，避免额外旋转使剑身沿手臂横放。
 --- @param itemId number 已配置的道具 ID。
---- @param extra table? 武器实例词条，用于选择品质模型和图标。
+--- @param extra table? 成品品质用于选择模型和图标；剑胚固定使用1级剑外观。
 --- @return Tool 不包含业务脚本的手持道具。
 function Comp:CreateTool(itemId, extra)
     local tool = Instance.new("Tool")
@@ -64,7 +65,7 @@ function Comp:CreateTool(itemId, extra)
     end
     local handle
     if Items.Data[itemId].HeldHandler == "Sword" then
-        local quality = extra and extra.Quality or 1
+        local quality = itemId == SwordRules.ItemId and extra.Quality or 1
         tool.TextureId = _G.GameConfig.WeaponData[quality].IconId
         handle = WeaponVisual.Create(quality, 4)
         tool:SetAttribute("Quality", quality)
@@ -121,7 +122,7 @@ function Comp:SyncTools()
         local tool = self._tools[grid]
         if tool and (not entry or tool:GetAttribute("FrameworkItemId") ~= entry.itemId
             or (Items.Data[entry.itemId].HeldHandler == "Sword"
-                and tool:GetAttribute("Quality") ~= (entry.extraData and entry.extraData.Quality or 1))
+                and tool:GetAttribute("Quality") ~= (entry.itemId == SwordRules.ItemId and entry.extraData.Quality or 1))
             or (tool.Parent ~= backpack and tool.Parent ~= player.Character)) then
             tool:Destroy()
             self._tools[grid] = nil
@@ -131,7 +132,7 @@ function Comp:SyncTools()
             if not tool then
                 tool = self:CreateTool(entry.itemId, entry.extraData)
                 self._tools[grid] = tool
-                local quality = entry.extraData and entry.extraData.Quality
+                local quality = entry.itemId == SwordRules.ItemId and entry.extraData.Quality
                 local name = quality and _G.GameConfig.WeaponData[quality].Name or Items.Display[entry.itemId].Name
                 tool.Name = name
                 tool:SetAttribute("DisplayNameSource", name)
@@ -141,7 +142,7 @@ function Comp:SyncTools()
             tool:SetAttribute("WeaponLevel", entry.extraData and entry.extraData.Level)
             tool:SetAttribute("StoredMoney", entry.extraData and entry.extraData.StoredMoney)
             tool:SetAttribute("MutationId", entry.extraData and entry.extraData.MutationId)
-            tool:SetAttribute("Luck", entry.extraData and entry.extraData.Luck)
+            tool:SetAttribute("blankLuckLevel", entry.extraData and entry.extraData.blankLuckLevel)
             tool:SetAttribute("FrameworkStackCount", entry.stackCount)
         end
     end

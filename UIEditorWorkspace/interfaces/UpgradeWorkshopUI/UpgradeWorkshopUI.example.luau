@@ -11,15 +11,15 @@ function CUpgradeWorkshopPreview:Ctor(owner)
         entries = {
             smelt = {
                 level = 3,
-                currentValue = "×1.20",
-                nextValue = "×1.30",
+                currentValue = "3",
+                nextValue = "4",
                 price = 100,
                 canUpgrade = true,
             },
             forge = {
                 level = 3,
-                currentValue = "×1.20",
-                nextValue = "×1.30",
+                currentValue = "3",
+                nextValue = "4",
                 price = 250,
                 canUpgrade = true,
             },
@@ -54,7 +54,11 @@ function CUpgradeWorkshopPreview:OnUIAction(action, payload)
     self._balance -= entry.price
     entry.level += 1
     entry.currentValue = entry.nextValue
-    entry.nextValue = string.format("×%.2f", 1 + entry.level * 0.1)
+    if payload.upgradeId == "income" then
+        entry.nextValue = string.format("×%.2f", 1 + entry.level * 0.1)
+    else
+        entry.nextValue = tostring(entry.level + 1)
+    end
     entry.price *= 2
     entry.maxed = entry.level >= self._maxLevel
     for upgradeId, currentEntry in pairs(self.State.entries) do

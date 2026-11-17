@@ -15,7 +15,7 @@ local Texts = Text.Define("WeaponActions", {
     Gift = "赠送剑胚",
     GiftTarget = "送给 {name}",
     ConfirmGift = "确定将当前装备的剑胚赠送给 {name} 吗？",
-    ReceiveGift = "{name} 想赠送一把{mutation}剑胚，幸运为 {luck:int}。是否接受？",
+    ReceiveGift = "{name} wants to give you a {mutation} sword blank with luck level {blankLuckLevel:int}. Accept?",
     Confirm = "确认",
     Cancel = "取消",
 })
@@ -59,9 +59,10 @@ function Comp:OnReady()
                 FX.Network:SendMsgToServer("C2S_OfferRawSword", target.UserId)
             end})
     end))
-    FX.Network:RegServerMsgCallback("S2C_RawSwordOffer", function(token, name, mutation, luck)
+    FX.Network:RegServerMsgCallback("S2C_RawSwordOffer", function(token, name, mutation, blankLuckLevel)
         self._common:ShowConfirm({DescKey = Texts.ReceiveGift, ConfirmKey = Texts.Confirm, CancelKey = Texts.Cancel,
-            Arguments = {name = name, mutation = Text.TrSource(Rules.GetMutation(mutation).MutationName), luck = luck},
+            Arguments = {name = name, mutation = Text.TrSource(Rules.GetMutation(mutation).MutationName),
+                blankLuckLevel = blankLuckLevel},
             ConfirmCB = function()
                 FX.Network:SendMsgToServer("C2S_ReplyRawSword", token, true)
             end,
@@ -98,7 +99,7 @@ function Comp:GetSword(tool)
         return nil
     end
     local sword = {Quality = tool:GetAttribute("Quality"), Level = tool:GetAttribute("WeaponLevel"),
-        MutationId = tool:GetAttribute("MutationId"), Luck = tool:GetAttribute("Luck"),
+        MutationId = tool:GetAttribute("MutationId"), blankLuckLevel = tool:GetAttribute("blankLuckLevel"),
         StoredMoney = tool:GetAttribute("StoredMoney")}
     return Rules.IsValid(sword) and sword or nil
 end
@@ -131,7 +132,7 @@ function Comp:Refresh()
     local target = self:GetNearestPlayer()
     local visible = self:GetNumber(Fields.ForgeStation) == 0
     self._sell.Visible = visible and sword ~= nil
-    self._gift.Visible = visible and tool ~= nil and tool:GetAttribute("FrameworkItemId") == Rules.RawItemId and target ~= nil
+    self._gift.Visible = visible and tool ~= nil and tool:GetAttribute("FrameworkItemId") == Rules.BlankItemId and target ~= nil
     self._sellTitle.Text = Text.Tr(Texts.Sell)
     self._sellDetail.Text = sword and Text.Tr(Texts.SellPrice, {value = Utility.NumberToText(Rules.GetSellPrice(sword))}) or ""
     self._giftTitle.Text = Text.Tr(Texts.Gift)

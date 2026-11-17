@@ -229,7 +229,7 @@
                       "scale": 0
                     }
                   },
-                  "Text": "Smelting Luck",
+                  "Text": "Furnace Level",
                   "TextColor3": "#FFFFFF",
                   "TextScaled": false,
                   "TextSize": 24,
@@ -291,7 +291,7 @@
                       "scale": 0
                     }
                   },
-                  "Text": "Luck Multiplier",
+                  "Text": "Furnace Level",
                   "TextColor3": "#E2EFCE",
                   "TextScaled": false,
                   "TextSize": 16,
@@ -1291,7 +1291,7 @@
                       "scale": 0
                     }
                   },
-                  "Text": "Weapon Forging",
+                  "Text": "Forge Level",
                   "TextColor3": "#FFFFFF",
                   "TextScaled": false,
                   "TextSize": 24,
@@ -1353,7 +1353,7 @@
                       "scale": 0
                     }
                   },
-                  "Text": "Forging Effect",
+                  "Text": "Forge Level",
                   "TextColor3": "#DCEBFA",
                   "TextScaled": false,
                   "TextSize": 16,

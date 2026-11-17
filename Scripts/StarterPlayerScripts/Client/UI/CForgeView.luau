@@ -15,7 +15,7 @@ local TranslationTexts = Text.Define("ForgeView", {
     Unchanged = "品质不变",
     Success = "锻造成功",
     GreatSuccess = "大成功",
-    Notice = "品质 {quality:int} · 玩家幸运 {player:int} · 材料幸运 {material:int}",
+    Notice = "Quality {quality:int} · Forge level {forgeLevel:int} · Blank luck level {blankLuckLevel:int}",
     Hint = "F：敲击 · G：出炉 · E：暂停并离开",
     Failed = "没有可用的剑胚，请先到熔炉熔炼矿石。",
     Busy = "锻造中…",
@@ -25,7 +25,7 @@ local TranslationTexts = Text.Define("ForgeView", {
     Destroyed = "武器已损毁，未获得成品。",
     Finished = "武器已出炉，装备后可放入基地。",
     PendingClaim = "武器已完成，请腾出背包空间后按 G 领取。",
-    Probabilities = "成功 {success}% · 不变 {unchanged}% · 终止 {broken}% · 损毁 {destroy}%",
+    Probabilities = "Success {success}% · Unchanged {unchanged}% · Broken finish {broken}% · Destroyed {destroy}%",
 })
 local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local OutcomeNames = {"Broken", "Damaged", "Unchanged", "Success", "GreatSuccess"}
@@ -151,7 +151,7 @@ function View:RefreshText()
     self._labels.CountCaption.Text = Text.Tr(TranslationTexts.Strikes)
     local data = self._forgeData
     self._labels.Notice.Text = data and data.Quality and Text.Tr(TranslationTexts.Notice, {
-        quality = data.Quality, player = data.PlayerLuck, material = data.Luck,
+        quality = data.Quality, forgeLevel = data.forgeLevel, blankLuckLevel = data.blankLuckLevel,
     }) or ""
     local resultKey = TranslationTexts.Ready
     local resultColor = Color3.fromRGB(255, 241, 217)
@@ -184,7 +184,7 @@ function View:RefreshText()
     end
     self._hint.Text = Text.Tr(self._busy and TranslationTexts.Busy or TranslationTexts.Hint)
     if data and data.Active and not data.Finished and not self._busy then
-        local probabilities = Rules.GetForgeProbabilities(data.Luck, data.PlayerLuck, data.Quality)
+        local probabilities = Rules.GetForgeProbabilities(data.blankLuckLevel, data.forgeLevel, data.Quality)
         self._hint.Text = Text.Tr(TranslationTexts.Probabilities, probabilities)
     end
     self.StrikeButton.Text = Text.Tr(TranslationTexts.StrikeButton)

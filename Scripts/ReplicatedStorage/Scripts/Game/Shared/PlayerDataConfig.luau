@@ -24,7 +24,7 @@ return {
         Type = "table", Key = "UpgradeWorkshop", DefVal = {smelt = 0, forge = 0, income = 0},
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
-    -- 锻造进度与原料一起持久化；离开台位只暂停，不重抽或退料。
+    -- 锻造进度与剑胚一起持久化；离开台位只暂停，不重抽或退回剑胚。
     ForgeData = {
         Type = "table", Key = "ForgeData", DefVal = {Active = false},
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,

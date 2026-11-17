@@ -8,7 +8,7 @@ local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local SwordRules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local PlayerDataConfig = _G.PlayerDataConfig
 local TranslationTexts = Text.Define("MainItemDescription", {
-    Traits = "{description}\n变异：{mutation}\n幸运：{luck}",
+    Traits = "{description}\nMutation: {mutation}\nBlank luck level: {blankLuckLevel:int}",
 })
 local Component = FX.Class("CMainUICompClass", "FCUICompClass")
 
@@ -90,12 +90,12 @@ function Component:RefreshSelectedTool()
         return
     end
     local description = Text.TrSource(ItemConfig.Display[itemId].Desc)
-    local mutationId, luck = tool:GetAttribute("MutationId"), tool:GetAttribute("Luck")
-    if mutationId and luck ~= nil then
+    local mutationId, blankLuckLevel = tool:GetAttribute("MutationId"), tool:GetAttribute("blankLuckLevel")
+    if mutationId and blankLuckLevel ~= nil then
         description = Text.Tr(TranslationTexts.Traits, {
             description = description,
             mutation = Text.TrSource(SwordRules.GetMutation(mutationId).MutationName),
-            luck = GameUtility.NumberToText(luck),
+            blankLuckLevel = blankLuckLevel,
         })
     end
     self._itemDescription:Show({
@@ -119,7 +119,7 @@ function Component:SetSelectedTool(tool)
                 self:RefreshSelectedTool()
             end))
         end
-        for index, attribute in ipairs({"FrameworkItemId", "MutationId", "Luck"}) do
+        for index, attribute in ipairs({"FrameworkItemId", "MutationId", "blankLuckLevel"}) do
             table.insert(self._selectedToolConnections, tool:GetAttributeChangedSignal(attribute):Connect(function()
                 self:RefreshSelectedTool()
             end))

@@ -47,11 +47,11 @@ function Component:UpdateState()
         local maxed = level >= Rules.MaxLevel
         local price = Rules.GetPrice(upgradeId, level)
         entries[upgradeId] = {
-            level = level,
+            level = Rules.GetLevel(level),
             currentValue = upgradeId == "income" and "×" .. GameUtility.NumberToText(Rules.GetMultiplier(level))
-                or tostring(Rules.GetLuck(level)),
+                or tostring(Rules.GetLevel(level)),
             nextValue = maxed and "" or (upgradeId == "income" and "×" .. GameUtility.NumberToText(Rules.GetMultiplier(level + 1))
-                or tostring(Rules.GetLuck(level + 1))),
+                or tostring(Rules.GetLevel(level + 1))),
             price = price,
             canUpgrade = not maxed and money >= price,
             maxed = maxed,
@@ -80,7 +80,7 @@ function Component:OnUIAction(action, payload)
     end
     self._pending[upgradeId] = true
     self:UpdateState()
-    FX.Network:SendMsgToServer("C2S_UpgradeWorkshop", upgradeId, entry.level)
+    FX.Network:SendMsgToServer("C2S_UpgradeWorkshop", upgradeId, entry.level - 1)
 end
 
 --- 移除本组件持有的结果回调，其余订阅由父类释放。

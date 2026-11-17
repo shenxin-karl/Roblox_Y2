@@ -30,7 +30,8 @@ function Manager:Ctor()
         assert(hits > 0 and hits % 1 == 0, "Rock hits must be a positive integer: " .. id)
         assert(oreCount > 0 and oreCount % 1 == 0, "Rock reward must be a positive integer: " .. id)
         assert(_G.ItemConfig.Data[rockType.OreItemId].Type == "Ore", "Invalid rock ore: " .. id)
-        assert(rockType.Luck >= 0 and rockType.Luck < math.huge, "Invalid rock luck: " .. id)
+        assert(rockType.mutationMultiplier > 0 and rockType.mutationMultiplier < math.huge,
+            "Invalid rock mutation multiplier: " .. id)
         assert(rockType.SpawnWeight >= 0 and rockType.SpawnWeight < math.huge, "Invalid rock weight")
         assert(rockType.ModelScale > 0 and rockType.ModelScale < math.huge, "Invalid rock scale")
         local template = FX.Loader:Shared(rockType.ModelPath)
@@ -131,10 +132,10 @@ function Manager:Mine(player, position, rock)
     return true
 end
 
---- 优先熔炼手持矿石，否则选择数量足够且幸运值最低的一种，避免默认消耗稀有矿石。
+--- 优先熔炼手持矿石，否则选择数量足够且品级最低的一种，避免默认消耗稀有矿石。
 --- @param player table 已登录的服务端玩家对象。
 --- @param position Vector3 服务端读取的角色位置。
---- @return boolean 是否扣矿并获得剑。
+--- @return boolean 是否扣矿并获得剑胚。
 function Manager:Smelt(player, position)
     if Settings.DistanceToPart(self._furnace, position) > Settings.InteractDistance then
         return false
@@ -152,18 +153,19 @@ function Manager:Smelt(player, position)
             selected = mutation
             break
         elseif (counts[mutation.OreItemId] or 0) >= Config.FurnaceOreCost
-            and (not selected or mutation.Luck < selected.Luck) then
+            and (not selected or mutation.Id < selected.Id) then
             selected = mutation
         end
     end
     if not selected then
         return false
     end
+    local furnaceLevel = WorkshopRules.GetLevel(player:GetTableView(Fields.UpgradeWorkshop).smelt)
     return player:RequireComponent("FSRewardComp"):ExchangeRewards(
         {{Type = "Item", ItemId = selected.OreItemId, Count = Config.FurnaceOreCost}},
-        {{Type = "Item", ItemId = Config.FurnaceSwordItemId, Count = 1,
+        {{Type = "Item", ItemId = Config.SwordBlankItemId, Count = 1,
             ExtraData = {MutationId = selected.MutationId,
-                Luck = WorkshopRules.RollMaterialLuck(player:GetTableView(Fields.UpgradeWorkshop).smelt, self._random)}}}
+                blankLuckLevel = WorkshopRules.RollBlankLuckLevel(furnaceLevel, self._random)}}}
     )
 end
 

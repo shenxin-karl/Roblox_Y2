@@ -17,23 +17,23 @@ end
 
 --- 零级保持原效果，每级增加基础效果的百分之十。
 --- @param level number 当前整数等级。
---- @return number 玩家收益倍率，不用于两项幸运升级。
+--- @return number 玩家收益倍率，不用于熔炉或锻造等级。
 function Rules.GetMultiplier(level)
     return FX.CurveSampler:SampleCurveGroupColumn(Numerical.incomeUpgradeCurves, "effect", level + 1)
 end
 
---- 两项幸运升级每级加一，初始幸运为1；不修改已经制作的原料。
+--- 熔炉与锻造分别从1级起步，存档各自记录已升级次数；不修改已有剑胚。
 --- @param level number 存档中的零起点升级等级。
---- @return number 实际人物或熔炼幸运。
-function Rules.GetLuck(level)
+--- @return number 实际熔炉等级或锻造等级。
+function Rules.GetLevel(level)
     return level + 1
 end
 
 --- 五档按模拟器权重抽取，低于1的结果夹到1，变异由矿石原样继承。
---- @param level number 熔炼升级的零起点等级。
+--- @param furnaceLevel number 本次制作使用的实际熔炉等级 L。
 --- @param random Random 服务端持有的随机数发生器。
---- @return number 本次原料幸运。
-function Rules.RollMaterialLuck(level, random)
+--- @return number 本次剑胚幸运等级 W，与矿石变异无关。
+function Rules.RollBlankLuckLevel(furnaceLevel, random)
     local total, weights = 0, {}
     for offset = -2, 2 do
         local weight = FX.CurveSampler:SampleCurve(Numerical.smeltingLuckWeightCurve, offset + 2)
@@ -44,10 +44,10 @@ function Rules.RollMaterialLuck(level, random)
     for offset = -2, 2 do
         roll -= weights[offset]
         if roll < 0 then
-            return math.max(1, Rules.GetLuck(level) + offset)
+            return math.max(1, furnaceLevel + offset)
         end
     end
-    return Rules.GetLuck(level) + 2
+    return furnaceLevel + 2
 end
 
 return Rules

@@ -13,7 +13,7 @@ return {
         MiningOrePerHit = 1,
         MiningOreItemId = 1001,
         FurnaceOreCost = 5,
-        FurnaceSwordItemId = 1002,
+        SwordBlankItemId = 1002,
         SwordSellIncomeSeconds = 60,
         OfflineMaxSeconds = 7200,
         GiftDistance = 15,
@@ -195,9 +195,8 @@ return {
             OreCountMultiplier = 1,
             HitsMultiplier = 1,
             OreItemId = 1001,
-            Luck = 1,
             IconId = nil,
-            IncomeMultiplier = 1
+            mutationMultiplier = 1
         },
         [2] = {
             Id = 2,
@@ -211,9 +210,8 @@ return {
             OreCountMultiplier = 1,
             HitsMultiplier = 1,
             OreItemId = 1101,
-            Luck = 2,
             IconId = [[rbxassetid://114769267589622]],
-            IncomeMultiplier = 1
+            mutationMultiplier = 1
         },
         [3] = {
             Id = 3,
@@ -227,9 +225,8 @@ return {
             OreCountMultiplier = 1,
             HitsMultiplier = 1,
             OreItemId = 1102,
-            Luck = 3,
             IconId = [[rbxassetid://106224256982724]],
-            IncomeMultiplier = 1
+            mutationMultiplier = 1
         },
         [4] = {
             Id = 4,
@@ -243,9 +240,8 @@ return {
             OreCountMultiplier = 1,
             HitsMultiplier = 1,
             OreItemId = 1103,
-            Luck = 4,
             IconId = [[rbxassetid://131760910444430]],
-            IncomeMultiplier = 1
+            mutationMultiplier = 1
         },
         [5] = {
             Id = 5,
@@ -259,9 +255,8 @@ return {
             OreCountMultiplier = 1,
             HitsMultiplier = 1,
             OreItemId = 1104,
-            Luck = 5,
             IconId = [[rbxassetid://120733919890929]],
-            IncomeMultiplier = 1
+            mutationMultiplier = 1
         },
         [6] = {
             Id = 6,
@@ -275,9 +270,8 @@ return {
             OreCountMultiplier = 1,
             HitsMultiplier = 1,
             OreItemId = 1105,
-            Luck = 6,
             IconId = [[rbxassetid://73900159742590]],
-            IncomeMultiplier = 1
+            mutationMultiplier = 1
         }
     },
     WeaponData = {

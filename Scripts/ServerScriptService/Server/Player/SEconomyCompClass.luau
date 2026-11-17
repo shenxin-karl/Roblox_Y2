@@ -1,4 +1,4 @@
--- 武器出售、离线领取与同服原料赠送；物品和货币只经公开接口与奖励事务提交。
+-- 武器出售、离线领取与同服剑胚赠送；物品和货币只经公开接口与奖励事务提交。
 local HttpService = game:GetService("HttpService")
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
@@ -8,8 +8,8 @@ local Config = _G.GameConfig.CommonConfig
 local Texts = FX.Text.Define("WeaponEconomy", {
     Sold = "Weapon sold for ${value}.",
     Offline = "Claimed ${value} offline income.",
-    GiftSent = "Raw weapon sent to {name}.",
-    GiftReceived = "Received a raw weapon from {name}.",
+    GiftSent = "Sword blank sent to {name}.",
+    GiftReceived = "Received a sword blank from {name}.",
     Failed = "Action failed. Check your equipped item, distance and backpack space.",
 })
 local Comp = FX.Class("SEconomyCompClass", "FSPlayerCompClass")
@@ -50,7 +50,7 @@ function Comp:Sell(grid, expected)
         self:GetPlayerObject():ShowLocalizedTips(Texts.Failed)
         return
     end
-    for index, key in ipairs({"Quality", "Level", "MutationId", "Luck", "StoredMoney"}) do
+    for index, key in ipairs({"Quality", "Level", "MutationId", "blankLuckLevel", "StoredMoney"}) do
         if item.extraData[key] ~= expected[key] then
             self:GetPlayerObject():ShowLocalizedTips(Texts.Failed)
             return
@@ -110,7 +110,7 @@ function Comp:IsNear(other)
         and (humanoid.RootPart.Position - targetHumanoid.RootPart.Position).Magnitude <= Config.GiftDistance
 end
 
---- 提议只锁定当前手持原料的快照，不提前扣料；每人最多一笔30秒待确认赠送。
+--- 提议只锁定当前手持剑胚的快照，不提前扣除；每人最多一笔30秒待确认赠送。
 --- @param targetId any 客户端选择的接收者 UserId。
 function Comp:OfferGift(targetId)
     if not self:CanRequest() or type(targetId) ~= "number" or targetId % 1 ~= 0 or targetId == self:GetPlayerId() then
@@ -122,7 +122,7 @@ function Comp:OfferGift(targetId)
     local grid = inventory:GetEquippedGrid()
     local items = self:GetTable(Fields.Inventory)
     local item = grid and items[tostring(grid)]
-    local traits = item and item.itemId == Rules.RawItemId and Rules.GetTraits(item.extraData)
+    local traits = item and item.itemId == Rules.BlankItemId and Rules.GetTraits(item.extraData)
     local now = os.clock()
     if not other or not self:IsNear(other) or not traits or item.stackCount ~= 1
         or (self._outgoing and self._outgoing.Expires > now)
@@ -131,10 +131,10 @@ function Comp:OfferGift(targetId)
         return
     end
     local offer = {Token = HttpService:GenerateGUID(false), Sender = self, Receiver = other, Grid = grid,
-        MutationId = traits.MutationId, Luck = traits.Luck, Expires = now + 30}
+        MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel, Expires = now + 30}
     self._outgoing, other._offer = offer, offer
     FX.Network:SendMsgToClient(targetId, "S2C_RawSwordOffer", offer.Token, self:GetPlayerNode().DisplayName,
-        offer.MutationId, offer.Luck)
+        offer.MutationId, offer.blankLuckLevel)
 end
 
 --- 接收者确认后重新检查会话、距离、物品与容量；两个玩家各自提交，接收失败即恢复发送方。
@@ -160,12 +160,13 @@ function Comp:ReplyGift(token, accepted)
     end
     local items = sender:GetTable(Fields.Inventory)
     local item = items[tostring(offer.Grid)]
-    local traits = item and item.itemId == Rules.RawItemId and Rules.GetTraits(item.extraData)
-    if not traits or item.stackCount ~= 1 or traits.MutationId ~= offer.MutationId or traits.Luck ~= offer.Luck then
+    local traits = item and item.itemId == Rules.BlankItemId and Rules.GetTraits(item.extraData)
+    if not traits or item.stackCount ~= 1 or traits.MutationId ~= offer.MutationId
+        or traits.blankLuckLevel ~= offer.blankLuckLevel then
         return
     end
-    local rewards = {{Type = "Item", ItemId = Rules.RawItemId, Count = 1,
-        ExtraData = {MutationId = traits.MutationId, Luck = traits.Luck}}}
+    local rewards = {{Type = "Item", ItemId = Rules.BlankItemId, Count = 1,
+        ExtraData = {MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel}}}
     local reward = self:RequireComponent("FSRewardComp")
     if not reward:CanAddRewards(rewards) then
         self:GetPlayerObject():ShowLocalizedTips(Texts.Failed)

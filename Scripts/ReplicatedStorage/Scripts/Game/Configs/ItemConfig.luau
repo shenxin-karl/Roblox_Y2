@@ -11,7 +11,7 @@ return {
         },
         [1002] = {
             Id = 1002,
-            Type = [[RawSword]],
+            Type = [[SwordBlank]],
             MaxStack = 1,
             UseHandler = nil,
             HeldHandler = [[Sword]],
@@ -84,8 +84,8 @@ return {
         },
         [1002] = {
             Id = 1002,
-            Name = [[Raw Iron Sword]],
-            Desc = [[Forge this raw sword at a forge station before placing it in your base.]],
+            Name = [[Sword Blank]],
+            Desc = [[Forge this sword blank at a forge station before placing the finished weapon in your base.]],
             Quality = 1,
             IconId = [[rbxasset://Textures/Sword128.png]],
             DisplayModelId = [[Sword]]
@@ -150,12 +150,12 @@ return {
             Level = 1,
             StoredMoney = 0,
             MutationId = [[Normal]],
-            Luck = 1,
+            blankLuckLevel = 1,
             Quality = 1
         },
-        RawSword = {
+        SwordBlank = {
             MutationId = [[Normal]],
-            Luck = 1
+            blankLuckLevel = 1
         }
     }
 }

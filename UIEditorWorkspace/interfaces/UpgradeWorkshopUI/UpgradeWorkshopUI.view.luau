@@ -4,9 +4,9 @@
 职责边界：
   展示层绑定三种固定升级、更新文字与按钮状态、发送 Upgrade 动作。
   游戏接入提供权威状态、资源余额判断、请求防重、扣款与升级结果。
-  不覆写 Render，不重复绑定按钮，不在子类修改展示层管理的属性。
+  不覆�� Render，不重复绑定按钮，不在子类修改展示层管理的属性。
 
-Config：无；三行稳定业务 ID 固定为 smelt、forge、income。
+Config：无；��行稳定业务 ID 固定为 smelt、forge、income。
 
 State（完整快照，不合并增量）：
   entries: table，可选；省略或缺少单行时，该行不显示状态提示并清空旧值。
@@ -81,7 +81,7 @@ State（完整快照，不合并增量）：
 ]]
 local FX = _G.FX
 local FXLoader = FX.Loader
-local Text = FX.Text
+local Text = FXLoader:RequireShared("Scripts.Framework.Shared.Core.FXText")
 local CUpgradeWorkshopView = FX.Class("CUpgradeWorkshopView", "CUIView")
 
 local TranslationTexts = Text.Define("UpgradeWorkshop", {

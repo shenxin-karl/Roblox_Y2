@@ -16,7 +16,7 @@ function Comp:Ctor(owner)
     self._random = Random.new()
 end
 
---- 每次请求只敲一锤，原料先进入持久化进度；所有概率与结果均由服务端裁定。
+--- 每次请求只敲一锤，剑胚先进入持久化进度；所有概率与结果均由服务端裁定。
 function Comp:ForgeSword()
     local character, humanoid = self:GetLivingCharacter()
     local station = self._station
@@ -31,8 +31,8 @@ function Comp:ForgeSword()
             local inventory = self:RequireComponent("FSInventoryComp")
             local items = self:GetTable(Fields.Inventory)
             local grid = inventory:GetEquippedGrid()
-            if not grid or not items[tostring(grid)] or items[tostring(grid)].itemId ~= Rules.RawItemId then
-                grid = inventory:FindItemById(Rules.RawItemId)
+            if not grid or not items[tostring(grid)] or items[tostring(grid)].itemId ~= Rules.BlankItemId then
+                grid = inventory:FindItemById(Rules.BlankItemId)
             end
             local item = grid and items[tostring(grid)]
             local traits = item and Rules.GetTraits(item.extraData)
@@ -40,9 +40,10 @@ function Comp:ForgeSword()
                 FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, false)
                 return
             end
-            local luck = WorkshopRules.GetLuck(self:GetTableView(Fields.UpgradeWorkshop).forge)
+            local forgeLevel = WorkshopRules.GetLevel(self:GetTableView(Fields.UpgradeWorkshop).forge)
             data = {Active = true, Finished = false, MutationId = traits.MutationId,
-                Luck = traits.Luck, PlayerLuck = luck, Quality = math.max(1, luck - 4), HammerCount = 0}
+                blankLuckLevel = traits.blankLuckLevel, forgeLevel = forgeLevel,
+                Quality = math.max(1, forgeLevel - 4), HammerCount = 0}
             items[tostring(grid)] = nil
             if not self:GetPlayerObject():RunDataTransaction(function()
                 return self:SetTable(Fields.Inventory, items) and self:SetTable(Fields.ForgeData, data)
@@ -54,13 +55,13 @@ function Comp:ForgeSword()
             self:FinishSword()
             return
         end
-        local probabilities = Rules.GetForgeProbabilities(data.Luck, data.PlayerLuck, data.Quality)
+        local probabilities = Rules.GetForgeProbabilities(data.blankLuckLevel, data.forgeLevel, data.Quality)
         local roll = self._random:NextNumber(0, 100)
         data.HammerCount += 1
         if roll < probabilities.success then
             data.Quality += 1
             data.Outcome = "Success"
-            data.Finished = data.Quality >= data.PlayerLuck + 4
+            data.Finished = data.Quality >= data.forgeLevel + 4
         elseif roll < probabilities.success + probabilities.unchanged then
             data.Outcome = "Unchanged"
         elseif roll < probabilities.success + probabilities.unchanged + probabilities.broken then
@@ -90,7 +91,8 @@ function Comp:FinishSword()
     self:SetTable(Fields.ForgeData, data)
     return self:GetPlayerObject():RunDataTransaction(function()
         if not self:RequireComponent("FSRewardComp"):AddRewards({{Type = "Item", ItemId = Rules.ItemId, Count = 1,
-            ExtraData = {MutationId = data.MutationId, Luck = data.Luck, Quality = data.Quality, Level = 1, StoredMoney = 0}}}) then
+            ExtraData = {MutationId = data.MutationId, blankLuckLevel = data.blankLuckLevel,
+                Quality = data.Quality, Level = 1, StoredMoney = 0}}}) then
             return false
         end
         data.Active = false

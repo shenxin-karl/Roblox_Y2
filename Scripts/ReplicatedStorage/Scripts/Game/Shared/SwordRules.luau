@@ -2,7 +2,7 @@
 local FX = _G.FX
 local Config = _G.GameConfig.CommonConfig
 local Numerical = FX.Loader:RequireShared("Scripts.Game.Configs.NumericalConfig")
-local Rules = {ItemId = 1003, RawItemId = Config.FurnaceSwordItemId}
+local Rules = {ItemId = 1003, BlankItemId = Config.SwordBlankItemId}
 
 --- 从合并矿石配置查找武器词条对应的变异。
 --- @param mutationId string 武器词条中的变异 ID。
@@ -16,20 +16,21 @@ function Rules.GetMutation(mutationId)
     return nil
 end
 
---- 校验武器词条；变异和幸运值必须完整，缺失时不补默认属性。
+--- 校验剑胚或成品词条；变异与剑胚幸运等级独立保存，缺失时不补默认属性。
 --- @param extra table? 背包或槽位中保存的武器属性。
---- @return table? 有效的变异和幸运值，损坏属性返回 nil。
+--- @return table? 有效的变异和剑胚幸运等级，损坏属性返回 nil。
 function Rules.GetTraits(extra)
     if type(extra) ~= "table" then
         return nil
     end
     local mutationId = extra.MutationId
     local mutation = Rules.GetMutation(mutationId)
-    local luck = extra.Luck
-    if not mutation or type(luck) ~= "number" or luck < 1 or luck >= math.huge or luck % 1 ~= 0 then
+    local blankLuckLevel = extra.blankLuckLevel
+    if not mutation or type(blankLuckLevel) ~= "number" or blankLuckLevel < 1
+        or blankLuckLevel >= math.huge or blankLuckLevel % 1 ~= 0 then
         return nil
     end
-    return {MutationId = mutationId, Luck = luck, Quality = extra.Quality}
+    return {MutationId = mutationId, blankLuckLevel = blankLuckLevel, Quality = extra.Quality}
 end
 
 --- 校验背包与槽位之间转移的武器成长，拒绝损坏存档参与交易。
@@ -49,9 +50,10 @@ end
 --- @param sword table 含 Quality、Level、MutationId 的成品属性。
 --- @return number 未格式化的单把秒收益。
 function Rules.GetIncome(sword)
+    local mutationMultiplier = Rules.GetMutation(sword.MutationId).mutationMultiplier
     return Config.SwordIncomeCoefficient ^ sword.Quality
         * FX.CurveSampler:SampleCurveGroupColumn(Numerical.swordUpgradeCurves, "levelMultiplier", sword.Level)
-        * Rules.GetMutation(sword.MutationId).IncomeMultiplier
+        * mutationMultiplier
 end
 
 --- 从模拟器导出的武器升级曲线读取当前等级对应费用。
@@ -61,20 +63,20 @@ function Rules.GetUpgradePrice(level)
     return FX.CurveSampler:SampleCurveGroupColumn(Numerical.swordUpgradeCurves, "upgradeCost", level)
 end
 
---- 按锻造设计返回互斥的单锤百分比；好坏料只在成功与破损之间转移概率。
---- @param weaponLuck number 原料幸运 W。
---- @param playerLuck number 开始打造时的人物幸运 P。
---- @param quality number 当前品质 Q，范围 P-4 到 P+3。
+--- 按锻造设计返回单锤百分比；剑胚幸运等级只在成功与破损之间转移概率，变异不参与。
+--- @param blankLuckLevel number 剑胚幸运等级 W。
+--- @param forgeLevel number 开始打造时的锻造等级 P。
+--- @param quality number 当前品质 Q，范围 max(1, P-4) 到 P+3。
 --- @return table success、unchanged、broken、destroy 四项百分比。
-function Rules.GetForgeProbabilities(weaponLuck, playerLuck, quality)
-    local index = quality - playerLuck + 5
+function Rules.GetForgeProbabilities(blankLuckLevel, forgeLevel, quality)
+    local index = quality - forgeLevel + 5
     local success = ({94, 93, 91, 88, 70, 50, 30, 10})[index]
     local unchanged = ({5, 5, 5, 5, 5, 15, 25, 40})[index]
     local destroy = ({0, 0, 0, 0, 3, 5, 10, 15})[index]
-    if quality >= playerLuck then
-        local difference = math.clamp(weaponLuck - playerLuck, -10, 10)
-        success = difference > 0 and math.min(success * (1 + 0.2 * difference), 100 - unchanged - destroy)
-            or success * (1 + 0.05 * difference)
+    if quality >= forgeLevel then
+        local luckDifference = math.clamp(blankLuckLevel - forgeLevel, -10, 10)
+        success = luckDifference > 0 and math.min(success * (1 + 0.2 * luckDifference), 100 - unchanged - destroy)
+            or success * (1 + 0.05 * luckDifference)
     end
     return {success = success, unchanged = unchanged, broken = 100 - unchanged - destroy - success, destroy = destroy}
 end

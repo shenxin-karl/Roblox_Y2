@@ -101,7 +101,7 @@ function Comp:CreateDisplay(slotId, slot, base)
     CollectionService:AddTag(display, "SlotSwordDisplay")
 end
 
---- 只处理已配置的成品武器，原料剑不能产生基地收益。
+--- 只处理已配置的成品武器，剑胚不能产生基地收益。
 --- @param slotId number 服务端槽位编号。
 --- @return table? 当前槽位的成品剑存档副本。
 function Comp:GetSword(slotId)
@@ -187,7 +187,7 @@ function Comp:RefreshSlots()
     self:Publish()
 end
 
---- 服务端按本人槽位和距离裁定转移；满背包或原料剑均不能完成交易。
+--- 服务端按本人槽位和距离裁定转移；满背包或剑胚均不能完成交易。
 --- @param slotId number 固定在服务端交互回调中的槽位编号。
 function Comp:Transfer(slotId)
     local entry = self._prompts[slotId]

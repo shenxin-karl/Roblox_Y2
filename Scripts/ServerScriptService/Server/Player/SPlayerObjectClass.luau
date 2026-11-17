@@ -19,35 +19,9 @@ function Player:Ctor(id)
     self:AddComponent("SAnalyticsCompClass")
 end
 
---- 旧测试武器补品质1并保留等级、金币和变异；旧倍率幸运取整为至少1，适配整数幸运规则。
---- @param version number 框架读取的持久化版本。
+--- 项目不执行旧存档迁移；保留框架登录所需的入口。
+--- @param version number 框架传入的历史版本，本项目不使用。
 function Player:MigrateData(version)
-    if version >= 1 then
-        return
-    end
-    local fields = _G.PlayerDataConfig
-    local base = self:GetTable(fields.BaseData)
-    for slotId, sword in pairs(base.SlotData) do
-        sword.Quality = sword.Quality or 1
-        sword.MutationId = sword.MutationId or "Normal"
-        sword.Luck = math.max(1, math.floor(sword.Luck or 1))
-    end
-    local items = self:GetTable(fields.Inventory)
-    for grid, item in pairs(items) do
-        if item.itemId == 1002 or item.itemId == 1003 then
-            local extra = item.extraData or {}
-            extra.MutationId = extra.MutationId or "Normal"
-            extra.Luck = math.max(1, math.floor(extra.Luck or 1))
-            if item.itemId == 1003 then
-                extra.Quality, extra.Level, extra.StoredMoney = extra.Quality or 1, extra.Level or 1, extra.StoredMoney or 0
-            end
-            item.extraData = extra
-        end
-    end
-    self:RunDataTransaction(function()
-        return self:SetTable(fields.BaseData, base) and self:SetTable(fields.Inventory, items)
-            and self:SetNumber(fields.DataVersion, 1)
-    end)
 end
 
 return Player

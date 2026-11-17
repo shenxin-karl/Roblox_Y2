@@ -12,7 +12,7 @@ return {
         "C2S_LeaveForge",
         -- 提交本人槽位编号，等级、费用与所属玩家均由服务端确定。
         "C2S_UpgradeSlotSword",
-        -- 在本人已占用的锻造台消耗一把原料剑，配方由服务端确定。
+        -- 在本人已占用的锻造台消耗一个剑胚，配方由服务端确定。
         "C2S_ForgeSword",
         "C2S_FinishSword",
         "C2S_SellSword",

@@ -34,7 +34,7 @@ return {
         end
         if not data.SlotData["1"] then
             data.SlotData["1"] = {ItemId = SwordRules.ItemId, Quality = 1, Level = 1, StoredMoney = 0,
-                MutationId = "Normal", Luck = 1}
+                MutationId = "Normal", blankLuckLevel = 1}
         end
         data.InitialSwordGranted = true
         tables.BaseData = data
@@ -101,7 +101,7 @@ return {
         end
         data.SlotData[key] = {
             ItemId = item.itemId, Level = item.extraData.Level, StoredMoney = item.extraData.StoredMoney,
-            MutationId = traits.MutationId, Luck = traits.Luck,
+            MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel,
             Quality = traits.Quality,
         }
         items[tostring(entry.Grid)] = nil
