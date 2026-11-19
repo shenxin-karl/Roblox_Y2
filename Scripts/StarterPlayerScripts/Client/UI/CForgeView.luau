@@ -5,17 +5,18 @@ local FXLoader = FX.Loader
 local Text = FX.Text
 local TranslationTexts = Text.Define("ForgeView", {
     Title = "武器锻造",
-    Station = "{station:int} 号锻造台",
+    Station = "Base income",
     Strikes = "敲击次数",
     Ready = "需要剑胚才能锻造，请先到熔炉熔炼矿石。",
     SuccessEffect = "已获得成品武器",
     GreatSuccessEffect = "大成功效果",
     Broken = "锻造终止：保留当前品质",
-    Damaged = "受损",
-    Unchanged = "品质不变",
+    Damaged = "Finish broken",
+    Unchanged = "Unchanged",
     Success = "锻造成功",
-    GreatSuccess = "大成功",
-    Notice = "Quality {quality:int} · Forge level {forgeLevel:int} · Blank luck level {blankLuckLevel:int}",
+    Notice = "{value} G/s",
+    Quality = "+{quality:int}",
+    DestroyChance = "Destroyed",
     Hint = "F：敲击 · G：出炉 · E：暂停并离开",
     Failed = "没有可用的剑胚，请先到熔炉熔炼矿石。",
     Busy = "锻造中…",
@@ -25,10 +26,11 @@ local TranslationTexts = Text.Define("ForgeView", {
     Destroyed = "武器已损毁，未获得成品。",
     Finished = "武器已出炉，装备后可放入基地。",
     PendingClaim = "武器已完成，请腾出背包空间后按 G 领取。",
-    Probabilities = "Success {success}% · Unchanged {unchanged}% · Broken finish {broken}% · Destroyed {destroy}%",
 })
 local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
-local OutcomeNames = {"Broken", "Damaged", "Unchanged", "Success", "GreatSuccess"}
+local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
+local OutcomeNames = {"Broken", "Damaged", "Unchanged", "Success"}
+local ProbabilityKeys = {"destroy", "broken", "unchanged", "success"}
 local View = {}
 View.__index = View
 
@@ -44,12 +46,14 @@ function View.New(root)
     self._flash = FXLoader:Here(root, "ImpactFlash")
     self._scale = FXLoader:Here(self._controls, "ResponsiveScale")
     self._resultScale = FXLoader:Here(self._panel, "Result.ImpactScale")
-    self._labels, self._outcomes, self._pips = {}, {}, {}
-    for index, name in ipairs({"Title", "Station", "Count", "CountCaption", "Result", "Notice"}) do
+    self._labels, self._outcomes, self._values, self._segments, self._pips = {}, {}, {}, {}, {}
+    for index, name in ipairs({"Title", "Station", "Count", "CountCaption", "Result", "Notice", "Quality"}) do
         self._labels[name] = FXLoader:Here(self._panel, name)
     end
     for index, name in ipairs(OutcomeNames) do
         self._outcomes[name] = FXLoader:Here(self._panel, "Outcomes." .. name .. ".Label")
+        self._values[name] = FXLoader:Here(self._panel, "Outcomes." .. name .. ".Value")
+        self._segments[name] = FXLoader:Here(self._panel, "Spectrum." .. name)
     end
     for index = 1, 10 do
         self._pips[index] = FXLoader:Here(self._panel, "Pips.Pip" .. index)
@@ -59,7 +63,6 @@ function View.New(root)
     self.GreatStrikeButton.Visible = true
     self.GreatStrikeButton.Position = UDim2.fromOffset(0, 144)
     self.GreatStrikeButton.Size = UDim2.fromOffset(300, 50)
-    FXLoader:Here(self._panel, "Outcomes").Visible = false
     self.LeaveButton = FXLoader:Here(self._controls, "Leave")
     self.LeaveButton.Position = UDim2.fromOffset(0, 206)
     self._controls.Size = UDim2.fromOffset(300, 264)
@@ -117,14 +120,11 @@ end
 
 --- 服务端确认本次敲击后播放命中反馈，实际品质与结果沿用同步数据。
 --- @param powerful boolean 是否显示大成功的视觉预览。
---- @param count number 当前进入会话已经落下的锤数。
+--- @param count number 动画回调的会话锤数；木牌计数沿用 SetForgeData 的累计锤数。
 function View:Impact(powerful, count)
     self._failed = false
-    self._powerful, self._count = powerful, count
+    self._powerful = powerful
     self:RefreshText()
-    for index, pip in ipairs(self._pips) do
-        pip.BackgroundTransparency = index <= count and 0 or 0.6
-    end
     self:CancelTweens()
     self._resultScale.Scale = powerful and 1.08 or 1.04
     self._flash.BackgroundTransparency = powerful and 0.88 or 0.96
@@ -143,16 +143,18 @@ function View:ShowFailure()
     self:RefreshText()
 end
 
---- 语言切换时重新翻译原始定义，不缓存旧语言结果。
+--- 按权威品质刷新木牌、四项真实概率和分段条；语言切换时重新翻译。
 function View:RefreshText()
-    self._labels.Title.Text = Text.Tr(TranslationTexts.Title)
-    self._labels.Station.Text = Text.Tr(TranslationTexts.Station, {station = self._stationId})
+    local data = self._forgeData
+    self._labels.Title.Text = data and data.Quality and Text.TrSource(_G.GameConfig.WeaponData[data.Quality].Name)
+        or Text.Tr(TranslationTexts.Title)
+    self._labels.Station.Text = Text.Tr(TranslationTexts.Station)
     self._labels.Count.Text = tostring(self._count)
     self._labels.CountCaption.Text = Text.Tr(TranslationTexts.Strikes)
-    local data = self._forgeData
+    self._labels.Quality.Text = data and data.Quality and Text.Tr(TranslationTexts.Quality, {quality = data.Quality}) or ""
     self._labels.Notice.Text = data and data.Quality and Text.Tr(TranslationTexts.Notice, {
-        quality = data.Quality, forgeLevel = data.forgeLevel, blankLuckLevel = data.blankLuckLevel,
-    }) or ""
+        value = GameUtility.NumberToText(Rules.GetIncome({Quality = data.Quality, Level = 1, MutationId = data.MutationId})),
+    }) or "—"
     local resultKey = TranslationTexts.Ready
     local resultColor = Color3.fromRGB(255, 241, 217)
     if self._failed then
@@ -167,26 +169,41 @@ function View:RefreshText()
             resultKey = TranslationTexts.PendingClaim
         elseif data.Outcome == "Destroyed" then
             resultKey = TranslationTexts.Destroyed
+            resultColor = Color3.fromRGB(255, 133, 111)
         elseif data.Outcome == "Broken" then
             resultKey = TranslationTexts.Broken
+            resultColor = Color3.fromRGB(244, 192, 106)
         elseif data.Outcome == "Finished" then
             resultKey = TranslationTexts.Finished
         elseif data.Outcome == "Unchanged" then
             resultKey = TranslationTexts.Unchanged
+            resultColor = Color3.fromRGB(177, 226, 180)
         elseif data.Outcome == "Success" then
             resultKey = TranslationTexts.Success
+            resultColor = Color3.fromRGB(167, 219, 245)
         end
     end
     self._labels.Result.Text = Text.Tr(resultKey)
     self._labels.Result.TextColor3 = resultColor
+    local probabilities
+    if data and data.Active and not data.Finished then
+        probabilities = Rules.GetForgeProbabilities(data.blankLuckLevel, data.forgeLevel, data.Quality)
+    end
+    local offset = 0
     for index, name in ipairs(OutcomeNames) do
-        self._outcomes[name].Text = Text.Tr(TranslationTexts[name])
+        self._outcomes[name].Text = Text.Tr(name == "Broken" and TranslationTexts.DestroyChance or TranslationTexts[name])
+        local chance = probabilities and probabilities[ProbabilityKeys[index]]
+        self._values[name].Text = chance and string.format("%.1f%%", chance) or "—"
+        local segment = self._segments[name]
+        segment.Visible = chance ~= nil and chance > 0
+        segment.Position = UDim2.fromScale(offset / 100, 0)
+        segment.Size = UDim2.fromScale((chance or 0) / 100, 1)
+        offset += chance or 0
+    end
+    for index, pip in ipairs(self._pips) do
+        pip.BackgroundTransparency = index <= self._count and 0 or 0.6
     end
     self._hint.Text = Text.Tr(self._busy and TranslationTexts.Busy or TranslationTexts.Hint)
-    if data and data.Active and not data.Finished and not self._busy then
-        local probabilities = Rules.GetForgeProbabilities(data.blankLuckLevel, data.forgeLevel, data.Quality)
-        self._hint.Text = Text.Tr(TranslationTexts.Probabilities, probabilities)
-    end
     self.StrikeButton.Text = Text.Tr(TranslationTexts.StrikeButton)
     self.GreatStrikeButton.Text = Text.Tr(TranslationTexts.GreatStrikeButton)
     self.LeaveButton.Text = Text.Tr(TranslationTexts.LeaveButton)

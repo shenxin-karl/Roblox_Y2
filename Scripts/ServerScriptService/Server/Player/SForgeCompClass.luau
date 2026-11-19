@@ -16,16 +16,25 @@ function Comp:Ctor(owner)
     self._random = Random.new()
 end
 
---- 每次请求只敲一锤，剑胚先进入持久化进度；所有概率与结果均由服务端裁定。
-function Comp:ForgeSword()
+--- 敲击与主动出炉共用服务端台位校验，离开台位或失去基地归属时拒绝操作。
+--- @return boolean 是否仍有权在当前台位操作。
+function Comp:CanUseStation()
     local character, humanoid = self:GetLivingCharacter()
     local station = self._station
-    if not character or not station or os.clock() - self._lastForge < Settings.RequestCooldown then
+    local userId = self:GetPlayerId()
+    return character ~= nil and station ~= nil and station.OwnerUserId == userId
+        and (not station.Base or station.Base.OwnerUserId == userId)
+        and (humanoid.RootPart.Position - station.Arrival.Position).Magnitude <= 8
+end
+
+--- 每次请求只敲一锤，剑胚先进入持久化进度；所有概率与结果均由服务端裁定。
+function Comp:ForgeSword()
+    local station = self._station
+    if os.clock() - self._lastForge < Settings.RequestCooldown then
         return
     end
     self._lastForge = os.clock()
-    if station.OwnerUserId == self:GetPlayerId()
-        and (humanoid.RootPart.Position - station.Arrival.Position).Magnitude <= 8 then
+    if self:CanUseStation() then
         local data = self:GetTable(Fields.ForgeData)
         if not data.Active then
             local inventory = self:RequireComponent("FSInventoryComp")
@@ -80,7 +89,7 @@ end
 --- 主动出炉或领取已结束成品；满背包时保留原结果，不能再次抽取概率。
 --- @return boolean 是否成功领取一把成品。
 function Comp:FinishSword()
-    if not self._active then
+    if not self:CanUseStation() then
         return false
     end
     local data = self:GetTable(Fields.ForgeData)
@@ -150,15 +159,19 @@ function Comp:TeleportToArea()
     self:Release()
 end
 
---- 仅在庭院附近随机取得一个空台位，分配与传送之间不让出执行。
+--- 优先进入身旁的本人锻造台；公共庭院仍随机分配空台位。
 function Comp:Enter()
     local character, humanoid = self:GetLivingCharacter()
-    if not character or self._station or os.clock() - self._lastRequest < Settings.RequestCooldown
-        or not self._manager:IsNear(humanoid.RootPart.Position) then
+    if not character or self._station or os.clock() - self._lastRequest < Settings.RequestCooldown then
         return
     end
     self._lastRequest = os.clock()
-    local station = self._manager:Allocate(self:GetPlayerId())
+    local position = humanoid.RootPart.Position
+    local base = self:RequireComponent("SBaseComp"):GetBase()
+    local station = self._manager:GetPersonalStation(base, self:GetPlayerId(), position)
+    if not station and self._manager:IsNear(position) then
+        station = self._manager:Allocate(self:GetPlayerId())
+    end
     if not station then
         return
     end
@@ -170,14 +183,16 @@ function Comp:Enter()
     self:SetNumber(Fields.ForgeStation, station.Id)
 end
 
---- 已分配玩家可随时离开，落点不由客户端提交；释放后空台位即可再分配。
+--- 私人台退出后留在原地；公共台退出时回庭院入口并归还空台位。
 function Comp:Leave()
     local character, humanoid = self:GetLivingCharacter()
     if not character or not self._station or os.clock() - self._lastRequest < Settings.RequestCooldown then
         return
     end
     self._lastRequest = os.clock()
-    self:Teleport(character, humanoid, self._manager:GetExit())
+    if not self._station.Base then
+        self:Teleport(character, humanoid, self._manager:GetExit())
+    end
     self:Release()
 end
 

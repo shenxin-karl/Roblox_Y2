@@ -21,7 +21,7 @@ end
 --- 绑定 Studio 主界面、余额、传送与升级工坊入口，装备说明沿用现有展示。
 function Component:OnReady()
     self._rootNode = FXLoader:PlayerGui("Main.HUD")
-    self._moneyLabel = FXLoader:Here(self._rootNode, "Wallet.Money")
+    self._moneyLabel = FXLoader:Here(self._rootNode, "Wallet.CashStat.Money")
     self:WatchDataChanged(PlayerDataConfig.Money, function()
         self:RefreshMoney()
     end)
@@ -73,6 +73,7 @@ function Component:RefreshLayout()
     for index, name in ipairs({"TopNav", "SideNav", "Wallet"}) do
         FXLoader:Here(self._rootNode, name .. ".ResponsiveScale").Scale = scale
     end
+    FXLoader:Here(self._rootNode, "Wallet").Position = UDim2.new(0, 16 * scale, 1, -24 * scale)
     self._itemDescriptionScale.Scale = scale
 end
 

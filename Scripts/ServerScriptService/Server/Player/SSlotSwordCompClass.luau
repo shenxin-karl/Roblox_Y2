@@ -304,7 +304,7 @@ function Comp:CollectAll()
     end
 end
 
---- 只升级本人当前槽位的武器，编号、距离与费用均由服务端复核。
+--- 只升级本人当前槽位的武器；交易成功后立即发布牌子数值，不等待数据监听刷新。
 --- @param slotId any 客户端请求的槽位编号。
 function Comp:Upgrade(slotId)
     if type(slotId) ~= "number" or slotId % 1 ~= 0 then
@@ -318,9 +318,12 @@ function Comp:Upgrade(slotId)
     self:Accrue()
     local sword = self:GetSword(slotId)
     if sword then
-        self:RequireComponent("FSRewardComp"):ExchangeRewards(
+        local success = self:RequireComponent("FSRewardComp"):ExchangeRewards(
             {{Type = "Money", Currency = "Money", Count = Rules.GetUpgradePrice(sword.Level)}},
             {{Type = "SlotSwordUpgrade", SlotId = slotId, ExpectedLevel = sword.Level}})
+        if success then
+            self:Publish()
+        end
     end
 end
 
