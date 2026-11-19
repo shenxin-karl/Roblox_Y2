@@ -6,7 +6,7 @@ require(script.Parent.CUIView)
 职责边界：
   展示层绑定三种固定升级、更新文字与按钮状态、发送 Upgrade 动作。
   游戏接入提供权威状态、资源余额判断、请求防重、扣款与升级结果。
-  不覆写 Render，不重复绑定按钮，不在子类修改展示层管理的属性。
+  不覆�� Render，不重复绑定按钮，不在子类修改展示层管理的属性。
 
 Config：无；��行稳定业务 ID 固定为 smelt、forge、income。
 
@@ -30,16 +30,17 @@ State（完整快照，不合并增量）：
 
 展示与交互规则：
   优先级：缺失数据 > maxed > pending > canUpgrade。
-  无数据、满级、请求中、资格不足均禁用；仅 canUpgrade 且非 maxed/pending 可点击。
+  无数据及请求中禁用；满级或余额不足保留灰绿外观，可点击获取原因。
   正常显示亮绿按钮、升级与价格；不可用显示灰绿按钮和对应状态文字。
   canUpgrade=false 在本页面表示钞票不足；其他资格限制须先扩展此契约。
   关闭按钮直接调用 Hide；不取消已发送请求，再次 Show 时刷新最新状态。
 
 动作：
   Upgrade，payload.upgradeId: string，必填；只取 smelt / forge / income。
-  游戏接入校验 ID、资格及重复请求，先 pending=true 并刷新，再请求服务端。
+  游戏接入校验 ID、资格及重复请求；满级或余额不足仅显示提示。
+  符合资格时先 pending=true 并刷新，再请求服务端。
   成功使用权威结果更新等级、效果、价格、资格及满级状态；失败保留权威旧值。
-  成功或失败都清 pending、重新计算所有行资格并刷新；失败提示由项目通知系统负责。
+  成功或失败都清 pending、重新计算所有行资格并刷新；结果提示由项目通知系统负责。
 
 接口实现清单：
   必须实现：OnUIAction(action: string, payload: table) -> 无返回值。
@@ -117,11 +118,11 @@ function CUpgradeWorkshopView:OnReady()
             next = FXLoader:Here(row, "NextValueTxt"),
             arrow = FXLoader:Here(row, "ArrowBox"),
         }
-        -- 点击时读取最新状态，禁止过期资格与请求中重复动作。
+        -- 灰态也允许询问原因；只有数据未就绪或正在请求时忽略点击。
         self:TrackConnection(button.Activated:Connect(function()
             local state = self:GetUIState()
             local entry = state.entries and state.entries[upgradeId]
-            if entry and entry.canUpgrade and not entry.maxed and not entry.pending then
+            if entry and not entry.pending then
                 self:EmitUIAction("Upgrade", { upgradeId = upgradeId })
             end
         end))
@@ -185,7 +186,7 @@ function CUpgradeWorkshopView:Render(state)
             row.button.BackgroundColor3 = Color3.fromHex("#67ED14")
             row.edge.BackgroundColor3 = Color3.fromHex("#225A07")
         end
-        self:SetButtonEnabled(row.button, enabled == true)
+        self:SetButtonEnabled(row.button, entry ~= nil and not entry.pending)
     end
 end
 

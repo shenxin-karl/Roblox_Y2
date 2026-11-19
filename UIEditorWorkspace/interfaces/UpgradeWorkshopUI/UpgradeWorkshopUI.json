@@ -3802,7 +3802,7 @@
     "name": "UpgradeWorkshopUI",
     "properties": {
       "AutoLocalize": true,
-      "DisplayOrder": 0,
+      "DisplayOrder": 10,
       "Enabled": true
     }
   },

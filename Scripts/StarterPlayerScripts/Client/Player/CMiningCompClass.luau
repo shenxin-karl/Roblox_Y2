@@ -58,7 +58,7 @@ function Comp:OnReady()
         self._rewardUntil = os.clock() + 2
         self:RefreshReward()
     end)
-    local button, title, detail = ActionButton.New("MiningInteraction", root)
+    local button, title, detail = ActionButton.New("MiningInteraction")
     self._buttonTitle, self._buttonDetail = title, detail
     self._button = button
     self._lastRequest = -math.huge
@@ -344,7 +344,7 @@ function Comp:Refresh()
     self:RefreshToolNames()
 end
 
---- 只删除矿场自有节点，保留共享画布和背包 Tool。
+--- 删除矿场自己的按钮和收益提示，保留共享画布和背包 Tool。
 function Comp:Dtor()
     FX.Network:UnRegServerMsgCallback("S2C_MiningReward")
     self:StopSwing()
@@ -359,6 +359,9 @@ function Comp:Dtor()
         self._toolUnequipped:Disconnect()
     end
     Comp.Super.Dtor(self)
+    if self._button then
+        self._button:Destroy()
+    end
     if self._rootNode then
         self._rootNode:Destroy()
     end

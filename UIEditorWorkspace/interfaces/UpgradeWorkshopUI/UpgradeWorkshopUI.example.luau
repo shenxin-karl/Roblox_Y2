@@ -48,7 +48,11 @@ function CUpgradeWorkshopPreview:OnUIAction(action, payload)
     assert(action == "Upgrade", "Unknown upgrade action")
     local entry = self.State.entries[payload.upgradeId]
     assert(entry, "Unknown upgrade ID")
-    if entry.maxed or entry.pending or not entry.canUpgrade then
+    if entry.pending then
+        return
+    end
+    if entry.maxed or not entry.canUpgrade then
+        print(entry.maxed and "Max level" or "Not enough cash", payload.upgradeId)
         return
     end
     self._balance -= entry.price

@@ -1,12 +1,37 @@
 -- 人物右侧交互按钮：背景独立渐变，标题与说明保持原色，复用框架悬停缩放。
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local FXLoader = _G.FX.Loader
 local ActionButton = {}
+local PopupNames = {"UpgradeWorkshopUI", "OfflineIncomeUI", "WelfareUI", "GMPanelUI", "AuraShopUI"}
+local worldLayer
 local buttons = {}
 local followConnection
 
+--- 角色提示独占 HUD 层；点开弹窗时整组隐藏，避免透出或抢点击。
+--- @return Frame 人物交互和装备说明共用的容器。
+function ActionButton.GetWorldLayer()
+    if not worldLayer then
+        worldLayer = Instance.new("Frame")
+        worldLayer.Name = "WorldInteractionLayer"
+        worldLayer.BackgroundTransparency = 1
+        worldLayer.Size = UDim2.fromScale(1, 1)
+        worldLayer.Parent = FXLoader:PlayerGui("Main")
+    end
+    return worldLayer
+end
+
 --- 以人物的屏幕投影为锚点，动作纵向排列在人物右侧并限制在屏幕内。
 local function Layout()
+    local playerGui = worldLayer.Parent.Parent
+    for index, name in ipairs(PopupNames) do
+        local popup = playerGui:FindFirstChild(name)
+        if popup and popup:IsA("ScreenGui") and popup.Enabled then
+            worldLayer.Visible = false
+            return
+        end
+    end
+    worldLayer.Visible = true
     local camera = workspace.CurrentCamera
     local character = Players.LocalPlayer.Character
     local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -53,11 +78,10 @@ end
 
 --- 创建人物右侧的紧凑交互入口；业务方只更新标题、说明和可见性。
 --- @param name string 稳定节点名称。
---- @param parent Instance 所属界面容器。
 --- @return TextButton 点击入口。
 --- @return TextLabel 主动作标题。
 --- @return TextLabel 次要状态说明。
-function ActionButton.New(name, parent)
+function ActionButton.New(name)
     local button = Instance.new("TextButton")
     button.Name = name
     button.Position = UDim2.fromOffset(-1000, -1000)
@@ -141,7 +165,7 @@ function ActionButton.New(name, parent)
     button.MouseButton1Up:Connect(Release)
     button.MouseLeave:Connect(Release)
     button:GetPropertyChangedSignal("Visible"):Connect(Release)
-    button.Parent = parent
+    button.Parent = ActionButton.GetWorldLayer()
     table.insert(buttons, button)
     if not followConnection then
         followConnection = RunService.RenderStepped:Connect(Layout)

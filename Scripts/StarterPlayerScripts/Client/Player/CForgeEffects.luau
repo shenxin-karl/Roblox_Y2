@@ -7,11 +7,13 @@ Effects.__index = Effects
 
 local ImpactTime = 0.29
 local SwingDuration = 0.68
+local WhitenDuration = 0.48
+local WhiteHoldDuration = 0.08
+local RevealDuration = 0.55
 local WarmColor = Color3.fromRGB(255, 173, 66)
-local PerfectColor = Color3.fromRGB(255, 250, 225)
 local SparkGravity = Vector3.new(0, -22, 0)
 
---- 在现有台位上建立本地放大木牌、剑、锤子和接触点，原模型只对本人隐藏。
+--- 建立本地锻造近景和升品质用的白色填充，原模型只对本人隐藏。
 --- @param station Model 服务端分配且已复制的场景台位。
 --- @return table 本次锻造会话拥有的表现对象。
 function Effects.New(station)
@@ -77,6 +79,13 @@ function Effects.New(station)
     end
     self._hammer.Parent = self._root
 
+    self._weaponHighlight = Instance.new("Highlight")
+    self._weaponHighlight.Name = "ForgeUpgradeWhite"
+    self._weaponHighlight.DepthMode = Enum.HighlightDepthMode.Occluded
+    self._weaponHighlight.FillColor = Color3.new(1, 1, 1)
+    self._weaponHighlight.OutlineTransparency = 1
+    self._weaponHighlight.Enabled = false
+    self._weaponHighlight.Parent = self._root
     self:SetQuality(1)
     self:SetWeaponVisible(false)
 
@@ -135,7 +144,7 @@ function Effects.New(station)
     return self
 end
 
---- 品质变化时替换本地剑外观，白闪使用同一模型的无贴图副本。
+--- 替换本地剑并重新对齐接触点；白色填充只覆盖外观，不包含透明定位部件。
 --- @param quality number 服务端同步的当前品质。
 function Effects:SetQuality(quality)
     if self._quality == quality then
@@ -144,7 +153,6 @@ function Effects:SetQuality(quality)
     self._quality = quality
     if self._sword then
         self._sword:Destroy()
-        self._bladeFlash:Destroy()
     end
     self._sword = WeaponVisual.Create(quality, 4)
     self._sword.Name = "ForgeSword"
@@ -158,34 +166,71 @@ function Effects:SetQuality(quality)
     WeaponVisual.SetCFrame(self._sword, self._base * CFrame.new(-0.35, self._swordHeight, 0.8)
         * CFrame.Angles(0, -math.pi / 2, 0) * CFrame.Angles(math.pi / 2, 0, 0))
     self._sword.Parent = self._root
-    self._bladeFlash = self._sword:Clone()
-    self._bladeFlash.Name = "BladeWhiteFlash"
-    self._flashParts = {}
-    for index, node in ipairs(self._bladeFlash:GetDescendants()) do
-        if node:IsA("BasePart") then
-            node.Material, node.Color, node.Reflectance = Enum.Material.Neon, PerfectColor, 0
-            node.Transparency, node.CastShadow = 1, false
-            if node:IsA("MeshPart") then
-                node.TextureID = ""
-            end
-            table.insert(self._flashParts, node)
-        elseif node:IsA("SurfaceAppearance") then
-            node:Destroy()
-        end
-    end
-    self._bladeFlash.Parent = self._root
+    self._weaponHighlight.Adornee = self._sword:FindFirstChildOfClass("Model")
 end
 
---- 仅在存在服务端锻造进度时显示武器，空台、损毁或领取后隐藏武器和闪白层。
---- @param visible boolean 是否存在尚未领取且未损毁的锻造武器。
+--- 只改变本人近景中武器的可见性。
+--- @param visible boolean 是否显示本地外观。
 function Effects:SetWeaponVisible(visible)
     for index, node in ipairs(self._sword:GetDescendants()) do
         if node:IsA("BasePart") then
             node.LocalTransparencyModifier = visible and 0 or 1
         end
     end
-    for index, part in ipairs(self._flashParts) do
-        part.LocalTransparencyModifier = visible and 0 or 1
+end
+
+--- 品质提升时先保留旧剑；动画期间只更新揭晓后的最终可见性。
+--- @param quality number? 服务端同步的目标品质。
+--- @param visible boolean 动画结束后剑是否仍留在台上。
+--- @param upgraded boolean 此次同步是否确认了一次新的品质提升。
+function Effects:ApplyWeapon(quality, visible, upgraded)
+    local upgrade = self._weaponUpgrade
+    if upgrade and upgrade.Quality == quality then
+        upgrade.Visible = visible
+        return
+    end
+    self._weaponUpgrade = nil
+    self._weaponHighlight.Enabled = false
+    if upgraded then
+        -- 第一锤前可能没有摆剑，先摆出服务端本次升级前的品质。
+        self:SetQuality(quality - 1)
+        self:SetWeaponVisible(true)
+        self._weaponUpgrade = {Quality = quality, Visible = visible, Age = 0}
+        self._weaponHighlight.FillTransparency = 1
+        self._weaponHighlight.Enabled = true
+    else
+        if quality then
+            self:SetQuality(quality)
+        end
+        self:SetWeaponVisible(visible)
+    end
+end
+
+--- 让旧剑完整变白再换模型，自动出炉的成品也保留短暂展示时间。
+--- @param deltaTime number 当前渲染帧经过的秒数。
+function Effects:UpdateWeapon(deltaTime)
+    local upgrade = self._weaponUpgrade
+    if not upgrade then
+        return
+    end
+    if upgrade.Age < WhitenDuration then
+        upgrade.Age = math.min(upgrade.Age + deltaTime, WhitenDuration)
+        local progress = upgrade.Age / WhitenDuration
+        self._weaponHighlight.FillTransparency = 1 - progress * progress
+    elseif not upgrade.RevealAge then
+        upgrade.Age += deltaTime
+        if upgrade.Age >= WhitenDuration + WhiteHoldDuration then
+            self._weaponHighlight.Enabled = false
+            self:SetQuality(upgrade.Quality)
+            self:SetWeaponVisible(true)
+            upgrade.RevealAge = 0
+        end
+    else
+        upgrade.RevealAge += deltaTime
+        if upgrade.RevealAge >= RevealDuration then
+            self._weaponUpgrade = nil
+            self:SetWeaponVisible(upgrade.Visible)
+        end
     end
 end
 
@@ -205,12 +250,12 @@ function Effects:SetAngle(degrees, rightOffset)
     self._hammer:PivotTo(pose * self._handleToPivot)
 end
 
---- 一锤播完才接受下一锤，结果回调只在锤头接触时执行一次。
+--- 挥锤和换剑结束后才接受下一锤，命中回调只执行一次。
 --- @param powerful boolean 是否使用较强的展示反馈，不代表装备强化结果。
 --- @param onImpact function 命中时通知所属 UI 的回调。
 --- @return boolean 是否开始本次挥锤。
 function Effects:Strike(powerful, onImpact)
-    if self._destroyed or self._swingAge then
+    if self._destroyed or self:IsBusy() then
         return false
     end
     self._swingAge = 0
@@ -220,13 +265,13 @@ function Effects:Strike(powerful, onImpact)
     return true
 end
 
---- 告知界面挥锤是否尚未结束，不把动画时长重复写到交互层。
---- @return boolean 当前是否正在播放一锤。
+--- 告知界面当前是否仍在挥锤或揭晓新剑。
+--- @return boolean 是否应暂缓下一次敲击和出炉。
 function Effects:IsBusy()
-    return not self._destroyed and self._swingAge ~= nil
+    return not self._destroyed and (self._swingAge ~= nil or self._weaponUpgrade ~= nil)
 end
 
---- 接触瞬间炸开橙金色飞溅并闪白剑身；大成功只加强数量和射程。
+--- 接触瞬间炸开橙金色火星；整剑变白留给确认升品质后的换剑。
 function Effects:EmitImpact()
     self._pulseAge = 0
     self._sparkAge = 0
@@ -285,7 +330,7 @@ function Effects:UpdateSparks(deltaTime)
     end
 end
 
---- 由所属组件逐帧推进，避免异步任务在退出后继续回写界面。
+--- 逐帧推进挥锤、火星与换剑；退出后不会有延迟回调修改场景。
 --- @param deltaTime number 当前渲染帧经过的秒数。
 function Effects:Update(deltaTime)
     if self._destroyed then
@@ -334,9 +379,7 @@ function Effects:Update(deltaTime)
     end
     self:UpdateSparks(sparkDelta)
     local flash = math.max(0, 1 - math.max(0, self._pulseAge - 0.025) / (self._powerful and 0.14 or 0.1))
-    for index, part in ipairs(self._flashParts) do
-        part.Transparency = 1 - math.sqrt(flash)
-    end
+    self:UpdateWeapon(deltaTime)
     self._light.Brightness = flash * flash * (self._powerful and 3.5 or 2)
     self._bloom.Intensity = flash * (self._powerful and 0.28 or 0.18)
 end

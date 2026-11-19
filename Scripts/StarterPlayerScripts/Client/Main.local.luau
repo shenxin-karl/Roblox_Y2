@@ -14,6 +14,10 @@ FXLoader:Require(script.Parent, "UI.CUpgradeWorkshopUICompClass")
 FXLoader:Require(script.Parent, "UI.CCommonUICompClass")
 FXLoader:Require(script.Parent, "UI.CWeaponActionsCompClass")
 FXLoader:Require(script.Parent, "UI.COfflineIncomeUICompClass")
+local isDeveloper = FX.IsDeveloper(Players.LocalPlayer.UserId)
+if isDeveloper then
+    FXLoader:Require(script.Parent, "UI.CGMPanelUICompClass")
+end
 
 FC.PlayerObject = PlayerClass.New(Players.LocalPlayer.UserId)
 
@@ -28,4 +32,7 @@ FC.PlayerObject:AddComponent("CUpgradeWorkshopUICompClass")
 FC.PlayerObject:AddComponent("CCommonUICompClass")
 FC.PlayerObject:AddComponent("CWeaponActionsCompClass")
 FC.PlayerObject:AddComponent("COfflineIncomeUICompClass")
+if isDeveloper then
+    FC.PlayerObject:AddComponent("CGMPanelUICompClass")
+end
 FC.WaitServerReady()

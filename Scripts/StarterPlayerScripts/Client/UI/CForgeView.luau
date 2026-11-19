@@ -1,5 +1,6 @@
 -- 锻造木板：展示服务端同步的品质、幸运、单锤概率和出炉结果。
 local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
 local FX = _G.FX
 local FXLoader = FX.Loader
 local Text = FX.Text
@@ -69,6 +70,11 @@ function View.New(root)
     self._hint = FXLoader:Here(self._controls, "Hint")
     self._tweens = {}
     self._count, self._stationId = 0, 0
+    self._gmChanceConnection = Players.LocalPlayer:GetAttributeChangedSignal("GMGuaranteedForge"):Connect(function()
+        if self._root.Enabled then
+            self:RefreshText()
+        end
+    end)
     return self
 end
 
@@ -187,7 +193,11 @@ function View:RefreshText()
     self._labels.Result.TextColor3 = resultColor
     local probabilities
     if data and data.Active and not data.Finished then
-        probabilities = Rules.GetForgeProbabilities(data.blankLuckLevel, data.forgeLevel, data.Quality)
+        if Players.LocalPlayer:GetAttribute("GMGuaranteedForge") == true then
+            probabilities = {success = 100, unchanged = 0, broken = 0, destroy = 0}
+        else
+            probabilities = Rules.GetForgeProbabilities(data.blankLuckLevel, data.forgeLevel, data.Quality)
+        end
     end
     local offset = 0
     for index, name in ipairs(OutcomeNames) do
@@ -225,6 +235,7 @@ end
 
 --- 组件释放时只关闭本视图和自有补间。
 function View:Destroy()
+    self._gmChanceConnection:Disconnect()
     self:Close()
 end
 

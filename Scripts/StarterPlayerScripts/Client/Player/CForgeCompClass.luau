@@ -7,7 +7,6 @@ local FXLoader = FX.Loader
 local Text = FX.Text
 local Fields = _G.PlayerDataConfig
 local Settings = FXLoader:RequireShared("Scripts.Game.Shared.ForgeSettings")
-local UIRoot = FXLoader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local Effects = FXLoader:RequireFromParent(script, "CForgeEffects")
 local ForgeView = FXLoader:Require(script.Parent.Parent, "UI.CForgeView")
 local ActionButton = FXLoader:Require(script.Parent.Parent, "UI.CActionButton")
@@ -31,7 +30,7 @@ function Comp:GetCompName()
     return "CForgeComp"
 end
 
---- 数据就绪后绑定原生锻造界面与右侧入口，沿用现有服务端进出协议。
+--- 数据就绪后绑定锻造界面，并用服务端同步的品质变化触发换剑。
 function Comp:OnReady()
     self._area = FXLoader:Workspace(Settings.AreaPath)
     self._forge = FXLoader:Workspace(Settings.StationPath)
@@ -41,7 +40,7 @@ function Comp:OnReady()
     self._actionName = "ForgeInput_" .. self:GetPlayerId()
     self._hiddenCharacter = {}
     self._personalPrompts = {}
-    local button, title, detail = ActionButton.New("ForgeInteraction", UIRoot.Get())
+    local button, title, detail = ActionButton.New("ForgeInteraction")
     self._buttonTitle, self._buttonDetail = title, detail
     self._rootNode = button
     self._lastRequest = -math.huge
@@ -70,15 +69,8 @@ function Comp:OnReady()
     self:TrackConnection(self._view.GreatStrikeButton.Activated:Connect(function()
         self:FinishSword()
     end))
-    self:WatchDataChanged(Fields.ForgeData, function()
-        local data = self:GetTable(Fields.ForgeData)
-        self._view:SetForgeData(data)
-        if self._effects then
-            if data.Quality then
-                self._effects:SetQuality(data.Quality)
-            end
-            self._effects:SetWeaponVisible(data.Active == true and data.Outcome ~= "Destroyed")
-        end
+    self:WatchDataChanged(Fields.ForgeData, function(data, previous)
+        self:ApplyForgeData(data, previous)
     end)
     FX.Network:RegServerMsgCallback("S2C_ForgeSwordResult", function(stationId, success)
         if self._effects and self._stationId == stationId then
@@ -102,6 +94,26 @@ function Comp:OnReady()
     RunService:BindToRenderStep(self._renderName, Enum.RenderPriority.Camera.Value + 1, function(deltaTime)
         self:UpdateView(deltaTime)
     end)
+end
+
+--- 从同步状态识别本次品质提升；进台回放和手动领取不重播动画。
+--- @param data table 服务端同步的最新锻造状态。
+--- @param previous table? 上一次同步状态；进台时不传。
+function Comp:ApplyForgeData(data, previous)
+    self._view:SetForgeData(data)
+    if not self._effects then
+        return
+    end
+    local upgraded = false
+    if previous then
+        if data.Outcome == "Success" then
+            upgraded = not previous.Active or data.HammerCount > previous.HammerCount
+        elseif data.Outcome == "Finished" and previous.Active then
+            -- 最后一锤的升级和自动领取可能合并成一条状态。
+            upgraded = data.HammerCount > previous.HammerCount and data.Quality > previous.Quality
+        end
+    end
+    self._effects:ApplyWeapon(data.Quality, data.Active == true and data.Outcome ~= "Destroyed", upgraded)
 end
 
 --- 仅为本人基地创建本地提示，节点流送回来后重新挂到对应桌面或炉台。
@@ -168,7 +180,7 @@ function Comp:Refresh()
     end
 end
 
---- StreamingEnabled 下先等实际台位复制齐全，不在逐帧入口中等待必需子节点。
+--- 等台位复制齐全后打开近景，直接呈现进入时的权威武器状态。
 --- @param stationId number 服务端同步的当前台位编号。
 function Comp:TryOpenView(stationId)
     local station
@@ -216,12 +228,7 @@ function Comp:TryOpenView(stationId)
     self._mainHUD.Visible = false
     camera.CameraType = Enum.CameraType.Scriptable
     self._view:Open(effects:GetBoardPanel(), stationId)
-    local data = self:GetTable(Fields.ForgeData)
-    self._view:SetForgeData(data)
-    if data.Quality then
-        effects:SetQuality(data.Quality)
-    end
-    effects:SetWeaponVisible(data.Active == true and data.Outcome ~= "Destroyed")
+    self:ApplyForgeData(self:GetTable(Fields.ForgeData))
     ContextActionService:BindActionAtPriority(self._actionName, function(actionName, inputState, inputObject)
         return self:HandlePreviewInput(actionName, inputState, inputObject)
     end, false, 3000, Enum.KeyCode.F, Enum.KeyCode.G, Enum.KeyCode.E,

@@ -41,6 +41,14 @@ function Comp:OnReady()
         end
         self:RefreshPrompts()
     end))
+    local player = self:GetPlayerNode()
+    self:TrackConnection(player:GetAttributeChangedSignal("GMFreeUpgrades"):Connect(function()
+        for display in pairs(self._views) do
+            if display:GetAttribute("OwnerUserId") == player.UserId then
+                self:Render(display)
+            end
+        end
+    end))
     self:TrackConnection(CollectionService:GetInstanceAddedSignal("BaseWeaponPrompt"):Connect(function(prompt)
         self._prompts[prompt] = true
         self:RefreshPrompts()
@@ -229,8 +237,12 @@ function Comp:Render(display)
     local ready = display:GetAttribute("HasSword") == true
         and level ~= nil and income ~= nil and price ~= nil and stored ~= nil
     view.Sign.Enabled, view.Collect.Enabled, view.IncomeGui.Enabled = ready, ready, ready
-    view.Upgrade.Active = display:GetAttribute("OwnerUserId") == self:GetPlayerId()
+    local isOwner = display:GetAttribute("OwnerUserId") == self:GetPlayerId()
+    view.Upgrade.Active = isOwner
     if ready then
+        if isOwner and self:GetPlayerNode():GetAttribute("GMFreeUpgrades") == true then
+            price = 0
+        end
         view.Income.Text = Text.Tr(TranslationTexts.Income, {value = GameUtility.NumberToText(income)})
         view.Upgrade.Text = Text.Tr(TranslationTexts.Upgrade, {
             level = level, nextLevel = level + 1, value = GameUtility.NumberToText(price),

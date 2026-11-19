@@ -1,14 +1,18 @@
 -- 项目主界面：绑定 Studio 原生 HUD，并保留通用道具说明。
+local GuiService = game:GetService("GuiService")
+local TextService = game:GetService("TextService")
 local FX, FC = _G.FX, _G.FC
 local FXLoader = FX.Loader
 local Text = FX.Text
 local FCItemDescription = FXLoader:RequireShared("Scripts.Framework.Client.FCItemDescription")
+local ActionButton = FXLoader:RequireFromParent(script, "CActionButton")
 local ItemConfig = FXLoader:RequireShared("Scripts.Game.Configs.ItemConfig")
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local SwordRules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local PlayerDataConfig = _G.PlayerDataConfig
 local TranslationTexts = Text.Define("MainItemDescription", {
     Traits = "{description}\nMutation: {mutation}\nBlank luck level: {blankLuckLevel:int}",
+    GM = "GM",
 })
 local Component = FX.Class("CMainUICompClass", "FCUICompClass")
 
@@ -21,6 +25,11 @@ end
 --- 绑定 Studio 主界面、余额、传送与升级工坊入口，装备说明沿用现有展示。
 function Component:OnReady()
     self._rootNode = FXLoader:PlayerGui("Main.HUD")
+    self._topNav = FXLoader:Here(self._rootNode, "TopNav")
+    self._topNavDefaultPosition = self._topNav.Position
+    if FX.IsDeveloper(self:GetPlayerNode().UserId) then
+        self:CreateGMButton()
+    end
     self._moneyLabel = FXLoader:Here(self._rootNode, "Wallet.CashStat.Money")
     self:WatchDataChanged(PlayerDataConfig.Money, function()
         self:RefreshMoney()
@@ -36,14 +45,24 @@ function Component:OnReady()
         self:GetOwner():RequireComponent("CUpgradeWorkshopUICompClass"):Show()
     end))
     self._itemDescription = FCItemDescription.New()
-    self._itemDescription.Root.Parent = self._rootNode
+    self._itemDescription.Root.Parent = ActionButton.GetWorldLayer()
+    for index, property in ipairs({"AbsolutePosition", "AbsoluteSize"}) do
+        self:TrackConnection(self._topNav:GetPropertyChangedSignal(property):Connect(function()
+            self:PositionItemDescription()
+        end))
+    end
+    self:PositionItemDescription()
     self._itemDescriptionScale = Instance.new("UIScale")
     self._itemDescriptionScale.Name = "ResponsiveScale"
     self._itemDescriptionScale.Parent = self._itemDescription.Root
     self:TrackConnection(self._rootNode:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
         self:RefreshLayout()
     end))
+    self:TrackConnection(GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(function()
+        self:RefreshLayout()
+    end))
     self:RefreshLayout()
+    self:ConfigureHudTextSizing()
     self._selectedToolConnections = {}
     self:TrackConnection(self._rootNode:GetPropertyChangedSignal("Visible"):Connect(function()
         self:RefreshSelectedTool()
@@ -66,15 +85,140 @@ function Component:OnReady()
     self:Show()
 end
 
---- 常驻 HUD 与道具说明使用相同缩放，顶部、侧栏与钱包保持各自的屏幕锚点。
+--- 道具说明贴在顶部导航下方，并随安全区域与导航缩放一起移动。
+function Component:PositionItemDescription()
+    local description = self._itemDescription.Root
+    local top = self._topNav.AbsolutePosition.Y - description.Parent.AbsolutePosition.Y
+    local bottom = top + self._topNav.AbsoluteSize.Y
+    description.Position = UDim2.new(0.5, 0, 0, math.max(0, bottom) + 12)
+end
+
+--- 复用 Y1 主界面右上角 GM 入口的外观；与 HUD 同级，锻造时仍可打开。
+function Component:CreateGMButton()
+    local button = Instance.new("TextButton")
+    button.Name = "GMButton"
+    button.AutoLocalize = false
+    button.Text = Text.Tr(TranslationTexts.GM)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 16
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.BackgroundColor3 = Color3.fromRGB(45, 49, 60)
+    button.BorderSizePixel = 0
+    button.AnchorPoint = Vector2.new(1, 0)
+    button.Position = UDim2.new(1, -68, 0, 10)
+    button.Size = UDim2.fromOffset(56, 32)
+    button:SetAttribute("BlocksTrainingClick", true)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = button
+    self:TrackConnection(button.Activated:Connect(function()
+        self:GetOwner():RequireComponent("CGMPanelUIComp"):Show()
+    end))
+    button.Parent = self._rootNode.Parent
+    self._gmButton = button
+end
+
+--- 各组使用相同倍率；顶部菜单优先放进原生顶栏空位，放不下就下移。
 function Component:RefreshLayout()
     local size = self._rootNode.AbsoluteSize
+    if size.X <= 0 or size.Y <= 0 then
+        return
+    end
     local scale = math.min(size.X / 1280, size.Y / 720, 1.25)
     for index, name in ipairs({"TopNav", "SideNav", "Wallet"}) do
         FXLoader:Here(self._rootNode, name .. ".ResponsiveScale").Scale = scale
     end
     FXLoader:Here(self._rootNode, "Wallet").Position = UDim2.new(0, 16 * scale, 1, -24 * scale)
     self._itemDescriptionScale.Scale = scale
+
+    -- Main.HUD 从 CoreUISafeInsets 原点开始；GetInsetArea 在同一坐标系内返回顶栏区域。
+    local topbarArea = GuiService:GetInsetArea(Enum.ScreenInsets.TopbarSafeInsets)
+    if topbarArea.Height <= 0 then
+        self._topNav.Position = self._topNavDefaultPosition
+        return
+    end
+
+    local topbarPadding = 12
+    local leftEdge = math.max(0, topbarArea.Min.X) + topbarPadding
+    local rightEdge = math.min(size.X, topbarArea.Max.X) - topbarPadding
+    local width = self._topNav.Size.X.Offset * scale
+    local height = self._topNav.Size.Y.Offset * scale
+    if width > rightEdge - leftEdge or height > topbarArea.Height then
+        local position = self._topNavDefaultPosition
+        local designY = size.Y * position.Y.Scale + position.Y.Offset
+        local topY = math.max(designY, topbarArea.Max.Y + topbarPadding)
+        self._topNav.Position = UDim2.new(position.X.Scale, position.X.Offset, 0, topY)
+        return
+    end
+
+    local halfWidth = width / 2
+    local minCenterX = leftEdge + halfWidth
+    local maxCenterX = rightEdge - halfWidth
+    local centerX = math.clamp(size.X / 2, minCenterX, maxCenterX)
+    local topY = topbarArea.Min.Y + (topbarArea.Height - height) / 2
+    self._topNav.Position = UDim2.fromOffset(centerX, topY)
+end
+
+--- 常驻文字随分组缩放；余额、倒计时和译文变化时只在溢出时降低设计字号。
+function Component:ConfigureHudTextSizing()
+    for groupIndex, groupName in ipairs({"TopNav", "SideNav", "Wallet"}) do
+        local group = FXLoader:Here(self._rootNode, groupName)
+        local responsiveScale = FXLoader:Here(group, "ResponsiveScale")
+        for labelIndex, label in ipairs(group:GetDescendants()) do
+            if not (label:IsA("TextLabel") or label:IsA("TextButton")) then
+                continue
+            end
+            local designSize = label.TextSize
+            label.TextScaled = false
+            local constraint = label:FindFirstChildOfClass("UITextSizeConstraint")
+            if constraint then
+                constraint:Destroy()
+            end
+
+            --- 在设计坐标中检查文字是否放得下，避免把分组倍率重复应用到字号。
+            local function FitText()
+                local scale = responsiveScale.Scale
+                if scale <= 0 then
+                    return
+                end
+                local available = label.AbsoluteSize / scale
+                if available.X <= 0 or available.Y <= 0 then
+                    return
+                end
+                local content = label.ContentText
+                local measureWidth = label.TextWrapped and available.X or 100000
+
+                --- 允许换行的文字先按当前字号换行，再检查宽度和行高。
+                --- @param textSize number 待测量的设计字号。
+                --- @return boolean 文字能否完整放入当前文本框。
+                local function Fits(textSize)
+                    local bounds = TextService:GetTextSize(content, textSize, label.Font,
+                        Vector2.new(measureWidth, 100000))
+                    return bounds.X <= available.X and bounds.Y * label.LineHeight <= available.Y
+                end
+
+                if content == "" or Fits(designSize) then
+                    label.TextSize = designSize
+                    return
+                end
+                local lower, upper = 1, math.floor(designSize)
+                while lower < upper do
+                    local middle = math.ceil((lower + upper) / 2)
+                    if Fits(middle) then
+                        lower = middle
+                    else
+                        upper = middle - 1
+                    end
+                end
+                label.TextSize = lower
+            end
+
+            self:TrackConnection(label:GetPropertyChangedSignal("ContentText"):Connect(FitText))
+            self:TrackConnection(label:GetPropertyChangedSignal("AbsoluteSize"):Connect(FitText))
+            self:TrackConnection(responsiveScale:GetPropertyChangedSignal("Scale"):Connect(FitText))
+            FitText()
+        end
+    end
 end
 
 --- 余额只取玩家同步字段，缩写统一使用项目数量格式化方法。
@@ -162,6 +306,9 @@ end
 
 --- 清理装备监听和自有道具说明，仅隐藏 Studio 提供的 HUD 模板副本。
 function Component:Dtor()
+    if self._gmButton then
+        self._gmButton:Destroy()
+    end
     if self._characterToolConnection then
         self._characterToolConnection:Disconnect()
     end

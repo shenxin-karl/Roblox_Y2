@@ -109,7 +109,7 @@ function Manager:RegForgeMsg()
         local player = self:GetPlayerObject(userId)
         local forge = player and player:GetComponent("SForgeComp")
         if forge then
-            forge:FinishSword()
+            forge:FinishSword(true)
         end
     end)
     --- 只对请求者的台位和背包进行锻造，不接受客户端配方或成品参数。
@@ -165,13 +165,14 @@ end
 
 --- 项目命令转发；框架已校验开发者身份，组件仍负责具体动作与会话校验。
 --- @param userId number 引擎认证的请求者 ID。
---- @param action string ResetData 或 SaveNow。
+--- @param action string 调试命令名。
+--- @param payload any 玩法命令参数。
 --- @return table 权威操作结果。
-function Manager:HandleGMCommand(userId, action)
+function Manager:HandleGMCommand(userId, action, payload)
     local player = self:GetPlayerObject(userId)
     local gm = player and player:GetComponent("SGMComp")
     if gm then
-        return gm:Request(action)
+        return gm:Request(action, payload)
     end
     return SGMRecovery.Request(userId, action)
 end

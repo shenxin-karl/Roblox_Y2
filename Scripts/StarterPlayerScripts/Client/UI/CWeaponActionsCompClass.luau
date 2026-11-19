@@ -6,7 +6,6 @@ local Text = FX.Text
 local Fields = _G.PlayerDataConfig
 local Rules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Utility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
-local UIRoot = FX.Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local ActionButton = FX.Loader:RequireFromParent(script, "CActionButton")
 local Texts = Text.Define("WeaponActions", {
     Sell = "出售武器",
@@ -30,12 +29,8 @@ end
 --- 构造普通动作入口并监听语言、离线余额与服务器赠送请求。
 function Comp:OnReady()
     self._common = self:GetOwner():RequireComponent("CCommonUICompClass")
-    self._rootNode = Instance.new("Frame")
-    self._rootNode.Name, self._rootNode.Size = "WeaponActions", UDim2.fromScale(1, 1)
-    self._rootNode.BackgroundTransparency = 1
-    self._rootNode.Parent = UIRoot.Get()
-    self._sell, self._sellTitle, self._sellDetail = ActionButton.New("SellWeapon", self._rootNode)
-    self._gift, self._giftTitle, self._giftDetail = ActionButton.New("GiftRawWeapon", self._rootNode)
+    self._sell, self._sellTitle, self._sellDetail = ActionButton.New("SellWeapon")
+    self._gift, self._giftTitle, self._giftDetail = ActionButton.New("GiftRawWeapon")
     self:TrackConnection(self._sell.Activated:Connect(function()
         local tool = self:GetEquippedTool()
         local sword = tool and self:GetSword(tool)
@@ -143,8 +138,9 @@ end
 function Comp:Dtor()
     FX.Network:UnRegServerMsgCallback("S2C_RawSwordOffer")
     Comp.Super.Dtor(self)
-    if self._rootNode then
-        self._rootNode:Destroy()
+    if self._sell then
+        self._sell:Destroy()
+        self._gift:Destroy()
     end
 end
 

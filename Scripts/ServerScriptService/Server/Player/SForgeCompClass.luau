@@ -4,6 +4,12 @@ local Fields = _G.PlayerDataConfig
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
 local Rules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
+local TranslationTexts = FX.Text.Define("FinishSword", {
+    Success = "Forged weapon added to your backpack.",
+    Failed = "Couldn't collect your weapon. Check your backpack space and try again.",
+    StationsFull = "All public forges are occupied. Try again when one is free.",
+    StationTooFar = "Move closer to a forge to start forging.",
+})
 local Comp = FX.Class("SForgeCompClass", "FSPlayerCompClass")
 
 --- 每次登录重新分配会话，不将台位写入存档。
@@ -67,7 +73,7 @@ function Comp:ForgeSword()
         local probabilities = Rules.GetForgeProbabilities(data.blankLuckLevel, data.forgeLevel, data.Quality)
         local roll = self._random:NextNumber(0, 100)
         data.HammerCount += 1
-        if roll < probabilities.success then
+        if self:GetPlayerNode():GetAttribute("GMGuaranteedForge") == true or roll < probabilities.success then
             data.Quality += 1
             data.Outcome = "Success"
             data.Finished = data.Quality >= data.forgeLevel + 4
@@ -86,9 +92,29 @@ function Comp:ForgeSword()
     end
 end
 
---- 主动出炉或领取已结束成品；满背包时保留原结果，不能再次抽取概率。
+--- 调试入口沿用自然破损的出炉流程，容量不足时保留原成品待领取。
+--- @return boolean 是否已将进行中的锻造标记为破损。
+function Comp:BreakCurrentSword()
+    if not self:CanUseStation() then
+        return false
+    end
+    local data = self:GetTable(Fields.ForgeData)
+    if not data.Active or data.Finished then
+        return false
+    end
+    data.Outcome = "Broken"
+    data.Finished = true
+    if not self:SetTable(Fields.ForgeData, data) then
+        return false
+    end
+    self:FinishSword()
+    return true
+end
+
+--- 主动出炉或领取已结束成品；失败保留原结果，不能再次抽取概率。
+--- @param showResult boolean? 主动点击时显示结果，自动出炉仍沿用锻造表现。
 --- @return boolean 是否成功领取一把成品。
-function Comp:FinishSword()
+function Comp:FinishSword(showResult)
     if not self:CanUseStation() then
         return false
     end
@@ -98,7 +124,8 @@ function Comp:FinishSword()
     end
     data.Finished = true
     self:SetTable(Fields.ForgeData, data)
-    return self:GetPlayerObject():RunDataTransaction(function()
+    local player = self:GetPlayerObject()
+    local success = player:RunDataTransaction(function()
         if not self:RequireComponent("FSRewardComp"):AddRewards({{Type = "Item", ItemId = Rules.ItemId, Count = 1,
             ExtraData = {MutationId = data.MutationId, blankLuckLevel = data.blankLuckLevel,
                 Quality = data.Quality, Level = 1, StoredMoney = 0}}}) then
@@ -108,6 +135,10 @@ function Comp:FinishSword()
         data.Outcome = data.Outcome == "Broken" and "Broken" or "Finished"
         return self:SetTable(Fields.ForgeData, data)
     end)
+    if showResult then
+        player:ShowLocalizedTips(success and TranslationTexts.Success or TranslationTexts.Failed)
+    end
+    return success
 end
 
 --- 返回玩家组件协作名。
@@ -159,7 +190,7 @@ function Comp:TeleportToArea()
     self:Release()
 end
 
---- 优先进入身旁的本人锻造台；公共庭院仍随机分配空台位。
+--- 优先进入本人锻造台；无法进入公共台时区分距离与满员。
 function Comp:Enter()
     local character, humanoid = self:GetLivingCharacter()
     if not character or self._station or os.clock() - self._lastRequest < Settings.RequestCooldown then
@@ -169,11 +200,17 @@ function Comp:Enter()
     local position = humanoid.RootPart.Position
     local base = self:RequireComponent("SBaseComp"):GetBase()
     local station = self._manager:GetPersonalStation(base, self:GetPlayerId(), position)
-    if not station and self._manager:IsNear(position) then
-        station = self._manager:Allocate(self:GetPlayerId())
-    end
     if not station then
-        return
+        local player = self:GetPlayerObject()
+        if not self._manager:IsNear(position) then
+            player:ShowLocalizedTips(TranslationTexts.StationTooFar)
+            return
+        end
+        station = self._manager:Allocate(self:GetPlayerId())
+        if not station then
+            player:ShowLocalizedTips(TranslationTexts.StationsFull)
+            return
+        end
     end
     self._station = station
     self._deathConnection = humanoid.Died:Connect(function()
