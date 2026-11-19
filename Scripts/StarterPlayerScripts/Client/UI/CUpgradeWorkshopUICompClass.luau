@@ -8,7 +8,6 @@ FXLoader:RequireFromParent(script, "Generated.CUpgradeWorkshopView")
 local TranslationTexts = FX.Text.Define("UpgradeWorkshopFeedback", {
     Success = "Workshop upgrade complete!",
     Failed = "Upgrade failed. Please try again.",
-    NotEnoughCash = "Not enough cash to upgrade. You need ${value}.",
     MaxLevel = "This workshop upgrade is already at its maximum level.",
 })
 local Component = FX.Class("CUpgradeWorkshopUICompClass", "CUpgradeWorkshopView")
@@ -85,7 +84,7 @@ function Component:FormatAmount(amount)
     return GameUtility.NumberToText(amount)
 end
 
---- 灰态点击只提示原因；符合资格才提交当前等级，费用与结果由服务端裁定。
+--- 满级点击显示提示；符合资格才提交当前等级，费用与结果由服务端裁定。
 --- @param action string View 发出的动作名称。
 --- @param payload table View 提供的稳定升级 ID。
 function Component:OnUIAction(action, payload)
@@ -99,8 +98,6 @@ function Component:OnUIAction(action, payload)
         return
     end
     if not entry.canUpgrade then
-        local commonUI = self:GetOwner():RequireComponent("CCommonUICompClass")
-        commonUI:ShowLocalizedTips(TranslationTexts.NotEnoughCash, {value = self:FormatAmount(entry.price)})
         return
     end
     self._pending[upgradeId] = true

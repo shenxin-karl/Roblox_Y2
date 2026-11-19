@@ -30,14 +30,14 @@ State（完整快照，不合并增量）：
 
 展示与交互规则：
   优先级：缺失数据 > maxed > pending > canUpgrade。
-  无数据及请求中禁用；满级或余额不足保留灰绿外观，可点击获取原因。
-  正常显示亮绿按钮、升级与价格；不可用显示灰绿按钮和对应状态文字。
+  无数据、请求中及余额不足禁用；满级保留灰绿外观，可点击查看提示。
+  未满级且请求未进行时，按钮只显示价格；可升级时亮绿，余额不足时灰绿。
   canUpgrade=false 在本页面表示钞票不足；其他资格限制须先扩展此契约。
   关闭按钮直接调用 Hide；不取消已发送请求，再次 Show 时刷新最新状态。
 
 动作：
   Upgrade，payload.upgradeId: string，必填；只取 smelt / forge / income。
-  游戏接入校验 ID、资格及重复请求；满级或余额不足仅显示提示。
+  游戏接入校验 ID、资格及重复请求；满级点击仅显示满级提示。
   符合资格时先 pending=true 并刷新，再请求服务端。
   成功使用权威结果更新等级、效果、价格、资格及满级状态；失败保留权威旧值。
   成功或失败都清 pending、重新计算所有行资格并刷新；结果提示由项目通知系统负责。
@@ -90,7 +90,6 @@ local CUpgradeWorkshopView = FX.Class("CUpgradeWorkshopView", "CUIView")
 local TranslationTexts = Text.Define("UpgradeWorkshop", {
     Maxed = "Max level",
     Pending = "Upgrading...",
-    Insufficient = "Not enough cash",
 })
 CUpgradeWorkshopView.BaseViewTranslationTexts = TranslationTexts
 
@@ -110,7 +109,6 @@ function CUpgradeWorkshopView:OnReady()
         self._rows[upgradeId] = {
             button = button,
             buttonText = FXLoader:Here(button, "ButtonTxt"),
-            price = FXLoader:Here(row, "PriceTxt"),
             status = FXLoader:Here(button, "StatusTxt"),
             edge = FXLoader:Here(button, "BottomEdgeImg"),
             level = FXLoader:Here(row, "LevelTxt"),
@@ -118,11 +116,11 @@ function CUpgradeWorkshopView:OnReady()
             next = FXLoader:Here(row, "NextValueTxt"),
             arrow = FXLoader:Here(row, "ArrowBox"),
         }
-        -- 灰态也允许询问原因；只有数据未就绪或正在请求时忽略点击。
+        -- 满级可点击查看提示；只有符合资格的非满级项发起升级。
         self:TrackConnection(button.Activated:Connect(function()
             local state = self:GetUIState()
             local entry = state.entries and state.entries[upgradeId]
-            if entry and not entry.pending then
+            if entry and not entry.pending and (entry.canUpgrade or entry.maxed) then
                 self:EmitUIAction("Upgrade", { upgradeId = upgradeId })
             end
         end))
@@ -159,13 +157,11 @@ function CUpgradeWorkshopView:Render(state)
             statusText = Text.Tr(TranslationTexts.Maxed)
         elseif entry.pending then
             statusText = Text.Tr(TranslationTexts.Pending)
-        elseif not entry.canUpgrade then
-            statusText = Text.Tr(TranslationTexts.Insufficient)
         end
         row.current.Text = ""
         row.next.Text = ""
         row.level.Text = ""
-        row.price.Text = ""
+        row.buttonText.Text = ""
         row.arrow.Visible = entry ~= nil and not entry.maxed
         if entry then
             row.current.Text = entry.currentValue
@@ -173,11 +169,13 @@ function CUpgradeWorkshopView:Render(state)
             if not entry.maxed then
                 row.level.Text = tostring(entry.level) .. " → " .. tostring(entry.level + 1)
                 row.next.Text = entry.nextValue
-                row.price.Text = "$" .. self:FormatAmount(entry.price)
             end
         end
-        row.buttonText.Visible = enabled == true
-        row.price.Visible = entry ~= nil and not entry.maxed
+        local showPrice = entry ~= nil and not entry.maxed and not entry.pending
+        if showPrice then
+            row.buttonText.Text = "$" .. self:FormatAmount(entry.price)
+        end
+        row.buttonText.Visible = showPrice
         row.status.Text = statusText
         row.status.Visible = statusText ~= ""
         row.button.BackgroundColor3 = Color3.fromHex("#638079")
@@ -186,7 +184,7 @@ function CUpgradeWorkshopView:Render(state)
             row.button.BackgroundColor3 = Color3.fromHex("#67ED14")
             row.edge.BackgroundColor3 = Color3.fromHex("#225A07")
         end
-        self:SetButtonEnabled(row.button, entry ~= nil and not entry.pending)
+        self:SetButtonEnabled(row.button, entry ~= nil and not entry.pending and (entry.canUpgrade or entry.maxed))
     end
 end
 

@@ -680,7 +680,7 @@
                         "x": 0,
                         "y": 0
                       },
-                      "AutoLocalize": true,
+                      "AutoLocalize": false,
                       "BackgroundColor3": "#ffffff",
                       "BackgroundTransparency": 1,
                       "ClipsDescendants": false,
@@ -707,7 +707,7 @@
                           "scale": 0
                         }
                       },
-                      "Text": "Upgrade",
+                      "Text": "",
                       "TextColor3": "#ffffff",
                       "TextScaled": false,
                       "TextSize": 24,
@@ -832,68 +832,6 @@
                   },
                   "Visible": true,
                   "ZIndex": 6
-                }
-              },
-              {
-                "children": [
-                  {
-                    "children": [],
-                    "className": "UIStroke",
-                    "id": "ef765cae-8f50-41d2-93bc-f23743f00ad6",
-                    "name": "TextStroke",
-                    "properties": {
-                      "Color": "#20231C",
-                      "Enabled": true,
-                      "Thickness": 1,
-                      "Transparency": 0
-                    }
-                  }
-                ],
-                "className": "TextLabel",
-                "id": "2fa2f617-e311-49e0-ac77-a982724b06da",
-                "name": "PriceTxt",
-                "properties": {
-                  "AnchorPoint": {
-                    "x": 0,
-                    "y": 0
-                  },
-                  "AutoLocalize": false,
-                  "BackgroundColor3": "#ffffff",
-                  "BackgroundTransparency": 1,
-                  "ClipsDescendants": false,
-                  "Font": "GothamBold",
-                  "LayoutOrder": 0,
-                  "Position": {
-                    "x": {
-                      "offset": 568,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 16,
-                      "scale": 0
-                    }
-                  },
-                  "Rotation": 0,
-                  "Size": {
-                    "x": {
-                      "offset": 200,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 28,
-                      "scale": 0
-                    }
-                  },
-                  "Text": "",
-                  "TextColor3": "#FFFFFF",
-                  "TextScaled": false,
-                  "TextSize": 22,
-                  "TextTransparency": 0,
-                  "TextWrapped": false,
-                  "TextXAlignment": "Center",
-                  "TextYAlignment": "Center",
-                  "Visible": true,
-                  "ZIndex": 8
                 }
               },
               {
@@ -1742,7 +1680,7 @@
                         "x": 0,
                         "y": 0
                       },
-                      "AutoLocalize": true,
+                      "AutoLocalize": false,
                       "BackgroundColor3": "#ffffff",
                       "BackgroundTransparency": 1,
                       "ClipsDescendants": false,
@@ -1769,7 +1707,7 @@
                           "scale": 0
                         }
                       },
-                      "Text": "Upgrade",
+                      "Text": "",
                       "TextColor3": "#ffffff",
                       "TextScaled": false,
                       "TextSize": 24,
@@ -1894,68 +1832,6 @@
                   },
                   "Visible": true,
                   "ZIndex": 6
-                }
-              },
-              {
-                "children": [
-                  {
-                    "children": [],
-                    "className": "UIStroke",
-                    "id": "f0c948b6-6100-4d1f-99f3-eac90f64913c",
-                    "name": "TextStroke",
-                    "properties": {
-                      "Color": "#20231C",
-                      "Enabled": true,
-                      "Thickness": 1,
-                      "Transparency": 0
-                    }
-                  }
-                ],
-                "className": "TextLabel",
-                "id": "4bee9bc7-dfaf-42ac-a5b7-f872320cb04b",
-                "name": "PriceTxt",
-                "properties": {
-                  "AnchorPoint": {
-                    "x": 0,
-                    "y": 0
-                  },
-                  "AutoLocalize": false,
-                  "BackgroundColor3": "#ffffff",
-                  "BackgroundTransparency": 1,
-                  "ClipsDescendants": false,
-                  "Font": "GothamBold",
-                  "LayoutOrder": 0,
-                  "Position": {
-                    "x": {
-                      "offset": 568,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 16,
-                      "scale": 0
-                    }
-                  },
-                  "Rotation": 0,
-                  "Size": {
-                    "x": {
-                      "offset": 200,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 28,
-                      "scale": 0
-                    }
-                  },
-                  "Text": "",
-                  "TextColor3": "#FFFFFF",
-                  "TextScaled": false,
-                  "TextSize": 22,
-                  "TextTransparency": 0,
-                  "TextWrapped": false,
-                  "TextXAlignment": "Center",
-                  "TextYAlignment": "Center",
-                  "Visible": true,
-                  "ZIndex": 8
                 }
               },
               {
@@ -2804,7 +2680,7 @@
                         "x": 0,
                         "y": 0
                       },
-                      "AutoLocalize": true,
+                      "AutoLocalize": false,
                       "BackgroundColor3": "#ffffff",
                       "BackgroundTransparency": 1,
                       "ClipsDescendants": false,
@@ -2831,7 +2707,7 @@
                           "scale": 0
                         }
                       },
-                      "Text": "Upgrade",
+                      "Text": "",
                       "TextColor3": "#ffffff",
                       "TextScaled": false,
                       "TextSize": 24,
@@ -2956,68 +2832,6 @@
                   },
                   "Visible": true,
                   "ZIndex": 6
-                }
-              },
-              {
-                "children": [
-                  {
-                    "children": [],
-                    "className": "UIStroke",
-                    "id": "5e1ebc06-a1e5-46b7-bdc4-9f84ee9558e4",
-                    "name": "TextStroke",
-                    "properties": {
-                      "Color": "#20231C",
-                      "Enabled": true,
-                      "Thickness": 1,
-                      "Transparency": 0
-                    }
-                  }
-                ],
-                "className": "TextLabel",
-                "id": "5b54b9a6-e6bc-439d-aeee-f95e2c1fd9bb",
-                "name": "PriceTxt",
-                "properties": {
-                  "AnchorPoint": {
-                    "x": 0,
-                    "y": 0
-                  },
-                  "AutoLocalize": false,
-                  "BackgroundColor3": "#ffffff",
-                  "BackgroundTransparency": 1,
-                  "ClipsDescendants": false,
-                  "Font": "GothamBold",
-                  "LayoutOrder": 0,
-                  "Position": {
-                    "x": {
-                      "offset": 568,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 16,
-                      "scale": 0
-                    }
-                  },
-                  "Rotation": 0,
-                  "Size": {
-                    "x": {
-                      "offset": 200,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 28,
-                      "scale": 0
-                    }
-                  },
-                  "Text": "",
-                  "TextColor3": "#FFFFFF",
-                  "TextScaled": false,
-                  "TextSize": 22,
-                  "TextTransparency": 0,
-                  "TextWrapped": false,
-                  "TextXAlignment": "Center",
-                  "TextYAlignment": "Center",
-                  "Visible": true,
-                  "ZIndex": 8
                 }
               },
               {
