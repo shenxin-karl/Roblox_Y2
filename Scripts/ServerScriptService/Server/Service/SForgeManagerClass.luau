@@ -1,4 +1,4 @@
--- 本服锻造台占用管理：只分配现有八台，不克隆模型，不保存跨服占用。
+-- 本服锻造台占用管理：公共台随机分配，私人台跟随基地归属，不保存跨服占用。
 local FX = _G.FX
 local FXLoader = FX.Loader
 local Settings = FXLoader:RequireShared("Scripts.Game.Shared.ForgeSettings")
@@ -7,6 +7,7 @@ local Manager = FX.Class("SForgeManagerClass")
 --- 按已核对的桌面朝向缓存中央通道侧落点，避免把玩家放到桌面或桌腿内。
 function Manager:Ctor()
     self._area = FXLoader:Workspace(Settings.AreaPath)
+    self._personalGround = FXLoader:Workspace(Settings.PersonalGroundPath)
     self._stations, self._owners = {}, {}
     self._random = Random.new()
     local forge = FXLoader:Workspace(Settings.StationPath)
@@ -24,6 +25,32 @@ function Manager:Ctor()
     end
     self._exit = self._area.CFrame * CFrame.new(
         -self._area.Size.X / 2 + Settings.ExitInset, self._area.Size.Y / 2 + Settings.ArrivalHeight, 0)
+end
+
+--- 只取本人基地的桌面，按桌子正面和草地高度计算操作落点。
+--- @param base table? 玩家会话当前分到的基地。
+--- @param userId number 已认证玩家 ID。
+--- @param position Vector3 服务端读取的角色根节点位置。
+--- @return table? 可进入的私人台位。
+function Manager:GetPersonalStation(base, userId, position)
+    if not base or base.OwnerUserId ~= userId then
+        return nil
+    end
+    local workshop = Settings.FindPersonalWorkshop(base.Id)
+    local desktop = workshop and FXLoader:Find(workshop, Settings.PersonalForgePart)
+    if not desktop or (desktop.Position - position).Magnitude > Settings.PersonalInteractDistance then
+        return nil
+    end
+    local front = desktop.CFrame * CFrame.new(0, 0, -desktop.Size.Z / 2 - Settings.StationClearance)
+    local height = self._personalGround.Position.Y + self._personalGround.Size.Y / 2 + Settings.ArrivalHeight
+    local arrival = Vector3.new(front.X, height, front.Z)
+    local target = Vector3.new(desktop.Position.X, height, desktop.Position.Z)
+    return {
+        Id = Settings.PersonalStationOffset + base.Id,
+        Arrival = CFrame.lookAt(arrival, target),
+        OwnerUserId = userId,
+        Base = base,
+    }
 end
 
 --- 服务端按庭院边界校验距离，与客户端按钮范围一致，但不信任客户端判断。

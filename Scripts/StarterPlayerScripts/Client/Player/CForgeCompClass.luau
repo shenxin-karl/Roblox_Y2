@@ -16,7 +16,13 @@ local TranslationTexts = Text.Define("ForgeInteraction", {
     Leave = "离开锻造台",
     Recipe = "使用剑胚逐锤锻造，可随时出炉。",
     Return = "返回庭院",
+    PersonalForge = "Forge Sword",
+    PersonalSmelt = "Smelt Sword Blank",
 })
+local PersonalActions = {
+    {PartPath = Settings.PersonalForgePart, Text = TranslationTexts.PersonalForge, Message = "C2S_EnterForge"},
+    {PartPath = Settings.PersonalFurnacePart, Text = TranslationTexts.PersonalSmelt, Message = "C2S_SmeltSword"},
+}
 local Comp = FX.Class("CForgeCompClass", "FCUICompClass")
 
 --- 返回锻造按钮的稳定组件名。
@@ -34,6 +40,7 @@ function Comp:OnReady()
     self._renderName = "ForgeCamera_" .. self:GetPlayerId()
     self._actionName = "ForgeInput_" .. self:GetPlayerId()
     self._hiddenCharacter = {}
+    self._personalPrompts = {}
     local button, title, detail = ActionButton.New("ForgeInteraction", UIRoot.Get())
     self._buttonTitle, self._buttonDetail = title, detail
     self._rootNode = button
@@ -51,6 +58,9 @@ function Comp:OnReady()
     end)
     self:TrackConnection(FC.Localization.Changed:Connect(function()
         self._textAssigned = nil
+        for action, prompt in pairs(self._personalPrompts) do
+            prompt.ActionText = Text.Tr(action.Text)
+        end
         self._view:RefreshText()
         self:Refresh()
     end))
@@ -94,13 +104,45 @@ function Comp:OnReady()
     end)
 end
 
---- 根据权威占用切换文案；未占用时只在锻造庭院附近显示按钮。
+--- 仅为本人基地创建本地提示，节点流送回来后重新挂到对应桌面或炉台。
+--- @param workshop Model? 当前客户端可见的本人小工坊。
+--- @param enabled boolean 角色存活且没有进入锻造界面时允许提示。
+function Comp:RefreshPersonalPrompts(workshop, enabled)
+    for index, action in ipairs(PersonalActions) do
+        local part = workshop and FXLoader:Find(workshop, action.PartPath)
+        local prompt = self._personalPrompts[action]
+        if prompt and (not part or prompt.Parent ~= part) then
+            prompt:Destroy()
+            self._personalPrompts[action] = nil
+            prompt = nil
+        end
+        if not prompt and part then
+            prompt = Instance.new("ProximityPrompt")
+            prompt.AutoLocalize = false
+            prompt.ActionText = Text.Tr(action.Text)
+            prompt.MaxActivationDistance = Settings.PersonalInteractDistance
+            prompt.RequiresLineOfSight = false
+            prompt.Enabled = enabled
+            prompt.Triggered:Connect(function()
+                FX.Network:SendMsgToServer(action.Message)
+            end)
+            prompt.Parent = part
+            self._personalPrompts[action] = prompt
+        elseif prompt then
+            prompt.Enabled = enabled
+        end
+    end
+end
+
+--- 根据权威占用切换文案，并分别显示公共庭院按钮和本人基地的工位提示。
 function Comp:Refresh()
     local character = self:GetPlayerCharacter()
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     local root = humanoid and humanoid.RootPart
     local stationId = self:GetNumber(Fields.ForgeStation)
     local assigned = stationId > 0
+    local workshop = Settings.FindPersonalWorkshop(self:GetNumber(Fields.BaseId))
+    self:RefreshPersonalPrompts(workshop, root ~= nil and humanoid.Health > 0 and not assigned)
     local visible = false
     if root and humanoid.Health > 0 then
         local offset = self._area.CFrame:PointToObjectSpace(root.Position)
@@ -115,18 +157,28 @@ function Comp:Refresh()
         self:TryOpenView(stationId)
     end
     self._rootNode.Visible = visible and not self._effects
-    if self._textAssigned ~= assigned then
-        self._textAssigned = assigned
+    if self._textAssigned ~= stationId then
+        self._textAssigned = stationId
         self._buttonTitle.Text = Text.Tr(assigned and TranslationTexts.Leave or TranslationTexts.Enter)
-        self._buttonDetail.Text = Text.Tr(assigned and TranslationTexts.Return or TranslationTexts.Recipe)
+        if stationId > Settings.PersonalStationOffset then
+            self._buttonDetail.Text = ""
+        else
+            self._buttonDetail.Text = Text.Tr(assigned and TranslationTexts.Return or TranslationTexts.Recipe)
+        end
     end
 end
 
 --- StreamingEnabled 下先等实际台位复制齐全，不在逐帧入口中等待必需子节点。
 --- @param stationId number 服务端同步的当前台位编号。
 function Comp:TryOpenView(stationId)
-    local side = stationId <= 4 and "Lower_" or "Upper_"
-    local station = self._forge:FindFirstChild(side .. ((stationId - 1) % 4 + 1))
+    local station
+    if stationId > Settings.PersonalStationOffset then
+        local workshop = Settings.FindPersonalWorkshop(stationId - Settings.PersonalStationOffset)
+        station = workshop and workshop:FindFirstChild("ForgeTable")
+    else
+        local side = stationId <= 4 and "Lower_" or "Upper_"
+        station = self._forge:FindFirstChild(side .. ((stationId - 1) % 4 + 1))
+    end
     local desktop = station and station:FindFirstChild("ThickSteelDesktop")
     local board = station and station:FindFirstChild("BlankDisplayBoard")
     local panel = board and board:FindFirstChild("BlankWoodPanel")
@@ -306,6 +358,9 @@ function Comp:Dtor()
     self._destroyed = true
     FX.Network:UnRegServerMsgCallback("S2C_ForgeSwordResult")
     self:CloseView()
+    if self._personalPrompts then
+        self:RefreshPersonalPrompts(nil, false)
+    end
     if self._renderName then
         RunService:UnbindFromRenderStep(self._renderName)
     end

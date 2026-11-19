@@ -190,6 +190,15 @@ function Comp:BuildView(display)
     anchor.Parent = display
     view.Income.Name = "Income"
     view.Income.TextColor3 = Color3.fromRGB(120, 255, 80)
+    -- 收益文字使用粗黑边，避免默认细描边在草地背景上丢失轮廓。
+    view.Income.TextStrokeTransparency = 1
+    local outline = Instance.new("UIStroke")
+    outline.Name = "TextOutline"
+    outline.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    outline.Color = Color3.new(0, 0, 0)
+    outline.Thickness = 6
+    outline.LineJoinMode = Enum.LineJoinMode.Round
+    outline.Parent = view.Income
     table.insert(view.Connections, view.Upgrade.Activated:Connect(function()
         if display:GetAttribute("OwnerUserId") == self:GetPlayerId() then
             FX.Network:SendMsgToServer("C2S_UpgradeSlotSword", display:GetAttribute("SlotId"))

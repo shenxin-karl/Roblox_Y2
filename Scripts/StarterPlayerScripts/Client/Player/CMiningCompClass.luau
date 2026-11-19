@@ -36,40 +36,8 @@ function Comp:OnReady()
     root.BackgroundTransparency = 1
     root.Parent = UIRoot.Get()
     self._rootNode = root
-    local refreshGroup = Instance.new("Frame")
-    refreshGroup.Name = "RefreshGroup"
-    refreshGroup.AnchorPoint = Vector2.new(0, 1)
-    refreshGroup.Size = UDim2.fromOffset(96, 108)
-    refreshGroup.BackgroundTransparency = 1
-    refreshGroup.Parent = root
-    self._refreshGroup = refreshGroup
-    self._refreshScale = Instance.new("UIScale")
-    self._refreshScale.Name = "ResponsiveScale"
-    self._refreshScale.Parent = refreshGroup
-    local crystal = Instance.new("ImageLabel")
-    crystal.Name = "RefreshCrystal"
-    crystal.AnchorPoint = Vector2.new(0, 1)
-    crystal.Position = UDim2.fromOffset(8, 80)
-    crystal.Size = UDim2.fromOffset(80, 80)
-    crystal.BackgroundTransparency = 1
-    crystal.Image = _G.ItemConfig.Display[1001].IconId
-    crystal.ScaleType = Enum.ScaleType.Fit
-    crystal.Parent = refreshGroup
-    local countdown = Instance.new("TextLabel")
-    countdown.Name = "RefreshCountdown"
-    countdown.AnchorPoint = Vector2.new(0, 1)
-    countdown.Position = UDim2.fromOffset(0, 108)
-    countdown.Size = UDim2.fromOffset(96, 28)
-    countdown.BackgroundTransparency = 1
-    countdown.TextColor3 = Color3.new(1, 1, 1)
-    countdown.Font = Enum.Font.GothamBold
-    countdown.TextSize = 20
-    countdown.TextStrokeTransparency = 0.25
-    countdown.TextScaled = false
-    countdown.AutoLocalize = false
-    countdown.Parent = refreshGroup
-    self._countdown = countdown
-    local feedback = countdown:Clone()
+    self._countdown = FX.Loader:PlayerGui("Main.HUD.Wallet.RefreshStat.Countdown")
+    local feedback = Instance.new("TextLabel")
     feedback.Name = "MiningReward"
     feedback.AnchorPoint = Vector2.new(0.5, 0)
     feedback.Position = UDim2.new(0.5, 0, 0, 115)
@@ -77,6 +45,8 @@ function Comp:OnReady()
     feedback.BackgroundColor3 = Color3.fromRGB(42, 47, 53)
     feedback.BackgroundTransparency = 0.15
     feedback.TextSize = 18
+    feedback.Font = Enum.Font.GothamBold
+    feedback.AutoLocalize = false
     feedback.TextScaled = false
     feedback.TextStrokeTransparency = 1
     feedback.TextColor3 = Color3.fromRGB(120, 255, 80)
@@ -122,22 +92,10 @@ function Comp:OnReady()
         self._miningRocks:Refresh(data)
         self:Refresh()
     end)
-    self:TrackConnection(root:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-        self:RefreshLayout()
-    end))
     self:WatchDataChanged(_G.PlayerDataConfig.ForgeStation, function()
         self:Refresh()
     end)
-    self:RefreshLayout()
     self:Refresh()
-end
-
---- 倒计时沿用 Y1 的设计分辨率整体缩放，保持左下角锚点及边距。
-function Comp:RefreshLayout()
-    local size = self._rootNode.AbsoluteSize
-    local scale = math.min(size.X / 1280, size.Y / 720, 1.25)
-    self._refreshScale.Scale = scale
-    self._refreshGroup.Position = UDim2.new(0, 20 * scale, 1, -24 * scale)
 end
 
 --- 仅显示服务器已入包的矿石数量，语言切换沿用矿场刷新，不预测奖励。

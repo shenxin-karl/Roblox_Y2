@@ -1,6 +1,7 @@
 -- 私人矿场权威状态：每人独立保存整轮矿石，发奖失败不消耗采集次数。
 local FX = _G.FX
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
+local ForgeSettings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
 local Config = _G.GameConfig.CommonConfig
 local Fields = _G.PlayerDataConfig
 local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
@@ -132,13 +133,18 @@ function Manager:Mine(player, position, rock)
     return true
 end
 
---- 优先熔炼手持矿石，否则选择数量足够且品级最低的一种，避免默认消耗稀有矿石。
+--- 仅允许在公共炉或本人炉旁熔炼；优先使用手持矿石，避免默认消耗稀有矿石。
 --- @param player table 已登录的服务端玩家对象。
 --- @param position Vector3 服务端读取的角色位置。
 --- @return boolean 是否扣矿并获得剑胚。
 function Manager:Smelt(player, position)
     if Settings.DistanceToPart(self._furnace, position) > Settings.InteractDistance then
-        return false
+        local base = player:RequireComponent("SBaseComp"):GetBase()
+        local workshop = base and base.OwnerUserId == player:GetPlayerId() and ForgeSettings.FindPersonalWorkshop(base.Id)
+        local hearth = workshop and FX.Loader:Find(workshop, ForgeSettings.PersonalFurnacePart)
+        if not hearth or (hearth.Position - position).Magnitude > ForgeSettings.PersonalInteractDistance then
+            return false
+        end
     end
     local inventory = player:RequireComponent("FSInventoryComp")
     local data = inventory:GetData()
