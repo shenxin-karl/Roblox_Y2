@@ -185,17 +185,22 @@ function Comp:SelectGrid(grid, expectedTool)
 end
 
 --- 使用两端格子的当前 Tool 防止复制延迟导致交换错误物品。
+--- @param sourceGrid number 来源格号。
+--- @param targetGrid number 目标格号。
+--- @param sourceTool Tool 客户端看到的来源道具。
+--- @param targetTool Tool? 客户端看到的目标道具。
+--- @return boolean 是否已提交换格。
 function Comp:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
     if not self._active or not self:_CheckGridIndexValid(sourceGrid) or not self:_CheckGridIndexValid(targetGrid)
         or sourceGrid == targetGrid or not sourceTool then
-        return
+        return false
     end
     if self._tools[sourceGrid] ~= sourceTool or self._tools[targetGrid] ~= targetTool then
-        return
+        return false
     end
     local equippedGrid = self:GetEquippedGrid()
     if not self:SwapGridData(sourceGrid, targetGrid) then
-        return
+        return false
     end
     if equippedGrid == sourceGrid or equippedGrid == targetGrid then
         local character = self:GetPlayerNode().Character
@@ -205,6 +210,7 @@ function Comp:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
         end
     end
     self:SyncTools()
+    return true
 end
 
 --- 框架整理等全量变更仍走同一展示更新。

@@ -35,6 +35,7 @@ return {
         "C2S_TeleportToMine",
         -- 仅操作本人背包；Tool 用于确认客户端看到的格子内容仍有效。
         "C2S_SelectInventoryGrid",
+        -- 需要确认跨分类拖入时以 RPC 调用，返回是否已提交换格。
         "C2S_SwapInventoryGrid",
     },
     -- S2C_UpgradeWorkshopResult(upgradeId: string, success: boolean)，真实等级沿用玩家字段同步。

@@ -20,6 +20,7 @@ function Drag.new(playerGui, ghost, ghostName, getSlot, onClick, onSwap)
         _onClick = onClick,
         _onSwap = onSwap,
         _gridsByButton = {},
+        _slotConnections = {},
         _connections = {},
     }, Drag)
     table.insert(self._connections, UserInputService.InputChanged:Connect(function(input)
@@ -40,7 +41,7 @@ end
 --- @param scroll ScrollingFrame? 触屏时允许轻扫列表、长按拖动道具。
 function Drag:RegisterSlot(button, getGrid, scroll)
     self._gridsByButton[button] = getGrid
-    table.insert(self._connections, button.InputBegan:Connect(function(input)
+    local inputConnection = button.InputBegan:Connect(function(input)
         local inputType = input.UserInputType
         if self._press or (inputType ~= Enum.UserInputType.MouseButton1 and inputType ~= Enum.UserInputType.Touch) then
             return
@@ -68,17 +69,34 @@ function Drag:RegisterSlot(button, getGrid, scroll)
                 end)
             end
         end
-    end))
+    end)
+    local destroyingConnection = button.Destroying:Connect(function()
+        self._gridsByButton[button] = nil
+        self._slotConnections[button] = nil
+    end)
+    self._slotConnections[button] = {inputConnection, destroyingConnection}
 end
 
---- 命中回收按钮时取得当前真实格号，遮挡用按钮不会穿透。
+--- 空白区域可以接收拖入的道具，无需为未使用的格号创建按钮。
+--- @param area GuiObject 背包列表的可见区域。
+--- @param getGrid function 返回当前可用的真实空格号或 nil。
+function Drag:RegisterDropArea(area, getGrid)
+    self._dropArea = area
+    self._getDropGrid = getGrid
+end
+
+--- 优先命中物品格；仅拖拽时才把空白区视为落点。
 --- @param position Vector3 屏幕输入坐标。
+--- @param dragging boolean? 当前操作是否已经开始拖拽。
 --- @return number? 命中的真实格号。
-function Drag:_GetGridAt(position)
+function Drag:_GetGridAt(position, dragging)
     for _, gui in ipairs(self._playerGui:GetGuiObjectsAtPosition(position.X, position.Y)) do
         local getGrid = self._gridsByButton[gui]
         if getGrid then
             return getGrid()
+        end
+        if dragging and gui == self._dropArea then
+            return self._getDropGrid()
         end
         if gui:IsA("GuiButton") then
             return nil
@@ -136,7 +154,7 @@ function Drag:_OnInputEnded(input)
     if input.UserInputState == Enum.UserInputState.Cancel then
         return
     end
-    local target = self:_GetGridAt(input.Position)
+    local target = self:_GetGridAt(input.Position, press.dragging)
     if press.dragging then
         if target and target ~= press.grid then
             self._onSwap(press.grid, target, press.slot)
@@ -155,11 +173,19 @@ function Drag:Cancel()
     self._ghost.Visible = false
 end
 
+--- 解绑全局输入和仍留在界面上的格子。
 function Drag:Destroy()
     self:Cancel()
     for _, connection in ipairs(self._connections) do
         connection:Disconnect()
     end
+    for button, connections in pairs(self._slotConnections) do
+        for index, connection in ipairs(connections) do
+            connection:Disconnect()
+        end
+    end
+    table.clear(self._slotConnections)
+    table.clear(self._gridsByButton)
 end
 
 return Drag

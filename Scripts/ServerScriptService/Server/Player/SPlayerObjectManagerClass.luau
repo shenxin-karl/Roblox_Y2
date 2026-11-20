@@ -31,9 +31,7 @@ function Manager:RegInventoryMsg()
     FX.Network:RegClientMsgCallback("C2S_SwapInventoryGrid", function(userId, sourceGrid, targetGrid, sourceTool, targetTool)
         local player = self:GetPlayerObject(userId)
         local inventory = player and player:GetComponent("FSInventoryComp")
-        if inventory then
-            inventory:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
-        end
+        return inventory ~= nil and inventory:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
     end)
 end
 
