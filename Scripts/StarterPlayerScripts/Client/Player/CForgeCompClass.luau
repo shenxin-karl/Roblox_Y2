@@ -10,6 +10,7 @@ local Settings = FXLoader:RequireShared("Scripts.Game.Shared.ForgeSettings")
 local Effects = FXLoader:RequireFromParent(script, "CForgeEffects")
 local ForgeView = FXLoader:Require(script.Parent.Parent, "UI.CForgeView")
 local ActionButton = FXLoader:Require(script.Parent.Parent, "UI.CActionButton")
+local DiamondPurchase = FXLoader:Require(script.Parent.Parent, "UI.CDiamondPurchase")
 local TranslationTexts = Text.Define("ForgeInteraction", {
     Enter = "前往锻造台",
     Leave = "离开锻造台",
@@ -44,6 +45,7 @@ function Comp:OnReady()
     self._buttonTitle, self._buttonDetail = title, detail
     self._rootNode = button
     self._lastRequest = -math.huge
+    self._lastRecoveryRequest = -math.huge
     self:TrackConnection(button.Activated:Connect(function()
         if not button.Visible or os.clock() - self._lastRequest < Settings.RequestCooldown then
             return
@@ -69,6 +71,14 @@ function Comp:OnReady()
     self:TrackConnection(self._view.GreatStrikeButton.Activated:Connect(function()
         self:FinishSword()
     end))
+    self:TrackConnection(self._view.RecoveryButton.Activated:Connect(function()
+        self:RequestRecovery()
+    end))
+    FX.Network:RegServerMsgCallback("S2C_ForgeRecoveryInsufficientDiamonds", function(failureId)
+        if self._effects and self:GetTable(Fields.ForgeData).RecoveryId == failureId then
+            DiamondPurchase.Open()
+        end
+    end)
     self:WatchDataChanged(Fields.ForgeData, function(data, previous)
         self:ApplyForgeData(data, previous)
     end)
@@ -114,6 +124,19 @@ function Comp:ApplyForgeData(data, previous)
         end
     end
     self._effects:ApplyWeapon(data.Quality, data.Active == true and data.Outcome ~= "Destroyed", upgraded)
+end
+
+--- 只请求恢复当前显示的损毁武器；费用和恢复结果以服务端为准。
+function Comp:RequestRecovery()
+    if not self._effects or self._effects:IsBusy()
+        or os.clock() - self._lastRecoveryRequest < Settings.RequestCooldown then
+        return
+    end
+    local data = self:GetTable(Fields.ForgeData)
+    if data.Outcome == "Destroyed" and data.RecoveryId then
+        self._lastRecoveryRequest = os.clock()
+        FX.Network:SendMsgToServer("C2S_RecoverForgeSword", data.RecoveryId)
+    end
 end
 
 --- 仅为本人基地创建本地提示，节点流送回来后重新挂到对应桌面或炉台。
@@ -364,6 +387,7 @@ end
 function Comp:Dtor()
     self._destroyed = true
     FX.Network:UnRegServerMsgCallback("S2C_ForgeSwordResult")
+    FX.Network:UnRegServerMsgCallback("S2C_ForgeRecoveryInsufficientDiamonds")
     self:CloseView()
     if self._personalPrompts then
         self:RefreshPersonalPrompts(nil, false)

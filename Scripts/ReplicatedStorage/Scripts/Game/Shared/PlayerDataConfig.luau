@@ -38,6 +38,12 @@ return {
         Type = "number", Key = "PaidMultiplierTier", DefVal = 1,
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
+    WelfareData = {
+        Type = "table", Key = "WelfareData",
+        DefVal = {Day = -1, DailyClaimDay = -1, SignInDay = 0, OnlineSeconds = 0,
+            OnlineClaims = {}, SignInClaims = {}, Passes = {}},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
     -- 进度随玩家保存；SlotData 以字符串槽位编号保存各槽的业务数据，不保存场景实例。
     BaseData = {
         Type = "table", Key = "BaseData",

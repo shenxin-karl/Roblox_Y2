@@ -6,6 +6,7 @@ local Text = FX.Text
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local UIRoot = FXLoader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local ModelAnimation = FXLoader:Require(script.Parent.Parent, "CModelAnimation")
+local MoneyRain = FXLoader:Require(script.Parent.Parent, "UI.CMoneyRain")
 local TranslationTexts = Text.Define("SlotSword", {
     Income = "武器\n每秒 ${value}",
     Upgrade = "${value}\n升级 {level:int} → {nextLevel:int}",
@@ -81,7 +82,7 @@ function Comp:RefreshPrompts()
     end
 end
 
---- 跟踪动态实例，不假定标签一定晚于其所有子节点复制。
+--- 跟踪动态实例；服务器确认领取后保留按钮动画，只给领取者播放金币雨。
 --- @param display Model 服务端创建的槽位剑展示容器。
 function Comp:TrackDisplay(display)
     if self._views[display] then
@@ -95,12 +96,16 @@ function Comp:TrackDisplay(display)
     view.Connections[2] = display.AttributeChanged:Connect(function()
         self:Render(display)
     end)
+    --- 服务端仅在奖励提交成功后递增序号。
     view.Connections[3] = display:GetAttributeChangedSignal("CollectSequence"):Connect(function()
         local collect = display:FindFirstChild("CollectArea")
         local target = collect and collect:FindFirstChild("AnimationTarget")
         if target and target.Value then
             view.AnimationTarget = target.Value
             ModelAnimation.PlayPress(target.Value)
+        end
+        if display:GetAttribute("OwnerUserId") == self:GetPlayerId() then
+            MoneyRain.Play()
         end
     end)
     self:BuildView(display)

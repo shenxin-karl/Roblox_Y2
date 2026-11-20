@@ -42,8 +42,11 @@ function Manager:RegEconomyMsg()
         end
         local player = self:GetPlayerObject(userId)
         local economy = player and player:GetComponent("SEconomyComp")
-        local success = economy ~= nil and economy:ClaimOffline(boosted)
-        FX.Network:SendMsgToClient(userId, "S2C_OfflineIncomeResult", requestId, success)
+        local success, insufficientDiamonds = false, false
+        if economy then
+            success, insufficientDiamonds = economy:ClaimOffline(boosted)
+        end
+        FX.Network:SendMsgToClient(userId, "S2C_OfflineIncomeResult", requestId, success, insufficientDiamonds == true)
     end)
 end
 
@@ -103,6 +106,16 @@ end
 
 --- 锻造请求只转发给认证请求者，不接收目标玩家、台位或坐标。
 function Manager:RegForgeMsg()
+    --- 只允许认证请求者恢复自己的当前损毁进度。
+    --- @param userId number 引擎认证的玩家身份。
+    --- @param failureId any 客户端回传的损毁标识，由组件复核。
+    FX.Network:RegClientMsgCallback("C2S_RecoverForgeSword", function(userId, failureId)
+        local player = self:GetPlayerObject(userId)
+        local forge = player and player:GetComponent("SForgeComp")
+        if forge then
+            forge:RecoverSword(failureId)
+        end
+    end)
     --- 主动出炉只处理请求者持久化的锻造进度，不接受客户端品质。
     --- @param userId number 引擎认证的玩家身份。
     FX.Network:RegClientMsgCallback("C2S_FinishSword", function(userId)

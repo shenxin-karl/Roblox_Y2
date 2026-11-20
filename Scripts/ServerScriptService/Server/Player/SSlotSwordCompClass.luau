@@ -17,7 +17,7 @@ local TranslationTexts = FX.Text.Define("BaseWeapon", {
     NotEnoughCash = "Not enough cash to upgrade this weapon. You need ${value}.",
 })
 local WeaponVisual = FXLoader:RequireShared("Scripts.Game.Shared.WeaponVisual")
-local Numerical = FXLoader:RequireShared("Scripts.Game.Configs.NumericalConfig")
+local MoneyMultiplier = FXLoader:RequireShared("Scripts.Game.Shared.MoneyMultiplierRules")
 local Comp = FX.Class("SSlotSwordCompClass", "FSPlayerCompClass")
 
 --- 持有本次会话的显示与节流；离线收益快照通过独立玩家字段保存。
@@ -399,8 +399,7 @@ end
 --- 付费档位表示最终倍率，历史档位不重复连乘。
 --- @return number 当前有效付费金币倍率。
 function Comp:GetPaidMultiplier()
-    return FX.CurveSampler:SampleCurveGroupColumn(Numerical.paidMultiplierCurves, "multiplier",
-        self:GetNumber(Fields.PaidMultiplierTier))
+    return MoneyMultiplier.GetMultiplier(self:GetNumber(Fields.PaidMultiplierTier))
 end
 
 --- 保存当前基地总秒收益和服务端时间；背包武器不参与离线计算。

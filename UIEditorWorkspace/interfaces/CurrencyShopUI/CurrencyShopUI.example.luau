@@ -2,7 +2,7 @@ local FX = _G.FX
 local CCurrencyShopPreview = FX.Class("CCurrencyShopPreview", "CCurrencyShopView")
 
 -- 父构造后提供示例商品；所有价格与图标均待业务配置替换。
--- @param owner table 编辑器组件宿主
+-- @param owner table 编辑���组件宿主
 function CCurrencyShopPreview:Ctor(owner)
     CCurrencyShopPreview.Super.Ctor(self, owner)
     self.Config = {

@@ -27,8 +27,8 @@ State（完整快照，不合并增量）：
 展示与交互规则：
   优先级：缺失数据 > pending > failed > 已领取 > 钻石不足 > 可领取。
   普通领取：amount>0且非pending时可点击，获得amount。
-  钻石双倍：上述条件且diamonds>=diamondCost时可点击，获得amount*2。
-  钻石不足时双倍按钮置灰，普通领取仍可用。
+  钻石双倍：amount>0且非pending时可点击，余额足够时获得amount*2。
+  钻石不足时双倍按钮置灰但仍发出Claim；游戏检查余额并打开钻石购买页面，普通领取仍可用。
   金额仅在奖励区展示；按钮不显示奖励金额或钻石价格。
   pending显示“Claiming...”；失败显示重试提示。
   amount=0显示已领取，两按钮禁用；关闭始终可用。
@@ -54,9 +54,9 @@ State（完整快照，不合并增量）：
   1. Generated之外继承COfflineIncomeView，在入口加载并仅挂载业务子类。
   2. 提供真实diamondCost、待领金币、钻石余额；未就绪不Show。
   3. OnReady先父绑定，再准备完整状态、一次订阅，刷新后有奖励才自动Show。
-  4. Claim时置pending=true、failed=false并刷新，发送请求ID及boosted。
+  4. 双倍Claim且本地余额不足时打开钻石购买页面；其余Claim置pending=true、failed=false并发送请求。
   5. 服务端原子扣钻、发金币、清待领额；回执成功或失败均清pending。
-  6. 成功采用权威数据并Hide；失败保留金额、failed=true、刷新并允许重试。
+  6. 成功采用权威数据并Hide；服务端确认钻石不足时打开钻石购买页面；其他失败保留金额、刷新并允许重试。
   7. Close只Hide，奖励保留，下次登录仍可领取；隐藏期间不移除订阅。
   8. Dtor解除网络回调后父清理，禁止过期回执回写已销毁组件。
 
@@ -106,11 +106,11 @@ function COfflineIncomeView:OnReady()
             self:EmitUIAction("Claim", {boosted = false})
         end
     end))
-    -- 双倍入口资格来自当前快照；真实扣钻仍须服务端再次核对。
+    -- 余额不足也发出点击动作，购买引导和真实扣钻由业务层处理。
     self:TrackConnection(self._doubleBtn.Activated:Connect(function()
         local state = self:GetUIState()
         local config = self:GetUIConfig()
-        if state and config and state.amount > 0 and not state.pending and state.diamonds >= config.diamondCost then
+        if state and config and state.amount > 0 and not state.pending then
             self:EmitUIAction("Claim", {boosted = true})
         end
     end))
@@ -146,7 +146,7 @@ function COfflineIncomeView:Render(state)
         return
     end
     local canClaim = state.amount > 0 and not state.pending
-    local canDouble = canClaim and state.diamonds >= config.diamondCost
+    local highlightDouble = canClaim and state.diamonds >= config.diamondCost
     local statusText = nil
     if state.pending then
         statusText = TranslationTexts.Pending
@@ -171,10 +171,10 @@ function COfflineIncomeView:Render(state)
     end
     self._claimBtn.BackgroundColor3 = canClaim and Color3.fromRGB(103, 237, 20) or Color3.fromRGB(99, 128, 121)
     self._claimEdge.BackgroundColor3 = canClaim and Color3.fromRGB(34, 90, 7) or Color3.fromRGB(38, 62, 54)
-    self._doubleBtn.BackgroundColor3 = canDouble and Color3.fromRGB(208, 59, 242) or Color3.fromRGB(99, 128, 121)
-    self._doubleEdge.BackgroundColor3 = canDouble and Color3.fromRGB(105, 21, 130) or Color3.fromRGB(38, 62, 54)
+    self._doubleBtn.BackgroundColor3 = highlightDouble and Color3.fromRGB(208, 59, 242) or Color3.fromRGB(99, 128, 121)
+    self._doubleEdge.BackgroundColor3 = highlightDouble and Color3.fromRGB(105, 21, 130) or Color3.fromRGB(38, 62, 54)
     self:SetButtonEnabled(self._claimBtn, canClaim)
-    self:SetButtonEnabled(self._doubleBtn, canDouble)
+    self:SetButtonEnabled(self._doubleBtn, canClaim)
 end
 
 --- 由项目实现请求与关闭，展示层不直接扣钻或发奖。

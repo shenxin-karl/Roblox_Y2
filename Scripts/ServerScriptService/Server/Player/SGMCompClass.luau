@@ -7,7 +7,7 @@ local TranslationTexts = Text.Define("GM", {
     Busy = "An operation is in progress. Please try again shortly.",
     SaveFailed = "Save failed. Please try again.",
     Success = "Operation completed.",
-    InvalidGrant = "Check the item ID, quantity or sword level.",
+    InvalidGrant = "Check the item ID and quantity.",
     GrantFailed = "Could not grant the item. Check your backpack space.",
     NoNearbySword = "Stand near one of your placed swords to top up its upgrade cost.",
     NoActiveForge = "Start forging a sword before testing breakage.",
@@ -53,11 +53,15 @@ local function IsPositiveInteger(value, maximum)
     return type(value) == "number" and value >= 1 and value <= maximum and value % 1 == 0
 end
 
---- 从配置选择词条与品质，发放走普通背包容量和奖励校验。
+--- 发放走普通背包容量和奖励校验；原成品剑按钮固定发一个普通剑胚。
 --- @param action string 白名单内的发放动作。
 --- @param payload table 面板原始发放参数。
 --- @return table 操作结果和提示。
 function Component:GrantItem(action, payload)
+    if action == "GiveSword" then
+        action = "GiveBlank"
+        payload = {id = SwordRules.BlankItemId, quantity = 1}
+    end
     local itemId, count, extraData
     if action == "GiveBlank" and IsPositiveInteger(payload.id, 2147483647)
         and IsPositiveInteger(payload.quantity, 100) then
@@ -78,16 +82,14 @@ function Component:GrantItem(action, payload)
                 break
             end
         end
-    elseif action == "GiveSword" or action == "GiveLevelOneSword" then
-        local quality = action == "GiveLevelOneSword" and 1 or payload.id
-        local level = action == "GiveLevelOneSword" and 1 or payload.level
-        if IsPositiveInteger(quality, 2147483647) and IsPositiveInteger(level, 2147483647)
-            and GameConfig.WeaponData[quality] then
+    elseif action == "GiveLevelOneSword" then
+        local quality = 1
+        if GameConfig.WeaponData[quality] then
             extraData = {
                 MutationId = "Normal",
                 blankLuckLevel = 1,
                 Quality = quality,
-                Level = level,
+                Level = 1,
                 StoredMoney = 0,
             }
             if SwordRules.IsValid(extraData) then

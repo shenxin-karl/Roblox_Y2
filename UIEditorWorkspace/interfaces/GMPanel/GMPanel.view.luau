@@ -11,7 +11,7 @@ State 是完整快照，以下必填布尔值由接入方提供：
 【动作】
 SetFreeUpgrades、SetGuaranteedForge：{ enabled: boolean }。
 GiveBlank、GiveOre：{ id: number, quantity: number }，留空数量按 1。
-GiveSword：{ id: number, level: number }，ID 为成品剑的品质配置 ID。
+GiveSword：{}，固定发放 1 个普通剑胚；保留原命令名。
 GiveLevelOneSword、PrepareUpgrade、BreakSword：{}。
 所有输入数字为正整数；服务端仍须核对 ID、范围和权限。
 
@@ -50,7 +50,6 @@ local Actions = {
 local FormFields = {
     GiveBlank = "quantity",
     GiveOre = "quantity",
-    GiveSword = "level",
 }
 
 --- 输入必须是可精确表达的正整数；配置存在性由服务端核验。

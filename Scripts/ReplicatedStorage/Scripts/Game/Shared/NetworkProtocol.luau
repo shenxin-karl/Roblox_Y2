@@ -25,8 +25,17 @@ return {
         "C2S_SmeltSword",
         -- upgradeId: smelt/forge/income；expectedLevel: 整数 0..19；服务端决定价格与新等级。
         "C2S_UpgradeWorkshop",
+        -- failureId: 当前损毁进度的服务端标识；费用及恢复内容均由服务端决定。
+        "C2S_RecoverForgeSword",
+        -- RPC(expectedTier: number)：只购买服务端档位的下一档，返回购买结果字符串。
+        "C2S_BuyMoneyMultiplier",
+        -- RPC(kind: string, rewardId: string)：服务端校验福利资格，返回是否领取成功。
+        "C2S_ClaimWelfare",
+        -- 无客户端参数；矿区落点由服务端决定。
+        "C2S_TeleportToMine",
     },
     -- S2C_UpgradeWorkshopResult(upgradeId: string, success: boolean)，真实等级沿用玩家字段同步。
+    -- S2C_OfflineIncomeResult(requestId: number, success: boolean, insufficientDiamonds: boolean)。
     ServerMsgID = {"S2C_ForgeSwordResult", "S2C_MiningReward", "S2C_UpgradeWorkshopResult", "S2C_RawSwordOffer",
-        "S2C_OfflineIncomeResult"},
+        "S2C_OfflineIncomeResult", "S2C_ForgeRecoveryInsufficientDiamonds"},
 }

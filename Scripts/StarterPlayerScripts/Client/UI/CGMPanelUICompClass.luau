@@ -7,7 +7,7 @@ local CommandMessages = {
     ["GM.Unknown"] = "操作失败，请重试。",
     ["GM.Busy"] = "上一条指令还在处理，请稍后重试。",
     ["GM.Success"] = "操作成功。",
-    ["GM.InvalidGrant"] = "请检查物品编号、数量或剑的等级。",
+    ["GM.InvalidGrant"] = "请检查物品编号和数量。",
     ["GM.GrantFailed"] = "发放失败，请检查背包空间。",
     ["GM.NoNearbySword"] = "请靠近自己摆放的剑，再补足升级材料。",
     ["GM.NoActiveForge"] = "请先开始锻造，再测试锻造损毁。",
@@ -43,7 +43,7 @@ end
 --- View 拒绝不合法输入时，用通用提示说明格式。
 --- @param action string 未提交的表单动作。
 function Component:OnInvalidInput(action)
-    self:GetPlayerObject():RequireComponent("FCCommonUIComp"):ShowTips("请输入有效编号，数量或等级须为正整数。")
+    self:GetPlayerObject():RequireComponent("FCCommonUIComp"):ShowTips("请输入有效编号，数量须为正整数。")
 end
 
 --- 等待服务器确认开关状态，失败时恢复操作并展示反馈。

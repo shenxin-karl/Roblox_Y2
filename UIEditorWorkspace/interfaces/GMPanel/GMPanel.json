@@ -632,7 +632,7 @@
                       "scale": 1
                     }
                   },
-                  "Text": "发放成品剑",
+                  "Text": "发放 1 个剑胚",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
                   "TextSize": 17,
@@ -2152,132 +2152,6 @@
                 },
                 "y": {
                   "offset": 126,
-                  "scale": 0
-                }
-              },
-              "Rotation": 0,
-              "Size": {
-                "x": {
-                  "offset": 61,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 36,
-                  "scale": 0
-                }
-              },
-              "Text": "",
-              "TextColor3": "#182322",
-              "TextScaled": false,
-              "TextSize": 16,
-              "TextTransparency": 0,
-              "TextWrapped": false,
-              "TextXAlignment": "Center",
-              "TextYAlignment": "Center",
-              "Visible": true,
-              "ZIndex": 5
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [],
-                "className": "UICorner",
-                "id": "0d2f0d34-b216-4b96-8bb3-f82bef4caf58",
-                "name": "UICorner",
-                "properties": {
-                  "CornerRadius": {
-                    "offset": 6,
-                    "scale": 0
-                  }
-                }
-              }
-            ],
-            "className": "TextBox",
-            "id": "e5551a32-938d-48cb-9c60-e9fb1683e185",
-            "name": "GiveSwordIdInput",
-            "properties": {
-              "AnchorPoint": {
-                "x": 0,
-                "y": 0
-              },
-              "AutoLocalize": false,
-              "BackgroundColor3": "#f1f3f2",
-              "BackgroundTransparency": 0.12,
-              "ClipsDescendants": false,
-              "Font": "Gotham",
-              "LayoutOrder": 0,
-              "PlaceholderText": "剑编号",
-              "Position": {
-                "x": {
-                  "offset": 151,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 184,
-                  "scale": 0
-                }
-              },
-              "Rotation": 0,
-              "Size": {
-                "x": {
-                  "offset": 84,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 36,
-                  "scale": 0
-                }
-              },
-              "Text": "",
-              "TextColor3": "#182322",
-              "TextScaled": false,
-              "TextSize": 16,
-              "TextTransparency": 0,
-              "TextWrapped": false,
-              "TextXAlignment": "Center",
-              "TextYAlignment": "Center",
-              "Visible": true,
-              "ZIndex": 5
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [],
-                "className": "UICorner",
-                "id": "54a1f826-f138-49ec-9760-bd6a05a22aef",
-                "name": "UICorner",
-                "properties": {
-                  "CornerRadius": {
-                    "offset": 6,
-                    "scale": 0
-                  }
-                }
-              }
-            ],
-            "className": "TextBox",
-            "id": "3de6c00d-d68e-4bc2-bb4e-867c814a8c1b",
-            "name": "GiveSwordAmountInput",
-            "properties": {
-              "AnchorPoint": {
-                "x": 0,
-                "y": 0
-              },
-              "AutoLocalize": false,
-              "BackgroundColor3": "#f1f3f2",
-              "BackgroundTransparency": 0.12,
-              "ClipsDescendants": false,
-              "Font": "Gotham",
-              "LayoutOrder": 0,
-              "PlaceholderText": "等级",
-              "Position": {
-                "x": {
-                  "offset": 243,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 184,
                   "scale": 0
                 }
               },

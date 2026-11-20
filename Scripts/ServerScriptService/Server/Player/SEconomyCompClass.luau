@@ -78,6 +78,7 @@ end
 --- 金币入账与待领额清零在一个玩家事务中完成；重试不会重复领取。
 --- @param boosted boolean 是否消耗配置钻石领取两倍金币。
 --- @return boolean 是否成功扣费并领取本次收益。
+--- @return boolean? 是否因钻石不足被拒绝；其他失败不设置此标记。
 function Comp:ClaimOffline(boosted)
     if not self:CanRequest() then
         return false
@@ -89,8 +90,12 @@ function Comp:ClaimOffline(boosted)
     end
     local costs = {}
     if boosted then
-        if Config.OfflineDoubleClaimDiamondCost > 0 then
-            costs = {{Type = "Money", Currency = "Diamonds", Count = Config.OfflineDoubleClaimDiamondCost}}
+        local diamondCost = Config.OfflineDoubleClaimDiamondCost
+        if diamondCost > 0 then
+            if self:GetNumber(Fields.Diamonds) < diamondCost then
+                return false, true
+            end
+            costs = {{Type = "Money", Currency = "Diamonds", Count = diamondCost}}
         end
         amount *= 2
     end

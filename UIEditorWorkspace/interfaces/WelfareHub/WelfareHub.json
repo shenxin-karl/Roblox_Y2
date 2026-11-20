@@ -4971,7 +4971,7 @@
                   "scale": 0
                 }
               },
-              "Visible": true,
+              "Visible": false,
               "ZIndex": 7
             }
           },

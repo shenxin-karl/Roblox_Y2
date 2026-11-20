@@ -25,15 +25,61 @@ local TranslationTexts = Text.Define("ForgeView", {
     GreatStrikeButton = "G · 武器出炉",
     LeaveButton = "E · 离开",
     Destroyed = "武器已损毁，未获得成品。",
+    RecoveryButton = "Restore · {value} Diamonds",
+    Recovered = "Weapon restored. You can continue forging.",
     Finished = "武器已出炉，装备后可放入基地。",
     PendingClaim = "武器已完成，请腾出背包空间后按 G 领取。",
 })
 local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
+local Settings = FXLoader:RequireShared("Scripts.Game.Shared.ForgeSettings")
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local OutcomeNames = {"Broken", "Damaged", "Unchanged", "Success"}
 local ProbabilityKeys = {"destroy", "broken", "unchanged", "success"}
 local View = {}
 View.__index = View
+
+--- 复用出炉按钮的配色与描边，在屏幕右上创建独立的恢复操作。
+--- @param root ScreenGui 当前玩家的锻造界面。
+--- @param template TextButton 用于继承原界面的样式。
+--- @return TextButton, TextLabel 恢复按钮和本地化价格标签。
+local function CreateRecoveryButton(root, template)
+    local button = template:Clone()
+    button.Name = "Recover"
+    button.Text = ""
+    button.AnchorPoint = Vector2.new(1, 0)
+    button.Position = UDim2.new(1, -16, 0, 16)
+    button.Size = UDim2.fromOffset(224, 48)
+    button.Visible = false
+    button.AutoLocalize = true
+    local padding = button:FindFirstChildOfClass("UIPadding")
+    if padding then
+        padding:Destroy()
+    end
+
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "RecoveryIcon"
+    icon.BackgroundTransparency = 1
+    icon.Position = UDim2.fromOffset(10, 0)
+    icon.Size = UDim2.new(0, 30, 1, 0)
+    icon.Image = "rbxassetid://126644722107975"
+    icon.ScaleType = Enum.ScaleType.Fit
+    icon.Parent = button
+
+    local label = Instance.new("TextLabel")
+    label.Name = "RecoveryPrice"
+    label.AutoLocalize = false
+    label.BackgroundTransparency = 1
+    label.Position = UDim2.fromOffset(48, 0)
+    label.Size = UDim2.new(1, -58, 1, 0)
+    label.FontFace = template.FontFace
+    label.TextColor3 = template.TextColor3
+    label.TextSize = 16
+    label.TextWrapped = true
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = button
+    button.Parent = root
+    return button, label
+end
 
 --- 绑定 Studio 原生模板，节点布局与翻译属性沿用制作结果。
 --- @param root ScreenGui 当前玩家的锻造界面。
@@ -41,6 +87,8 @@ View.__index = View
 function View.New(root)
     local self = setmetatable({}, View)
     self._root = root
+    -- 锻造仍留在屏幕上；缺钻时让货币商店（30）盖在锻造操作之上。
+    root.DisplayOrder = 25
     self._surface = FXLoader:Here(root, "BoardSurface")
     self._panel = FXLoader:Here(self._surface, "Panel")
     self._controls = FXLoader:Here(root, "Controls")
@@ -61,6 +109,7 @@ function View.New(root)
     end
     self.StrikeButton = FXLoader:Here(self._controls, "Strike")
     self.GreatStrikeButton = FXLoader:Here(self._controls, "GreatStrike")
+    self.RecoveryButton, self._recoveryPrice = CreateRecoveryButton(root, self.GreatStrikeButton)
     self.GreatStrikeButton.Visible = true
     self.GreatStrikeButton.Position = UDim2.fromOffset(0, 144)
     self.GreatStrikeButton.Size = UDim2.fromOffset(300, 50)
@@ -106,6 +155,7 @@ function View:Close()
     self:CancelTweens()
     self._root.Enabled, self._surface.Enabled = false, false
     self._surface.Adornee = nil
+    self.RecoveryButton.Visible = false
     self._flash.BackgroundTransparency = 1
     self._resultScale.Scale = 1
 end
@@ -152,6 +202,14 @@ end
 --- 按权威品质刷新木牌、四项真实概率和分段条；语言切换时重新翻译。
 function View:RefreshText()
     local data = self._forgeData
+    local canRecover = self._root.Enabled and data ~= nil and data.Outcome == "Destroyed" and data.RecoveryId ~= nil
+    self.RecoveryButton.Visible = canRecover
+    self.RecoveryButton.Interactable = canRecover and not self._busy
+    if canRecover then
+        self._recoveryPrice.Text = Text.Tr(TranslationTexts.RecoveryButton, {
+            value = GameUtility.NumberToText(Settings.RecoveryDiamondCost),
+        })
+    end
     self._labels.Title.Text = data and data.Quality and Text.TrSource(_G.GameConfig.WeaponData[data.Quality].Name)
         or Text.Tr(TranslationTexts.Title)
     self._labels.Station.Text = Text.Tr(TranslationTexts.Station)
@@ -176,6 +234,8 @@ function View:RefreshText()
         elseif data.Outcome == "Destroyed" then
             resultKey = TranslationTexts.Destroyed
             resultColor = Color3.fromRGB(255, 133, 111)
+        elseif data.Outcome == "Recovered" then
+            resultKey = TranslationTexts.Recovered
         elseif data.Outcome == "Broken" then
             resultKey = TranslationTexts.Broken
             resultColor = Color3.fromRGB(244, 192, 106)
@@ -237,6 +297,7 @@ end
 function View:Destroy()
     self._gmChanceConnection:Disconnect()
     self:Close()
+    self.RecoveryButton:Destroy()
 end
 
 return View

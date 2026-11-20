@@ -195,7 +195,7 @@ local TranslationTexts = Text.Define("WelfareHub", {
     DailyAmount = "+{value} Diamonds per day",
     PassTomorrow = "Next claim tomorrow",
     PassRemaining = "{days:int} claims left · {status}",
-    PassInactive = "Use this pass from your backpack to activate it.",
+    PassInactive = "No weekly pass active.",
 })
 
 -- 暴露只读文案定义，供接入子类通过 self.BaseViewTranslationTexts 复用。

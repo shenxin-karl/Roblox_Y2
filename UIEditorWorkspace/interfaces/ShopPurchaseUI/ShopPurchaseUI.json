@@ -1191,7 +1191,7 @@
     "name": "ShopPurchaseUI",
     "properties": {
       "AutoLocalize": true,
-      "DisplayOrder": 0,
+      "DisplayOrder": 31,
       "Enabled": true
     }
   },

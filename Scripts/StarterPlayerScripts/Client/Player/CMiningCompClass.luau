@@ -10,8 +10,10 @@ local MiningEffects = FX.Loader:RequireFromParent(script, "CMiningEffects")
 local MiningRocks = FX.Loader:RequireFromParent(script, "CMiningRocks")
 local UIRoot = FX.Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local ActionButton = FX.Loader:Require(script.Parent.Parent, "UI.CActionButton")
+local AnimatedText = FX.Loader:Require(script.Parent.Parent, "UI.CAnimatedText")
 local TranslationTexts = Text.Define("MiningInteraction", {
     Preparing = "矿石准备中…",
+    Refreshed = "Ore has refreshed!",
     Mine = "挖矿",
     Smelt = "制作剑胚",
     RemainingHits = "还需敲击 {hits:int} 次",
@@ -26,6 +28,31 @@ function Comp:GetCompName()
     return "CMiningComp"
 end
 
+--- 在共享画布底部显示 Y1 的彩色提示，留出快捷栏空间。
+function Comp:CreateRefreshNotice()
+    local label = Instance.new("TextLabel")
+    label.Name = "OreRefreshNotice"
+    label.AnchorPoint = Vector2.new(0.5, 1)
+    label.Position = UDim2.new(0.5, 0, 1, -78)
+    label.Size = UDim2.new(0.9, 0, 0, 80)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.GothamBold
+    label.TextWrapped = true
+    label.TextYAlignment = Enum.TextYAlignment.Bottom
+    label.TextSize = 28
+    label.AutoLocalize = false
+    label.Text = Text.Tr(TranslationTexts.Refreshed)
+    label.Visible = false
+    label.Parent = UIRoot.Get()
+    local stroke = Instance.new("UIStroke")
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    stroke.Color = Color3.new(0, 0, 0)
+    stroke.Thickness = 3
+    stroke.Parent = label
+    self._refreshNotice = label
+    self._refreshTextEffect = AnimatedText.Attach(label)
+end
+
 --- 左下角显示刷新倒计时，右侧共用挖矿与熔炼入口；场景目标允许随流式加载变化。
 function Comp:OnReady()
     self._effects = MiningEffects.New(self)
@@ -37,6 +64,7 @@ function Comp:OnReady()
     root.Parent = UIRoot.Get()
     self._rootNode = root
     self._countdown = FX.Loader:PlayerGui("Main.HUD.Wallet.RefreshStat.Countdown")
+    self:CreateRefreshNotice()
     local feedback = Instance.new("TextLabel")
     feedback.Name = "MiningReward"
     feedback.AnchorPoint = Vector2.new(0.5, 0)
@@ -74,6 +102,7 @@ function Comp:OnReady()
         end
     end))
     self:TrackConnection(FC.Localization.Changed:Connect(function()
+        self._refreshNotice.Text = Text.Tr(TranslationTexts.Refreshed)
         self:Refresh()
     end))
     local elapsed = 0
@@ -88,8 +117,13 @@ function Comp:OnReady()
         end
     end))
     self:WatchDataChanged(_G.PlayerDataConfig.MiningData, function(data)
+        local previousDeadline = self._miningDeadline
         self._miningDeadline = data.NextRefresh
         self._miningRocks:Refresh(data)
+        -- 挖矿也会同步数据，只有服务端推进下一轮截止时间时才提示。
+        if previousDeadline and previousDeadline > 0 and data.NextRefresh > previousDeadline then
+            self._refreshNoticeUntil = os.clock() + 4
+        end
         self:Refresh()
     end)
     self:WatchDataChanged(_G.PlayerDataConfig.ForgeStation, function()
@@ -297,6 +331,7 @@ end
 function Comp:Refresh()
     local forging = self:GetNumber(_G.PlayerDataConfig.ForgeStation) > 0
     self._rootNode.Visible = not forging
+    self._refreshNotice.Visible = self._refreshNoticeUntil ~= nil and os.clock() < self._refreshNoticeUntil
     self:RefreshReward()
     self:RefreshPickaxe()
     local deadline = self._miningDeadline or 0
@@ -344,7 +379,7 @@ function Comp:Refresh()
     self:RefreshToolNames()
 end
 
---- 删除矿场自己的按钮和收益提示，保留共享画布和背包 Tool。
+--- 删除矿场自己的按钮、提示和文字特效，保留共享画布和背包 Tool。
 function Comp:Dtor()
     FX.Network:UnRegServerMsgCallback("S2C_MiningReward")
     self:StopSwing()
@@ -359,6 +394,10 @@ function Comp:Dtor()
         self._toolUnequipped:Disconnect()
     end
     Comp.Super.Dtor(self)
+    if self._refreshTextEffect then
+        self._refreshTextEffect:Destroy()
+        self._refreshNotice:Destroy()
+    end
     if self._button then
         self._button:Destroy()
     end

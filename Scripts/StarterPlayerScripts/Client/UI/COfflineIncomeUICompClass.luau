@@ -3,6 +3,8 @@ local FX = _G.FX
 local FXLoader = FX.Loader
 local Fields = _G.PlayerDataConfig
 local Utility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
+local DiamondPurchase = FXLoader:RequireFromParent(script, "CDiamondPurchase")
+local MoneyRain = FXLoader:RequireFromParent(script, "CMoneyRain")
 FXLoader:RequireFromParent(script, "Generated.COfflineIncomeView")
 local Component = FX.Class("COfflineIncomeUICompClass", "COfflineIncomeView")
 
@@ -24,15 +26,18 @@ end
 
 --- 数据订阅仅建立一次，回执与权威字段更新共同恢复领取状态。
 function Component:BindUIData()
-    FX.Network:RegServerMsgCallback("S2C_OfflineIncomeResult", function(requestId, success)
-        if self._destroyed or requestId ~= self._requestId then
+    FX.Network:RegServerMsgCallback("S2C_OfflineIncomeResult", function(requestId, success, insufficientDiamonds)
+        if self._destroyed or not self._pending or requestId ~= self._requestId then
             return
         end
         self._pending = false
-        self._failed = not success
+        self._failed = not success and not insufficientDiamonds
         self:UpdateState()
         if success then
             self:Hide()
+            MoneyRain.Play()
+        elseif insufficientDiamonds == true then
+            DiamondPurchase.Open()
         end
     end)
     self:WatchDataChanged(Fields.OfflineIncome, function()
@@ -78,6 +83,7 @@ function Component:OnUIAction(action, payload)
         return
     end
     if payload.boosted and self.State.diamonds < self.Config.diamondCost then
+        DiamondPurchase.Open()
         return
     end
     self._requestId += 1

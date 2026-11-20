@@ -18,6 +18,13 @@ local TranslationTexts = FX.Text.Define("FurnaceSmelt", {
 })
 local Manager = FX.Class("SMiningManagerClass", "FXObjectBaseClass")
 
+--- 矿面是横放的圆柱，局部 X 为厚度；落点保持角色竖直。
+--- @return CFrame 矿区中央、安全高度的传送落点。
+function Manager:GetArrival()
+    local ground = self._ground
+    return CFrame.new(ground.Position + Vector3.new(0, ground.Size.X / 2 + 4, 0))
+end
+
 --- 启动前核对配置与矿场几何；服务端只保存矿石数据，不创建共享石头。
 function Manager:Ctor()
     Manager.Super.Ctor(self)

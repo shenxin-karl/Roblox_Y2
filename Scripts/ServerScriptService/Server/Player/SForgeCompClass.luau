@@ -1,4 +1,5 @@
 -- 玩家锻造区会话：校验距离与角色，持有一个台位，并在死亡或离服时释放。
+local HttpService = game:GetService("HttpService")
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
@@ -19,6 +20,7 @@ function Comp:Ctor(owner)
     self._manager = _G.SForgeManager
     self._lastRequest = -math.huge
     self._lastForge = -math.huge
+    self._lastRecovery = -math.huge
     self._random = Random.new()
 end
 
@@ -83,6 +85,7 @@ function Comp:ForgeSword()
             data.Outcome, data.Finished = "Broken", true
         else
             data.Outcome, data.Active, data.Finished = "Destroyed", false, true
+            data.RecoveryId = HttpService:GenerateGUID(false)
         end
         self:SetTable(Fields.ForgeData, data)
         if data.Finished and data.Active then
@@ -90,6 +93,33 @@ function Comp:ForgeSword()
         end
         FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, true)
     end
+end
+
+--- 仅恢复当前彻底损毁的剑；扣款与恢复进度一起提交，同一损毁标识只能成功一次。
+--- @param failureId any 客户端看到的损毁标识，不能指定剑、品质或费用。
+function Comp:RecoverSword(failureId)
+    if type(failureId) ~= "string" or #failureId ~= 36
+        or os.clock() - self._lastRecovery < Settings.RequestCooldown or not self:CanUseStation() then
+        return
+    end
+    local data = self:GetTable(Fields.ForgeData)
+    if data.Active or not data.Finished or data.Outcome ~= "Destroyed" or data.RecoveryId ~= failureId then
+        return
+    end
+    self._lastRecovery = os.clock()
+    if self:GetNumber(Fields.Diamonds) < Settings.RecoveryDiamondCost then
+        FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeRecoveryInsufficientDiamonds", failureId)
+        return
+    end
+    local rewards = self:RequireComponent("FSRewardComp")
+    self:GetPlayerObject():RunDataTransaction(function()
+        if not rewards:ConsumeRewards({{Type = "Money", Currency = "Diamonds", Count = Settings.RecoveryDiamondCost}}) then
+            return false
+        end
+        data.RecoveryId = nil
+        data.Active, data.Finished, data.Outcome = true, false, "Recovered"
+        return self:SetTable(Fields.ForgeData, data)
+    end)
 end
 
 --- 调试入口沿用自然破损的出炉流程，容量不足时保留原成品待领取。

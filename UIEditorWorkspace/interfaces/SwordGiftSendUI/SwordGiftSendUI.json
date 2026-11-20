@@ -1,0 +1,1813 @@
+{
+  "canvas": {
+    "height": 720,
+    "width": 1280
+  },
+  "format": "roblox-ui",
+  "id": "b0891c68-ed20-4cff-bcb3-22cbffad7d65",
+  "name": "SwordGiftSendUI",
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [],
+            "className": "UICorner",
+            "id": "e5a925a3-74ba-4d5a-9610-d1fb0272d895",
+            "name": "UICorner",
+            "properties": {
+              "CornerRadius": {
+                "offset": 2,
+                "scale": 0
+              }
+            }
+          },
+          {
+            "children": [],
+            "className": "UIStroke",
+            "id": "71ced0e7-d01e-49d3-9411-6da880e9e9cd",
+            "name": "UIStroke",
+            "properties": {
+              "Color": "#000000",
+              "Enabled": true,
+              "Thickness": 2,
+              "Transparency": 0
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "9269ab50-2261-405a-8293-9798692a8af2",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 5,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "10f1b771-8cfc-4d84-b034-5ee03a80b374",
+                "name": "PlayerRoleTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "Gotham",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 14,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 86,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 42,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "To",
+                  "TextColor3": "#D6DDDA",
+                  "TextScaled": false,
+                  "TextSize": 18,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Left",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 6
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "3890632a-86a2-44eb-b748-7da460931cc3",
+                "name": "PlayerNameTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 102,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 482,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 42,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "Luna",
+                  "TextColor3": "#FFFFFF",
+                  "TextScaled": false,
+                  "TextSize": 22,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Left",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 6
+                }
+              }
+            ],
+            "className": "Frame",
+            "id": "cfe16260-a593-41f6-b225-00054b2eed65",
+            "name": "PlayerImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#26282F",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": false,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 24,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 16,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 602,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 42,
+                  "scale": 0
+                }
+              },
+              "Visible": true,
+              "ZIndex": 3
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "cee2146c-054f-4cb7-ac37-086c833c336b",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "af2c8817-81c2-4ab0-b30b-2ac6443b3b85",
+                "name": "UIStroke",
+                "properties": {
+                  "Color": "#111318",
+                  "Enabled": true,
+                  "Thickness": 2,
+                  "Transparency": 0
+                }
+              },
+              {
+                "children": [
+                  {
+                    "children": [],
+                    "className": "UICorner",
+                    "id": "bdce5c2d-37b0-48d7-b650-e60c1f6d7c3a",
+                    "name": "UICorner",
+                    "properties": {
+                      "CornerRadius": {
+                        "offset": 6,
+                        "scale": 0
+                      }
+                    }
+                  },
+                  {
+                    "children": [],
+                    "className": "UIStroke",
+                    "id": "01504ec1-058e-4d65-94fc-d7d304f26cd9",
+                    "name": "UIStroke",
+                    "properties": {
+                      "Color": "#3E6888",
+                      "Enabled": true,
+                      "Thickness": 1,
+                      "Transparency": 0
+                    }
+                  },
+                  {
+                    "children": [],
+                    "className": "Frame",
+                    "id": "f21f618d-841b-46d3-afb1-cd85fb846b63",
+                    "name": "BladeImg",
+                    "properties": {
+                      "AnchorPoint": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "AutoLocalize": true,
+                      "BackgroundColor3": "#A8DFFF",
+                      "BackgroundTransparency": 0,
+                      "ClipsDescendants": false,
+                      "LayoutOrder": 0,
+                      "Position": {
+                        "x": {
+                          "offset": 52,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 12,
+                          "scale": 0
+                        }
+                      },
+                      "Rotation": 36,
+                      "Size": {
+                        "x": {
+                          "offset": 12,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 57,
+                          "scale": 0
+                        }
+                      },
+                      "Visible": true,
+                      "ZIndex": 6
+                    }
+                  },
+                  {
+                    "children": [],
+                    "className": "Frame",
+                    "id": "cea26dac-61df-43b9-99e1-11a2424577e9",
+                    "name": "BladeHighlightImg",
+                    "properties": {
+                      "AnchorPoint": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "AutoLocalize": true,
+                      "BackgroundColor3": "#EDF9FF",
+                      "BackgroundTransparency": 0,
+                      "ClipsDescendants": false,
+                      "LayoutOrder": 0,
+                      "Position": {
+                        "x": {
+                          "offset": 55,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 14,
+                          "scale": 0
+                        }
+                      },
+                      "Rotation": 36,
+                      "Size": {
+                        "x": {
+                          "offset": 3,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 49,
+                          "scale": 0
+                        }
+                      },
+                      "Visible": true,
+                      "ZIndex": 7
+                    }
+                  },
+                  {
+                    "children": [],
+                    "className": "Frame",
+                    "id": "72cdc505-fa48-423a-b8ad-6f78dd642e12",
+                    "name": "GuardImg",
+                    "properties": {
+                      "AnchorPoint": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "AutoLocalize": true,
+                      "BackgroundColor3": "#568AB7",
+                      "BackgroundTransparency": 0,
+                      "ClipsDescendants": false,
+                      "LayoutOrder": 0,
+                      "Position": {
+                        "x": {
+                          "offset": 28,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 57,
+                          "scale": 0
+                        }
+                      },
+                      "Rotation": 36,
+                      "Size": {
+                        "x": {
+                          "offset": 34,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 7,
+                          "scale": 0
+                        }
+                      },
+                      "Visible": true,
+                      "ZIndex": 8
+                    }
+                  },
+                  {
+                    "children": [],
+                    "className": "Frame",
+                    "id": "8a4619cf-b3a6-4cf3-b5b0-24f0e82b2f4f",
+                    "name": "GripImg",
+                    "properties": {
+                      "AnchorPoint": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "AutoLocalize": true,
+                      "BackgroundColor3": "#AD774A",
+                      "BackgroundTransparency": 0,
+                      "ClipsDescendants": false,
+                      "LayoutOrder": 0,
+                      "Position": {
+                        "x": {
+                          "offset": 35,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 60,
+                          "scale": 0
+                        }
+                      },
+                      "Rotation": 36,
+                      "Size": {
+                        "x": {
+                          "offset": 8,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 13,
+                          "scale": 0
+                        }
+                      },
+                      "Visible": true,
+                      "ZIndex": 7
+                    }
+                  },
+                  {
+                    "children": [],
+                    "className": "Frame",
+                    "id": "2402a9ce-7d96-4136-9c23-f7a978b5c762",
+                    "name": "PommelImg",
+                    "properties": {
+                      "AnchorPoint": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "AutoLocalize": true,
+                      "BackgroundColor3": "#A8DFFF",
+                      "BackgroundTransparency": 0,
+                      "ClipsDescendants": false,
+                      "LayoutOrder": 0,
+                      "Position": {
+                        "x": {
+                          "offset": 30,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 72,
+                          "scale": 0
+                        }
+                      },
+                      "Rotation": 36,
+                      "Size": {
+                        "x": {
+                          "offset": 12,
+                          "scale": 0
+                        },
+                        "y": {
+                          "offset": 5,
+                          "scale": 0
+                        }
+                      },
+                      "Visible": true,
+                      "ZIndex": 7
+                    }
+                  }
+                ],
+                "className": "Frame",
+                "id": "b86a3729-0be9-42e3-9540-fc0f2576dc45",
+                "name": "SwordIconImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#162F46",
+                  "BackgroundTransparency": 0,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 16,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 16,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 94,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 94,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "41cdca13-82f6-4bd0-acf9-ba8483a5aaf5",
+                "name": "SwordNameTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 128,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 13,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 450,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 36,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "Frost Sword Blank",
+                  "TextColor3": "#FFFFFF",
+                  "TextScaled": false,
+                  "TextSize": 28,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Left",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 6
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "175d8723-824a-4d0e-9842-9fe8feba1f78",
+                "name": "AttributeDividerImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#414752",
+                  "BackgroundTransparency": 0,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 128,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 54,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 452,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 1,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "61c83832-41a0-430c-9cbc-e60cd0aacf91",
+                "name": "MutationLabelTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "Gotham",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 128,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 63,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 200,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 23,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "Mutation",
+                  "TextColor3": "#D6DDDA",
+                  "TextScaled": false,
+                  "TextSize": 16,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Left",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 6
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "53b6bea8-2936-4fb5-8651-511ff43951b6",
+                "name": "MutationValueTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 128,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 88,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 200,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 26,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "Frost",
+                  "TextColor3": "#A8DFFF",
+                  "TextScaled": false,
+                  "TextSize": 21,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Left",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 6
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "461cfce5-92e7-458c-ba81-f79fc64c3e29",
+                "name": "LuckLabelTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "Gotham",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 358,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 63,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 200,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 23,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "Luck Level",
+                  "TextColor3": "#D6DDDA",
+                  "TextScaled": false,
+                  "TextSize": 16,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Left",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 6
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "53c03e48-0935-4d21-a366-8607e0b1ced3",
+                "name": "LuckValueTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 358,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 88,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 200,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 26,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "Lv. 5",
+                  "TextColor3": "#FFDA79",
+                  "TextScaled": false,
+                  "TextSize": 21,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Left",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 6
+                }
+              }
+            ],
+            "className": "Frame",
+            "id": "78c73c2d-1412-4c3c-9b9a-6745049ddfda",
+            "name": "SwordCardImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#20242D",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": false,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 24,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 70,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 602,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 126,
+                  "scale": 0
+                }
+              },
+              "Visible": true,
+              "ZIndex": 3
+            }
+          },
+          {
+            "children": [],
+            "className": "TextLabel",
+            "id": "d247c360-c11d-4cfb-8b1a-29c02dfc932f",
+            "name": "GiftHelpTxt",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#ffffff",
+              "BackgroundTransparency": 1,
+              "ClipsDescendants": false,
+              "Font": "Gotham",
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 24,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 201,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 602,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 28,
+                  "scale": 0
+                }
+              },
+              "Text": "The sword blank moves to their backpack when they accept.",
+              "TextColor3": "#D6DDDA",
+              "TextScaled": false,
+              "TextSize": 16,
+              "TextTransparency": 0,
+              "TextWrapped": false,
+              "TextXAlignment": "Center",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 6
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "b7401f08-9f9b-440a-a714-3baeee089ea1",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "85867ca9-ee76-4ac3-a3f7-27e92f5bd7c0",
+                "name": "UIStroke",
+                "properties": {
+                  "Color": "#000000",
+                  "Enabled": true,
+                  "Thickness": 3,
+                  "Transparency": 0
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "df771a79-d59e-4acb-83a1-8646ec4d040a",
+                "name": "TopHighlightImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 0.58,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 220,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 2,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 4
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "9e448859-ea8b-4aff-adc7-0cd342fbc04d",
+                "name": "BottomEdgeImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#263e36",
+                  "BackgroundTransparency": 0.2,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 54,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 220,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 4,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 4
+                }
+              },
+              {
+                "children": [
+                  {
+                    "children": [],
+                    "className": "UIStroke",
+                    "id": "185240b7-6e98-46ff-84ff-038fea8f5f53",
+                    "name": "TextStroke",
+                    "properties": {
+                      "Color": "#20231c",
+                      "Enabled": true,
+                      "Thickness": 2,
+                      "Transparency": 0
+                    }
+                  }
+                ],
+                "className": "TextLabel",
+                "id": "e77c8010-a95a-4dfb-b30f-0d8eae1e016a",
+                "name": "ButtonTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 1
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 1
+                    }
+                  },
+                  "Text": "Cancel",
+                  "TextColor3": "#ffffff",
+                  "TextScaled": false,
+                  "TextSize": 24,
+                  "TextTransparency": 0,
+                  "TextWrapped": true,
+                  "TextXAlignment": "Center",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              }
+            ],
+            "className": "ImageButton",
+            "id": "c445ab2c-052c-495a-9940-02fbc9370dc5",
+            "name": "CancelBtn",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#638079",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": false,
+              "Image": "rbxassetid://82793028306773",
+              "ImageColor3": "#ffffff",
+              "ImageTransparency": 0,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 90,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 237,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "ScaleType": "Tile",
+              "Size": {
+                "x": {
+                  "offset": 220,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 58,
+                  "scale": 0
+                }
+              },
+              "TileSize": {
+                "x": {
+                  "offset": 28,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 28,
+                  "scale": 0
+                }
+              },
+              "Visible": true,
+              "ZIndex": 3
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "26a782ef-85ea-4714-89f0-d2603ec04780",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "849ed81d-039a-48c4-87a3-514039b79cf3",
+                "name": "UIStroke",
+                "properties": {
+                  "Color": "#000000",
+                  "Enabled": true,
+                  "Thickness": 3,
+                  "Transparency": 0
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "c7e48a7c-5899-4d49-8987-049a48f9afd5",
+                "name": "TopHighlightImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 0.58,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 220,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 2,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 4
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "79f0bc49-935e-44cf-a036-d0c40aef0d59",
+                "name": "BottomEdgeImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#225a07",
+                  "BackgroundTransparency": 0.2,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 54,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 220,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 4,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 4
+                }
+              },
+              {
+                "children": [
+                  {
+                    "children": [],
+                    "className": "UIStroke",
+                    "id": "c153208d-8752-4e15-8e7f-bc642566642d",
+                    "name": "TextStroke",
+                    "properties": {
+                      "Color": "#20231c",
+                      "Enabled": true,
+                      "Thickness": 2,
+                      "Transparency": 0
+                    }
+                  }
+                ],
+                "className": "TextLabel",
+                "id": "5dba926f-8b19-4574-8d71-50ece6d2c7f6",
+                "name": "ButtonTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": -2,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 1
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 1
+                    }
+                  },
+                  "Text": "Send Gift",
+                  "TextColor3": "#ffffff",
+                  "TextScaled": false,
+                  "TextSize": 24,
+                  "TextTransparency": 0,
+                  "TextWrapped": true,
+                  "TextXAlignment": "Center",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              }
+            ],
+            "className": "ImageButton",
+            "id": "d2eab7b2-8315-43fd-b866-64f8c6045243",
+            "name": "ConfirmBtn",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#67ed14",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": false,
+              "Image": "rbxassetid://82793028306773",
+              "ImageColor3": "#ffffff",
+              "ImageTransparency": 0,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 340,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 237,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "ScaleType": "Tile",
+              "Size": {
+                "x": {
+                  "offset": 220,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 58,
+                  "scale": 0
+                }
+              },
+              "TileSize": {
+                "x": {
+                  "offset": 28,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 28,
+                  "scale": 0
+                }
+              },
+              "Visible": true,
+              "ZIndex": 3
+            }
+          }
+        ],
+        "className": "Frame",
+        "id": "47ed473b-ef97-4afc-b1b3-9220c7213ae6",
+        "name": "PopupPanelImg",
+        "properties": {
+          "AnchorPoint": {
+            "x": 0,
+            "y": 0
+          },
+          "AutoLocalize": true,
+          "BackgroundColor3": "#000000",
+          "BackgroundTransparency": 0.3,
+          "ClipsDescendants": false,
+          "LayoutOrder": 0,
+          "Position": {
+            "x": {
+              "offset": 315,
+              "scale": 0
+            },
+            "y": {
+              "offset": 240,
+              "scale": 0
+            }
+          },
+          "Rotation": 0,
+          "Size": {
+            "x": {
+              "offset": 650,
+              "scale": 0
+            },
+            "y": {
+              "offset": 310,
+              "scale": 0
+            }
+          },
+          "Visible": true,
+          "ZIndex": 2
+        }
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "aff55964-68fa-4f83-be19-cfbf228128fa",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 2,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "14854981-7b18-439e-addc-4907149253ba",
+                "name": "UIStroke",
+                "properties": {
+                  "Color": "#000000",
+                  "Enabled": true,
+                  "Thickness": 3,
+                  "Transparency": 0
+                }
+              },
+              {
+                "children": [],
+                "className": "ImageLabel",
+                "id": "1819f55d-b1e3-4b02-813f-f48f8fc6af03",
+                "name": "StudTileImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Image": "rbxassetid://82793028306773",
+                  "ImageColor3": "#ffffff",
+                  "ImageTransparency": 0,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "ScaleType": "Tile",
+                  "Size": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 1
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 1
+                    }
+                  },
+                  "TileSize": {
+                    "x": {
+                      "offset": 27,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 27,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 4
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "07c80406-1ae3-440b-94df-aa210f1807f0",
+                "name": "TopHighlightImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 0.58,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 650,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 2,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "4bb77485-7035-4e7b-9407-52bd722d7771",
+                "name": "LeftHighlightImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 0.75,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 0,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 2,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 70,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              },
+              {
+                "children": [],
+                "className": "Frame",
+                "id": "e5807ce2-9d86-4468-a5ca-e93673e0af77",
+                "name": "BottomEdgeImg",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#48246B",
+                  "BackgroundTransparency": 0.2,
+                  "ClipsDescendants": false,
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 66,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 650,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 4,
+                      "scale": 0
+                    }
+                  },
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              }
+            ],
+            "className": "Frame",
+            "id": "d6e38415-7e45-435c-bd6f-c5ba4e7ec19b",
+            "name": "TitleImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#8A4DC2",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": true,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 0,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 0,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 650,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 70,
+                  "scale": 0
+                }
+              },
+              "Visible": true,
+              "ZIndex": 3
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "e9638a34-bb47-435a-9ce3-251b687f953c",
+                "name": "TextStroke",
+                "properties": {
+                  "Color": "#000000",
+                  "Enabled": true,
+                  "Thickness": 2,
+                  "Transparency": 0
+                }
+              }
+            ],
+            "className": "TextLabel",
+            "id": "2eefd370-0401-4d6b-b173-616bbab3cb43",
+            "name": "TitleTxt",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#ffffff",
+              "BackgroundTransparency": 1,
+              "ClipsDescendants": false,
+              "Font": "GothamBold",
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 106,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 0,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 438,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 70,
+                  "scale": 0
+                }
+              },
+              "Text": "Send Sword Blank",
+              "TextColor3": "#ffffff",
+              "TextScaled": false,
+              "TextSize": 30,
+              "TextTransparency": 0,
+              "TextWrapped": false,
+              "TextXAlignment": "Center",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 6
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "bc5596c4-7a7b-4e40-836d-020635d962b4",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "974539d7-f463-4da0-b698-b79af40cca42",
+                "name": "UIStroke",
+                "properties": {
+                  "Color": "#000000",
+                  "Enabled": true,
+                  "Thickness": 3,
+                  "Transparency": 0
+                }
+              },
+              {
+                "children": [
+                  {
+                    "children": [],
+                    "className": "UIStroke",
+                    "id": "70c7ce2c-e36a-4e0d-b67f-f469af4fa9cd",
+                    "name": "TextStroke",
+                    "properties": {
+                      "Color": "#000000",
+                      "Enabled": true,
+                      "Thickness": 2,
+                      "Transparency": 0
+                    }
+                  }
+                ],
+                "className": "TextButton",
+                "id": "4b2c7862-b58b-4e48-a3ad-72b47ccabbee",
+                "name": "CloseBtn",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": true,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 0,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": -2,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 52,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 52,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "×",
+                  "TextColor3": "#ffffff",
+                  "TextScaled": false,
+                  "TextSize": 52,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Center",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 7
+                }
+              }
+            ],
+            "className": "Frame",
+            "id": "cb3aaaad-e9e5-43b1-89fb-2064160aaf2b",
+            "name": "CloseSurfaceImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#55ce35",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": false,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 588,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 9,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 52,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 52,
+                  "scale": 0
+                }
+              },
+              "Visible": true,
+              "ZIndex": 6
+            }
+          }
+        ],
+        "className": "Frame",
+        "id": "641ece2b-77ef-49e5-b6fe-02c1484a8002",
+        "name": "TitleBox",
+        "properties": {
+          "AnchorPoint": {
+            "x": 0,
+            "y": 0
+          },
+          "AutoLocalize": true,
+          "BackgroundColor3": "#ffffff",
+          "BackgroundTransparency": 1,
+          "ClipsDescendants": false,
+          "LayoutOrder": 0,
+          "Position": {
+            "x": {
+              "offset": 315,
+              "scale": 0
+            },
+            "y": {
+              "offset": 170,
+              "scale": 0
+            }
+          },
+          "Rotation": 0,
+          "Size": {
+            "x": {
+              "offset": 650,
+              "scale": 0
+            },
+            "y": {
+              "offset": 70,
+              "scale": 0
+            }
+          },
+          "Visible": true,
+          "ZIndex": 3
+        }
+      }
+    ],
+    "className": "ScreenGui",
+    "id": "5c183191-b1cd-4173-809d-7f0b99e16ba6",
+    "name": "SwordGiftSendUI",
+    "properties": {
+      "AutoLocalize": true,
+      "DisplayOrder": 0,
+      "Enabled": false
+    }
+  },
+  "version": 4
+}
