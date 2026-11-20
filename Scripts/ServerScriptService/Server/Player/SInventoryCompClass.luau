@@ -10,14 +10,12 @@ local Comp = FX.Class("SInventoryCompClass", "FSInventoryCompClass")
 --- @param owner table 当前服务端玩家对象。
 function Comp:Ctor(owner)
     Comp.Super.Ctor(self, owner)
-    local config = _G.Provider:GetNativeBackpackConfig()
-    local shortcut = config.ShortcutEnabled and math.min(10, config.InventoryCapacity) or 0
+    local config = _G.Provider:GetInventoryConfig()
     self._config = {
         storeTableVarEnum = Fields.Inventory,
-        shortcutCapacity = shortcut,
-        inventoryCapacity = config.InventoryCapacity - shortcut,
+        shortcutCapacity = config.ShortcutCapacity,
+        inventoryCapacity = config.BackpackCapacity,
     }
-    self._shortcutEnabled = config.ShortcutEnabled
     self._tools = {}
     self._oreModels = {}
     for grade, rockType in pairs(_G.GameConfig.MiningRockData) do
@@ -108,7 +106,7 @@ end
 
 --- 数据提交后只更新变动格子；武器品质改变时重建模型，避免沿用旧外观和名称。
 function Comp:SyncTools()
-    if not self._active or not self._shortcutEnabled then
+    if not self._active or self:GetTotalCapacity() == 0 then
         return
     end
     local player = self:GetPlayerNode()
@@ -136,7 +134,6 @@ function Comp:SyncTools()
                 local name = quality and _G.GameConfig.WeaponData[quality].Name or Items.Display[entry.itemId].Name
                 tool.Name = name
                 tool:SetAttribute("DisplayNameSource", name)
-                tool.Parent = backpack
             end
             tool:SetAttribute("FrameworkGrid", grid)
             tool:SetAttribute("WeaponLevel", entry.extraData and entry.extraData.Level)
@@ -144,6 +141,9 @@ function Comp:SyncTools()
             tool:SetAttribute("MutationId", entry.extraData and entry.extraData.MutationId)
             tool:SetAttribute("blankLuckLevel", entry.extraData and entry.extraData.blankLuckLevel)
             tool:SetAttribute("FrameworkStackCount", entry.stackCount)
+            if not tool.Parent then
+                tool.Parent = backpack
+            end
         end
     end
 end
@@ -160,6 +160,51 @@ function Comp:GetEquippedGrid()
         end
     end
     return nil
+end
+
+--- 只装备当前快捷格里的本人道具；再次选择同一格则卸下。
+function Comp:SelectGrid(grid, expectedTool)
+    if not self._active or not self:_CheckGridIndexValid(grid) or grid > self:GetShortcutCapacity() then
+        return
+    end
+    local tool = self._tools[grid]
+    if not tool or tool ~= expectedTool then
+        return
+    end
+    local player = self:GetPlayerNode()
+    local character = player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        return
+    end
+    if tool.Parent == character then
+        humanoid:UnequipTools()
+    elseif tool.Parent and tool.Parent == player:FindFirstChildOfClass("Backpack") then
+        humanoid:EquipTool(tool)
+    end
+end
+
+--- 使用两端格子的当前 Tool 防止复制延迟导致交换错误物品。
+function Comp:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
+    if not self._active or not self:_CheckGridIndexValid(sourceGrid) or not self:_CheckGridIndexValid(targetGrid)
+        or sourceGrid == targetGrid or not sourceTool then
+        return
+    end
+    if self._tools[sourceGrid] ~= sourceTool or self._tools[targetGrid] ~= targetTool then
+        return
+    end
+    local equippedGrid = self:GetEquippedGrid()
+    if not self:SwapGridData(sourceGrid, targetGrid) then
+        return
+    end
+    if equippedGrid == sourceGrid or equippedGrid == targetGrid then
+        local character = self:GetPlayerNode().Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:UnequipTools()
+        end
+    end
+    self:SyncTools()
 end
 
 --- 框架整理等全量变更仍走同一展示更新。

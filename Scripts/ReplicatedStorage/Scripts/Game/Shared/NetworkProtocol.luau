@@ -33,6 +33,9 @@ return {
         "C2S_ClaimWelfare",
         -- 无客户端参数；矿区落点由服务端决定。
         "C2S_TeleportToMine",
+        -- 仅操作本人背包；Tool 用于确认客户端看到的格子内容仍有效。
+        "C2S_SelectInventoryGrid",
+        "C2S_SwapInventoryGrid",
     },
     -- S2C_UpgradeWorkshopResult(upgradeId: string, success: boolean)，真实等级沿用玩家字段同步。
     -- S2C_OfflineIncomeResult(requestId: number, success: boolean, insufficientDiamonds: boolean)。

@@ -60,12 +60,22 @@ function Provider:GetServerDataConfig()
     return ServerDataConfig
 end
 
---- 快捷栏与正式背包共用总容量，快捷栏最多占用其中 10 格，不删除已有存档。
---- @return table 快捷栏开关与正式背包总容量（非负整数，0 关闭）。
-function Provider:GetNativeBackpackConfig()
+--- 前 ShortcutCapacity 格属于快捷栏，后 BackpackCapacity 格属于背包。
+--- @return table 两区独立的非负整数容量；0 关闭对应区域。
+function Provider:GetInventoryConfig()
     return {
-        ShortcutEnabled = true,
-        InventoryCapacity = 12, -- 正式背包总容量，包含快捷栏占用的格子。
+        ShortcutCapacity = 10,
+        BackpackCapacity = 10,
+    }
+end
+
+--- 框架原生背包在自定义界面接管前仍沿用原来的启用规则。
+--- @return table 框架原生背包配置。
+function Provider:GetNativeBackpackConfig()
+    local config = self:GetInventoryConfig()
+    return {
+        ShortcutEnabled = config.ShortcutCapacity > 0,
+        InventoryCapacity = config.ShortcutCapacity + config.BackpackCapacity,
     }
 end
 

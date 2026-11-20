@@ -16,6 +16,25 @@ function Manager:Ctor()
     self:RegMiningMsg()
     self:RegUpgradeWorkshopMsg()
     self:RegEconomyMsg()
+    self:RegInventoryMsg()
+end
+
+--- 使用网络层认证的玩家身份路由背包操作。
+function Manager:RegInventoryMsg()
+    FX.Network:RegClientMsgCallback("C2S_SelectInventoryGrid", function(userId, grid, tool)
+        local player = self:GetPlayerObject(userId)
+        local inventory = player and player:GetComponent("FSInventoryComp")
+        if inventory then
+            inventory:SelectGrid(grid, tool)
+        end
+    end)
+    FX.Network:RegClientMsgCallback("C2S_SwapInventoryGrid", function(userId, sourceGrid, targetGrid, sourceTool, targetTool)
+        local player = self:GetPlayerObject(userId)
+        local inventory = player and player:GetComponent("FSInventoryComp")
+        if inventory then
+            inventory:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
+        end
+    end)
 end
 
 --- 经济操作只转发引擎认证的请求者，不允许指定扣款方或奖励金额。

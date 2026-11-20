@@ -54,6 +54,8 @@ function CUpgradeWorkshopPreview:OnUIAction(action, payload)
     if entry.maxed or not entry.canUpgrade then
         if entry.maxed then
             print("Max level", payload.upgradeId)
+        else
+            print("Not enough cash", payload.upgradeId)
         end
         return
     end

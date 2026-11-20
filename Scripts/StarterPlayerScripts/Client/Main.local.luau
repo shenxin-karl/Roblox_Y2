@@ -17,6 +17,7 @@ FXLoader:Require(script.Parent, "UI.COfflineIncomeUICompClass")
 FXLoader:Require(script.Parent, "UI.CCurrencyShopUICompClass")
 FXLoader:Require(script.Parent, "UI.CMoneyMultiplierUICompClass")
 FXLoader:Require(script.Parent, "UI.CWelfareUICompClass")
+FXLoader:Require(script.Parent, "UI.CInventoryCompClass")
 local isDeveloper = FX.IsDeveloper(Players.LocalPlayer.UserId)
 if isDeveloper then
     FXLoader:Require(script.Parent, "UI.CGMPanelUICompClass")
@@ -38,6 +39,7 @@ FC.PlayerObject:AddComponent("COfflineIncomeUICompClass")
 FC.PlayerObject:AddComponent("CCurrencyShopUICompClass")
 FC.PlayerObject:AddComponent("CMoneyMultiplierUICompClass")
 FC.PlayerObject:AddComponent("CWelfareUICompClass")
+FC.PlayerObject:AddComponent("CInventoryCompClass")
 if isDeveloper then
     FC.PlayerObject:AddComponent("CGMPanelUICompClass")
 end
