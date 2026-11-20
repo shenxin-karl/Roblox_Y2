@@ -15,35 +15,13 @@ local PlayerDataConfig = _G.PlayerDataConfig
 local TranslationTexts = Text.Define("MainItemDescription", {
     Traits = "{description}\nMutation: {mutation}\nBlank luck level: {blankLuckLevel:int}",
     GM = "GM",
-    Shop = "Shop",
-    Mine = "Mine",
-    Welfare = "Rewards",
+    Forge = "Forge Area",
     Multiplier = "×{rate} Cash",
-    MultiplierPrice = "{price} Diamonds",
     MultiplierMaxed = "Max level",
 })
 local Component = FX.Class("CMainUICompClass", "FCUICompClass")
 
 local NAVIGATION_ICON_INSET = 38
-
---- 在按钮左侧添加不接收输入的图标，保留按钮原有文字和点击区域。
---- @param button TextButton 顶栏按钮。
---- @param image string 已上传的 Roblox 图片引用。
---- @return ImageLabel 由主界面组件清理的图标。
-local function AddNavigationIcon(button, image)
-    local icon = Instance.new("ImageLabel")
-    icon.Name = "NavigationIcon"
-    icon.AnchorPoint = Vector2.new(0, 0.5)
-    icon.Position = UDim2.new(0, 5, 0.5, 0)
-    icon.Size = UDim2.fromOffset(32, 32)
-    icon.BackgroundTransparency = 1
-    icon.Active = false
-    icon.ScaleType = Enum.ScaleType.Fit
-    icon.ZIndex = 10
-    icon.Image = image
-    icon.Parent = button
-    return icon
-end
 
 --- 返回项目主界面组件协作名。
 --- @return string 主界面组件名。
@@ -67,7 +45,7 @@ function Component:OnReady()
         FX.Network:SendMsgToServer("C2S_ReturnHome")
     end))
     self:BindCommerceNavigation()
-    self:CreateMoneyMultiplierButton()
+    self:BindMoneyMultiplierButton()
     -- 侧栏只打开工坊组件，关闭及重复打开的刷新由生成 View 负责。
     self:TrackConnection(FXLoader:Here(self._rootNode, "SideNav.Upgrade").Activated:Connect(function()
         self:GetOwner():RequireComponent("CUpgradeWorkshopUICompClass"):Show()
@@ -116,79 +94,50 @@ end
 --- 复用原生 HUD 的左上商店、右上导航和侧栏福利入口。
 function Component:BindCommerceNavigation()
     local left = FXLoader:Here(self._topNav, "Center")
-    local home = FXLoader:Here(self._topNav, "Home")
     local right = FXLoader:Here(self._topNav, "Shop")
-    self._navigationIcons = {
-        AddNavigationIcon(left, "rbxassetid://90598676193917"),
-        AddNavigationIcon(home, "rbxassetid://116553370129888"),
-    }
-    left.FontFace, left.TextSize = home.FontFace, home.TextSize
-    left.TextColor3, left.TextStrokeTransparency = home.TextColor3, home.TextStrokeTransparency
-    left.AutoLocalize = false
     self:TrackConnection(left.Activated:Connect(DiamondPurchase.Open))
 
     local miningEnabled = table.find(_G.NetworkProtocol.ClientMsgID, "C2S_TeleportToMine") ~= nil
+    FXLoader:Here(right, "NavigationIcon").Visible = miningEnabled
     self:TrackConnection(right.Activated:Connect(function()
         FX.Network:SendMsgToServer(miningEnabled and "C2S_TeleportToMine" or "C2S_TeleportToForge")
     end))
-    if miningEnabled then
+    if not miningEnabled then
         right.AutoLocalize = false
-        table.insert(self._navigationIcons, AddNavigationIcon(right, "rbxassetid://124957624114627"))
+        --- 旧传送协议仍落在锻造区，入口名称随语言刷新。
+        local function RefreshForgeLabel()
+            right.Text = Text.Tr(TranslationTexts.Forge)
+        end
+        self:TrackConnection(FC.Localization.Changed:Connect(RefreshForgeLabel))
+        RefreshForgeLabel()
     end
 
     local welfare = FXLoader:Here(self._rootNode, "SideNav.Shop")
+    local welfareCaption = FXLoader:Here(welfare, "Caption")
     local welfareEnabled = table.find(_G.NetworkProtocol.ClientMsgID, "C2S_ClaimWelfare") ~= nil
+    welfareCaption.Visible = welfareEnabled
+    FXLoader:Here(welfare, "Icon").Visible = welfareEnabled
     if welfareEnabled then
-        welfare.AutoLocalize = false
-        welfare.TextSize, welfare.FontFace, welfare.TextColor3 = 16, home.FontFace, home.TextColor3
         self:TrackConnection(welfare.Activated:Connect(function()
             self:GetOwner():RequireComponent("CWelfareUICompClass"):Show()
         end))
     end
-
-    --- 为实际启用的入口刷新译文；原生回家按钮沿用自己的翻译。
-    local function RefreshLabels()
-        left.Text = Text.Tr(TranslationTexts.Shop)
-        if miningEnabled then
-            right.Text = Text.Tr(TranslationTexts.Mine)
-        end
-        if welfareEnabled then
-            welfare.Text = Text.Tr(TranslationTexts.Welfare)
-        end
-    end
-    self:TrackConnection(FC.Localization.Changed:Connect(RefreshLabels))
-    RefreshLabels()
 end
 
---- 参照 Y1 快捷购买使用两行显示：下一档倍率与钻石价；满级显示当前倍率。
-function Component:CreateMoneyMultiplierButton()
+--- 绑定 Studio 倍率入口；价格放在按钮上方，倍率标题沿用 Y1 快捷入口的布局。
+function Component:BindMoneyMultiplierButton()
     if not table.find(_G.NetworkProtocol.ClientMsgID, "C2S_BuyMoneyMultiplier") then
+        local button = FXLoader:Find(self._rootNode, "MoneyMultiplier")
+        if button then
+            button.Visible = false
+        end
         return
     end
-    local button = Instance.new("TextButton")
-    button.Name = "MoneyMultiplier"
-    button.AutoLocalize = false
-    button.AnchorPoint = Vector2.new(1, 0.5)
-    button.Position = UDim2.new(1, -18, 0.42, 0)
-    button.Size = UDim2.fromOffset(164, 64)
-    button.BackgroundColor3 = Color3.fromRGB(31, 111, 62)
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 18
-    button.TextStrokeTransparency = 0.4
-    button:SetAttribute("BlocksTrainingClick", true)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = button
-    local stroke = Instance.new("UIStroke")
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Color = Color3.fromRGB(17, 40, 26)
-    stroke.Thickness = 3
-    stroke.Parent = button
-    local scale = Instance.new("UIScale")
-    scale.Parent = button
-    self._multiplierButton = button
-    self._multiplierScale = scale
+    local button = FXLoader:Here(self._rootNode, "MoneyMultiplier")
+    self._multiplierScale = FXLoader:Here(button, "ResponsiveScale")
+    local titleLabel = FXLoader:Here(button, "Background.Title")
+    local priceLabel = FXLoader:Here(button, "PriceRow.Price")
+    local diamondIcon = FXLoader:Here(button, "PriceRow.Diamond")
     self:TrackConnection(button.Activated:Connect(function()
         self:GetOwner():RequireComponent("CMoneyMultiplierUICompClass"):OpenPurchase()
     end))
@@ -198,14 +147,12 @@ function Component:CreateMoneyMultiplierButton()
         local tier = self:GetNumber(PlayerDataConfig.PaidMultiplierTier)
         local price = MoneyMultiplier.GetNextPrice(tier)
         local rate = MoneyMultiplier.GetMultiplier(price and tier + 1 or tier)
-        local title = Text.Tr(TranslationTexts.Multiplier, {rate = GameUtility.NumberToText(rate)})
-        local detail = price and Text.Tr(TranslationTexts.MultiplierPrice, {price = GameUtility.NumberToText(price)})
-            or Text.Tr(TranslationTexts.MultiplierMaxed)
-        button.Text = title .. "\n" .. detail
+        titleLabel.Text = Text.Tr(TranslationTexts.Multiplier, {rate = GameUtility.NumberToText(rate)})
+        priceLabel.Text = price and GameUtility.NumberToText(price) or Text.Tr(TranslationTexts.MultiplierMaxed)
+        diamondIcon.Visible = price ~= nil
     end
     self:WatchDataChanged(PlayerDataConfig.PaidMultiplierTier, RefreshOffer)
     self:TrackConnection(FC.Localization.Changed:Connect(RefreshOffer))
-    button.Parent = self._rootNode
 end
 
 --- 道具说明贴在顶部导航下方，并随安全区域与导航缩放一起移动。
@@ -295,7 +242,8 @@ function Component:ConfigureHudTextSizing()
                 continue
             end
             local designSize = label.TextSize
-            local hasNavigationIcon = label:FindFirstChild("NavigationIcon") ~= nil
+            local navigationIcon = label:FindFirstChild("NavigationIcon")
+            local hasNavigationIcon = navigationIcon and navigationIcon.Visible
             label.TextScaled = false
             local constraint = label:FindFirstChildOfClass("UITextSizeConstraint")
             if constraint then
@@ -438,14 +386,6 @@ end
 
 --- 清理装备监听和自有道具说明，仅隐藏 Studio 提供的 HUD 模板副本。
 function Component:Dtor()
-    if self._navigationIcons then
-        for index, icon in ipairs(self._navigationIcons) do
-            icon:Destroy()
-        end
-    end
-    if self._multiplierButton then
-        self._multiplierButton:Destroy()
-    end
     if self._gmButton then
         self._gmButton:Destroy()
     end
