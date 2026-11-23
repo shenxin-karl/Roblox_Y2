@@ -5,12 +5,19 @@ local FXLoader = FX.Loader
 local Fields = _G.PlayerDataConfig
 local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local WorkshopRules = FXLoader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
+local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local TranslationTexts = FX.Text.Define("BaseWeapon", {
     FinishedRequired = "Equip a finished sword before placing it in an empty slot.",
     BackpackFull = "Not enough backpack space to remove this weapon.",
+    Placed = "Weapon placed.",
+    Removed = "Weapon returned to your backpack.",
+    UpgradeSuccess = "Weapon upgraded to level {level:int}!",
+    UpgradeFailed = "Weapon upgrade failed. Please try again.",
+    MaxLevel = "This weapon is already at its maximum level.",
+    NotEnoughCash = "Not enough cash to upgrade this weapon. You need ${value}.",
 })
 local WeaponVisual = FXLoader:RequireShared("Scripts.Game.Shared.WeaponVisual")
-local Numerical = FXLoader:RequireShared("Scripts.Game.Configs.NumericalConfig")
+local MoneyMultiplier = FXLoader:RequireShared("Scripts.Game.Shared.MoneyMultiplierRules")
 local Comp = FX.Class("SSlotSwordCompClass", "FSPlayerCompClass")
 
 --- 持有本次会话的显示与节流；离线收益快照通过独立玩家字段保存。
@@ -187,7 +194,7 @@ function Comp:RefreshSlots()
     self:Publish()
 end
 
---- 服务端按本人槽位和距离裁定转移；满背包或剑胚均不能完成交易。
+--- 服务端按本人槽位和距离裁定转移，完成后提示武器去向。
 --- @param slotId number 固定在服务端交互回调中的槽位编号。
 function Comp:Transfer(slotId)
     local entry = self._prompts[slotId]
@@ -210,15 +217,11 @@ function Comp:Transfer(slotId)
             {Type = "Item", ItemId = sword.ItemId, Count = 1,
                 ExtraData = traits},
         })
-        if not success then
-            self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.BackpackFull)
-        end
+        self:GetPlayerObject():ShowLocalizedTips(success and TranslationTexts.Removed or TranslationTexts.BackpackFull)
     else
         local grid = self:RequireComponent("FSInventoryComp"):GetEquippedGrid()
         local success = grid and reward:AddRewards({{Type = "SlotSwordPlace", SlotId = slotId, Grid = grid}})
-        if not success then
-            self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.FinishedRequired)
-        end
+        self:GetPlayerObject():ShowLocalizedTips(success and TranslationTexts.Placed or TranslationTexts.FinishedRequired)
     end
 end
 
@@ -304,7 +307,28 @@ function Comp:CollectAll()
     end
 end
 
---- 只升级本人当前槽位的武器；交易成功后立即发布牌子数值，不等待数据监听刷新。
+--- 取得附近最近一把已放置剑的正常价格，供 GM 补齐这次升级所需金币。
+--- @return number? 可升级剑的原价。
+function Comp:GetNearbyUpgradePrice()
+    local closestDistance = math.huge
+    local price
+    for slotId, display in pairs(self._displays) do
+        if self:IsNear(display.Sign, 6) then
+            local sword = self:GetSword(slotId)
+            if Rules.IsValid(sword) and Rules.GetUpgradePrice(sword.Level + 1) < math.huge then
+                local position = self:GetPlayerNode().Character:GetPivot().Position
+                local distance = (display.Sign.Position - position).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    price = Rules.GetUpgradePrice(sword.Level)
+                end
+            end
+        end
+    end
+    return price
+end
+
+--- 只升级本人当前槽位的武器；显示未完成的原因，成功后立即更新牌子和结果提示。
 --- @param slotId any 客户端请求的槽位编号。
 function Comp:Upgrade(slotId)
     if type(slotId) ~= "number" or slotId % 1 ~= 0 then
@@ -317,13 +341,32 @@ function Comp:Upgrade(slotId)
     self._lastUpgrade = os.clock()
     self:Accrue()
     local sword = self:GetSword(slotId)
-    if sword then
-        local success = self:RequireComponent("FSRewardComp"):ExchangeRewards(
-            {{Type = "Money", Currency = "Money", Count = Rules.GetUpgradePrice(sword.Level)}},
-            {{Type = "SlotSwordUpgrade", SlotId = slotId, ExpectedLevel = sword.Level}})
-        if success then
-            self:Publish()
+    local player = self:GetPlayerObject()
+    if not Rules.IsValid(sword) then
+        player:ShowLocalizedTips(TranslationTexts.UpgradeFailed)
+        return
+    end
+    local nextLevel = sword.Level + 1
+    if Rules.GetUpgradePrice(nextLevel) >= math.huge then
+        player:ShowLocalizedTips(TranslationTexts.MaxLevel)
+        return
+    end
+    local costs = {}
+    if self:GetPlayerNode():GetAttribute("GMFreeUpgrades") ~= true then
+        local price = Rules.GetUpgradePrice(sword.Level)
+        if self:GetNumber(Fields.Money) < price then
+            player:ShowLocalizedTips(TranslationTexts.NotEnoughCash, {value = GameUtility.NumberToText(price)})
+            return
         end
+        costs = {{Type = "Money", Currency = "Money", Count = price}}
+    end
+    local success = self:RequireComponent("FSRewardComp"):ExchangeRewards(costs,
+        {{Type = "SlotSwordUpgrade", SlotId = slotId, ExpectedLevel = sword.Level}})
+    if success then
+        self:Publish()
+        player:ShowLocalizedTips(TranslationTexts.UpgradeSuccess, {level = nextLevel})
+    else
+        player:ShowLocalizedTips(TranslationTexts.UpgradeFailed)
     end
 end
 
@@ -356,8 +399,7 @@ end
 --- 付费档位表示最终倍率，历史档位不重复连乘。
 --- @return number 当前有效付费金币倍率。
 function Comp:GetPaidMultiplier()
-    return FX.CurveSampler:SampleCurveGroupColumn(Numerical.paidMultiplierCurves, "multiplier",
-        self:GetNumber(Fields.PaidMultiplierTier))
+    return MoneyMultiplier.GetMultiplier(self:GetNumber(Fields.PaidMultiplierTier))
 end
 
 --- 保存当前基地总秒收益和服务端时间；背包武器不参与离线计算。

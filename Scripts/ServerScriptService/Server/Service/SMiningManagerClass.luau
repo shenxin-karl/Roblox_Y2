@@ -1,11 +1,29 @@
 -- 私人矿场权威状态：每人独立保存整轮矿石，发奖失败不消耗采集次数。
-local FX = _G.FX
+local FX, FS = _G.FX, _G.FS
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local ForgeSettings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
 local Config = _G.GameConfig.CommonConfig
 local Fields = _G.PlayerDataConfig
 local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
+local TranslationTexts = FX.Text.Define("FurnaceSmelt", {
+    Success = "Smelting successful: you received a sword blank.",
+    NotEnoughOre = "Not enough ore. You need {count:int} of the same ore to smelt a sword blank.",
+    BackpackFull = "Your backpack is full. Make room for the sword blank and try again.",
+    TooFar = "Move closer to the furnace to smelt ore.",
+    Failed = "Smelting failed. Please try again.",
+    RockUnavailable = "This rock is no longer available. Try another rock.",
+    RockTooFar = "Move closer to the rock to mine it.",
+    OreBackpackFull = "Your backpack is full. Make room for the ore and try again.",
+    MiningFailed = "Mining failed. Please try again.",
+})
 local Manager = FX.Class("SMiningManagerClass", "FXObjectBaseClass")
+
+--- 矿面是横放的圆柱，局部 X 为厚度；落点保持角色竖直。
+--- @return CFrame 矿区中央、安全高度的传送落点。
+function Manager:GetArrival()
+    local ground = self._ground
+    return CFrame.new(ground.Position + Vector3.new(0, ground.Size.X / 2 + 4, 0))
+end
 
 --- 启动前核对配置与矿场几何；服务端只保存矿石数据，不创建共享石头。
 function Manager:Ctor()
@@ -102,7 +120,7 @@ function Manager:Refresh(player)
     player:SetTable(Fields.MiningData, data)
 end
 
---- 不等待、不让出执行；同一石头的扣次和背包发奖在本次回调中完成。
+--- 同一石头的扣次与发奖一起提交；失败时解释矿石、距离或背包问题。
 --- @param player table 已登录的服务端玩家对象。
 --- @param position Vector3 服务端读取的当前角色位置。
 --- @param rock any 客户端提交的编号，只接受请求者本轮登记的矿石。
@@ -113,27 +131,34 @@ function Manager:Mine(player, position, rock)
     end
     local data = player:GetTable(Fields.MiningData)
     local state = data.Rocks[rock]
-    if not state or state.Hits <= 0 or workspace:GetServerTimeNow() >= data.NextRefresh
-        or (position - Vector3.new(state.X, state.Y, state.Z)).Magnitude > Settings.InteractDistance then
+    if not state or state.Hits <= 0 or workspace:GetServerTimeNow() >= data.NextRefresh then
+        player:ShowLocalizedTips(TranslationTexts.RockUnavailable)
+        return false
+    end
+    if (position - Vector3.new(state.X, state.Y, state.Z)).Magnitude > Settings.InteractDistance then
+        player:ShowLocalizedTips(TranslationTexts.RockTooFar)
         return false
     end
     local reward = player:RequireComponent("FSRewardComp")
     local mutation = _G.GameConfig.MiningRockData[state.Grade]
     local oreCount = Config.MiningOrePerHit * mutation.OreCountMultiplier
+    local rewards = {{Type = "Item", ItemId = mutation.OreItemId, Count = oreCount}}
     if not player:RunDataTransaction(function()
-        if not reward:AddRewards({{Type = "Item", ItemId = mutation.OreItemId, Count = oreCount}}) then
+        if not reward:AddRewards(rewards) then
             return false
         end
         state.Hits -= 1
         return player:SetTable(Fields.MiningData, data)
     end) then
+        player:ShowLocalizedTips(reward:CanAddRewards(rewards) and TranslationTexts.MiningFailed
+            or TranslationTexts.OreBackpackFull)
         return false
     end
     FX.Network:SendMsgToClient(player:GetPlayerId(), "S2C_MiningReward", mutation.OreItemId, oreCount)
     return true
 end
 
---- 仅允许在公共炉或本人炉旁熔炼；优先使用手持矿石，避免默认消耗稀有矿石。
+--- 在公共炉或本人炉旁兑换剑胚，保留手持矿优先规则并反馈实际结果。
 --- @param player table 已登录的服务端玩家对象。
 --- @param position Vector3 服务端读取的角色位置。
 --- @return boolean 是否扣矿并获得剑胚。
@@ -143,6 +168,7 @@ function Manager:Smelt(player, position)
         local workshop = base and base.OwnerUserId == player:GetPlayerId() and ForgeSettings.FindPersonalWorkshop(base.Id)
         local hearth = workshop and FX.Loader:Find(workshop, ForgeSettings.PersonalFurnacePart)
         if not hearth or (hearth.Position - position).Magnitude > ForgeSettings.PersonalInteractDistance then
+            player:ShowLocalizedTips(TranslationTexts.TooFar)
             return false
         end
     end
@@ -163,16 +189,32 @@ function Manager:Smelt(player, position)
             selected = mutation
         end
     end
-    if not selected then
+    if not selected or counts[selected.OreItemId] < Config.FurnaceOreCost then
+        player:ShowLocalizedTips(TranslationTexts.NotEnoughOre, {count = Config.FurnaceOreCost})
         return false
     end
     local furnaceLevel = WorkshopRules.GetLevel(player:GetTableView(Fields.UpgradeWorkshop).smelt)
-    return player:RequireComponent("FSRewardComp"):ExchangeRewards(
-        {{Type = "Item", ItemId = selected.OreItemId, Count = Config.FurnaceOreCost}},
-        {{Type = "Item", ItemId = Config.SwordBlankItemId, Count = 1,
-            ExtraData = {MutationId = selected.MutationId,
-                blankLuckLevel = WorkshopRules.RollBlankLuckLevel(furnaceLevel, self._random)}}}
-    )
+    local oreId = selected.OreItemId
+    local blank = {Type = "Item", ItemId = Config.SwordBlankItemId, Count = 1,
+        ExtraData = {MutationId = selected.MutationId,
+            blankLuckLevel = WorkshopRules.RollBlankLuckLevel(furnaceLevel, self._random)}}
+    local success = player:RequireComponent("FSRewardComp"):ExchangeRewards(
+        {{Type = "Item", ItemId = oreId, Count = Config.FurnaceOreCost}}, {blank})
+    if success then
+        player:ShowLocalizedTips(TranslationTexts.Success)
+        return true
+    end
+
+    -- 只在兑换失败后诊断容量；扣完整堆矿石腾出的格子也必须算进去。
+    local removed = {}
+    local maxStack = _G.ItemConfig.Data[oreId].MaxStack
+    for consumed = 0, Config.FurnaceOreCost - 1, maxStack do
+        local count = math.min(maxStack, Config.FurnaceOreCost - consumed)
+        table.insert(removed, FS.ItemClass.New(oreId, count))
+    end
+    local canFit = inventory:CanAddItems({FS.ItemClass.New(blank.ItemId, 1, blank.ExtraData)}, removed)
+    player:ShowLocalizedTips(canFit and TranslationTexts.Failed or TranslationTexts.BackpackFull)
+    return false
 end
 
 return Manager

@@ -8621,7 +8621,7 @@
     "name": "CurrencyShopUI",
     "properties": {
       "AutoLocalize": true,
-      "DisplayOrder": 0,
+      "DisplayOrder": 30,
       "Enabled": true
     }
   },

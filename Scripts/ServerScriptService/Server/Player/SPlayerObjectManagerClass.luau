@@ -16,6 +16,23 @@ function Manager:Ctor()
     self:RegMiningMsg()
     self:RegUpgradeWorkshopMsg()
     self:RegEconomyMsg()
+    self:RegInventoryMsg()
+end
+
+--- 使用网络层认证的玩家身份路由背包操作。
+function Manager:RegInventoryMsg()
+    FX.Network:RegClientMsgCallback("C2S_SelectInventoryGrid", function(userId, grid, tool)
+        local player = self:GetPlayerObject(userId)
+        local inventory = player and player:GetComponent("FSInventoryComp")
+        if inventory then
+            inventory:SelectGrid(grid, tool)
+        end
+    end)
+    FX.Network:RegClientMsgCallback("C2S_SwapInventoryGrid", function(userId, sourceGrid, targetGrid, sourceTool, targetTool)
+        local player = self:GetPlayerObject(userId)
+        local inventory = player and player:GetComponent("FSInventoryComp")
+        return inventory ~= nil and inventory:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
+    end)
 end
 
 --- 经济操作只转发引擎认证的请求者，不允许指定扣款方或奖励金额。
@@ -42,8 +59,11 @@ function Manager:RegEconomyMsg()
         end
         local player = self:GetPlayerObject(userId)
         local economy = player and player:GetComponent("SEconomyComp")
-        local success = economy ~= nil and economy:ClaimOffline(boosted)
-        FX.Network:SendMsgToClient(userId, "S2C_OfflineIncomeResult", requestId, success)
+        local success, insufficientDiamonds = false, false
+        if economy then
+            success, insufficientDiamonds = economy:ClaimOffline(boosted)
+        end
+        FX.Network:SendMsgToClient(userId, "S2C_OfflineIncomeResult", requestId, success, insufficientDiamonds == true)
     end)
 end
 
@@ -103,13 +123,23 @@ end
 
 --- 锻造请求只转发给认证请求者，不接收目标玩家、台位或坐标。
 function Manager:RegForgeMsg()
+    --- 只允许认证请求者恢复自己的当前损毁进度。
+    --- @param userId number 引擎认证的玩家身份。
+    --- @param failureId any 客户端回传的损毁标识，由组件复核。
+    FX.Network:RegClientMsgCallback("C2S_RecoverForgeSword", function(userId, failureId)
+        local player = self:GetPlayerObject(userId)
+        local forge = player and player:GetComponent("SForgeComp")
+        if forge then
+            forge:RecoverSword(failureId)
+        end
+    end)
     --- 主动出炉只处理请求者持久化的锻造进度，不接受客户端品质。
     --- @param userId number 引擎认证的玩家身份。
     FX.Network:RegClientMsgCallback("C2S_FinishSword", function(userId)
         local player = self:GetPlayerObject(userId)
         local forge = player and player:GetComponent("SForgeComp")
         if forge then
-            forge:FinishSword()
+            forge:FinishSword(true)
         end
     end)
     --- 只对请求者的台位和背包进行锻造，不接受客户端配方或成品参数。
@@ -165,13 +195,14 @@ end
 
 --- 项目命令转发；框架已校验开发者身份，组件仍负责具体动作与会话校验。
 --- @param userId number 引擎认证的请求者 ID。
---- @param action string ResetData 或 SaveNow。
+--- @param action string 调试命令名。
+--- @param payload any 玩法命令参数。
 --- @return table 权威操作结果。
-function Manager:HandleGMCommand(userId, action)
+function Manager:HandleGMCommand(userId, action, payload)
     local player = self:GetPlayerObject(userId)
     local gm = player and player:GetComponent("SGMComp")
     if gm then
-        return gm:Request(action)
+        return gm:Request(action, payload)
     end
     return SGMRecovery.Request(userId, action)
 end

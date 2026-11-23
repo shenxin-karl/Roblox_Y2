@@ -6,6 +6,7 @@ local Text = FX.Text
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local UIRoot = FXLoader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local ModelAnimation = FXLoader:Require(script.Parent.Parent, "CModelAnimation")
+local MoneyRain = FXLoader:Require(script.Parent.Parent, "UI.CMoneyRain")
 local TranslationTexts = Text.Define("SlotSword", {
     Income = "武器\n每秒 ${value}",
     Upgrade = "${value}\n升级 {level:int} → {nextLevel:int}",
@@ -41,6 +42,14 @@ function Comp:OnReady()
         end
         self:RefreshPrompts()
     end))
+    local player = self:GetPlayerNode()
+    self:TrackConnection(player:GetAttributeChangedSignal("GMFreeUpgrades"):Connect(function()
+        for display in pairs(self._views) do
+            if display:GetAttribute("OwnerUserId") == player.UserId then
+                self:Render(display)
+            end
+        end
+    end))
     self:TrackConnection(CollectionService:GetInstanceAddedSignal("BaseWeaponPrompt"):Connect(function(prompt)
         self._prompts[prompt] = true
         self:RefreshPrompts()
@@ -73,7 +82,7 @@ function Comp:RefreshPrompts()
     end
 end
 
---- 跟踪动态实例，不假定标签一定晚于其所有子节点复制。
+--- 跟踪动态实例；服务器确认领取后保留按钮动画，只给领取者播放金币雨。
 --- @param display Model 服务端创建的槽位剑展示容器。
 function Comp:TrackDisplay(display)
     if self._views[display] then
@@ -87,12 +96,16 @@ function Comp:TrackDisplay(display)
     view.Connections[2] = display.AttributeChanged:Connect(function()
         self:Render(display)
     end)
+    --- 服务端仅在奖励提交成功后递增序号。
     view.Connections[3] = display:GetAttributeChangedSignal("CollectSequence"):Connect(function()
         local collect = display:FindFirstChild("CollectArea")
         local target = collect and collect:FindFirstChild("AnimationTarget")
         if target and target.Value then
             view.AnimationTarget = target.Value
             ModelAnimation.PlayPress(target.Value)
+        end
+        if display:GetAttribute("OwnerUserId") == self:GetPlayerId() then
+            MoneyRain.Play()
         end
     end)
     self:BuildView(display)
@@ -229,8 +242,12 @@ function Comp:Render(display)
     local ready = display:GetAttribute("HasSword") == true
         and level ~= nil and income ~= nil and price ~= nil and stored ~= nil
     view.Sign.Enabled, view.Collect.Enabled, view.IncomeGui.Enabled = ready, ready, ready
-    view.Upgrade.Active = display:GetAttribute("OwnerUserId") == self:GetPlayerId()
+    local isOwner = display:GetAttribute("OwnerUserId") == self:GetPlayerId()
+    view.Upgrade.Active = isOwner
     if ready then
+        if isOwner and self:GetPlayerNode():GetAttribute("GMFreeUpgrades") == true then
+            price = 0
+        end
         view.Income.Text = Text.Tr(TranslationTexts.Income, {value = GameUtility.NumberToText(income)})
         view.Upgrade.Text = Text.Tr(TranslationTexts.Upgrade, {
             level = level, nextLevel = level + 1, value = GameUtility.NumberToText(price),

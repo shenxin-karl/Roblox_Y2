@@ -9,6 +9,7 @@ local Settings = {
     ArrivalHeight = 3.5,
     ExitInset = 8,
     RequestCooldown = 0.5,
+    RecoveryDiamondCost = 88,
     PersonalStationOffset = 8,
     PersonalGroundPath = "BlockMeshs.ground.营地铺地.草地",
     PersonalForgePart = "ForgeTable.ThickSteelDesktop",

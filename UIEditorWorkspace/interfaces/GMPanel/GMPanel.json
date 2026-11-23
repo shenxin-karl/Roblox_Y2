@@ -88,8 +88,8 @@
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 2,
@@ -121,15 +121,15 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": 30,
-                      "scale": 0
+                      "offset": -4,
+                      "scale": 1
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 4,
@@ -175,7 +175,7 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": -2,
+                      "offset": -1,
                       "scale": 0
                     }
                   },
@@ -190,10 +190,10 @@
                       "scale": 1
                     }
                   },
-                  "Text": "设置等级",
+                  "Text": "发放剑胚",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
-                  "TextSize": 16,
+                  "TextSize": 17,
                   "TextTransparency": 0,
                   "TextWrapped": true,
                   "TextXAlignment": "Center",
@@ -205,7 +205,7 @@
             ],
             "className": "ImageButton",
             "id": "22fbbbc5-4666-44a7-99f6-fc9110898614",
-            "name": "SetLevelBtn",
+            "name": "GiveBlankBtn",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
@@ -221,11 +221,11 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 20,
+                  "offset": 18,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 20,
+                  "offset": 68,
                   "scale": 0
                 }
               },
@@ -233,11 +233,11 @@
               "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 140,
+                  "offset": 125,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 34,
+                  "offset": 36,
                   "scale": 0
                 }
               },
@@ -309,8 +309,8 @@
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 2,
@@ -342,15 +342,15 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": 30,
-                      "scale": 0
+                      "offset": -4,
+                      "scale": 1
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 4,
@@ -396,7 +396,7 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": -2,
+                      "offset": -1,
                       "scale": 0
                     }
                   },
@@ -411,10 +411,10 @@
                       "scale": 1
                     }
                   },
-                  "Text": "设置重生",
+                  "Text": "发放矿石",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
-                  "TextSize": 16,
+                  "TextSize": 17,
                   "TextTransparency": 0,
                   "TextWrapped": true,
                   "TextXAlignment": "Center",
@@ -426,7 +426,7 @@
             ],
             "className": "ImageButton",
             "id": "e6368750-701c-4f7e-a58d-1854830af03b",
-            "name": "SetRebirthBtn",
+            "name": "GiveOreBtn",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
@@ -442,11 +442,11 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 172,
+                  "offset": 18,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 20,
+                  "offset": 126,
                   "scale": 0
                 }
               },
@@ -454,11 +454,11 @@
               "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 140,
+                  "offset": 125,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 34,
+                  "offset": 36,
                   "scale": 0
                 }
               },
@@ -530,8 +530,8 @@
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 2,
@@ -563,15 +563,15 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": 30,
-                      "scale": 0
+                      "offset": -4,
+                      "scale": 1
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 4,
@@ -617,7 +617,7 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": -2,
+                      "offset": -1,
                       "scale": 0
                     }
                   },
@@ -632,10 +632,10 @@
                       "scale": 1
                     }
                   },
-                  "Text": "设置金钱",
+                  "Text": "发放 1 个剑胚",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
-                  "TextSize": 16,
+                  "TextSize": 17,
                   "TextTransparency": 0,
                   "TextWrapped": true,
                   "TextXAlignment": "Center",
@@ -647,7 +647,7 @@
             ],
             "className": "ImageButton",
             "id": "db88deb8-1cd1-44fe-ba6a-e93e908e320f",
-            "name": "SetMoneyBtn",
+            "name": "GiveSwordBtn",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
@@ -663,11 +663,11 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 324,
+                  "offset": 18,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 20,
+                  "offset": 184,
                   "scale": 0
                 }
               },
@@ -675,11 +675,11 @@
               "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 140,
+                  "offset": 125,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 34,
+                  "offset": 36,
                   "scale": 0
                 }
               },
@@ -751,8 +751,8 @@
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 2,
@@ -774,7 +774,7 @@
                     "y": 0
                   },
                   "AutoLocalize": true,
-                  "BackgroundColor3": "#225a07",
+                  "BackgroundColor3": "#263e36",
                   "BackgroundTransparency": 0.2,
                   "ClipsDescendants": false,
                   "LayoutOrder": 0,
@@ -784,15 +784,15 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": 30,
-                      "scale": 0
+                      "offset": -4,
+                      "scale": 1
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 4,
@@ -834,32 +834,94 @@
                   "LayoutOrder": 0,
                   "Position": {
                     "x": {
-                      "offset": 0,
+                      "offset": 236,
                       "scale": 0
                     },
                     "y": {
-                      "offset": -2,
+                      "offset": -1,
                       "scale": 0
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 0,
-                      "scale": 1
+                      "offset": 51,
+                      "scale": 0
                     },
                     "y": {
-                      "offset": 0,
-                      "scale": 1
+                      "offset": 36,
+                      "scale": 0
                     }
                   },
-                  "Text": "设置钻石",
+                  "Text": "",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
-                  "TextSize": 16,
+                  "TextSize": 17,
                   "TextTransparency": 0,
                   "TextWrapped": true,
-                  "TextXAlignment": "Center",
+                  "TextXAlignment": "Right",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              },
+              {
+                "children": [
+                  {
+                    "children": [],
+                    "className": "UIStroke",
+                    "id": "98a34c57-e015-41be-b9ff-62875cb85af9",
+                    "name": "TextStroke",
+                    "properties": {
+                      "Color": "#20231c",
+                      "Enabled": true,
+                      "Thickness": 2,
+                      "Transparency": 0
+                    }
+                  }
+                ],
+                "className": "TextLabel",
+                "id": "7ca96d19-f78e-4ef7-94ff-7ef1b6b21f23",
+                "name": "CaptionTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 13,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": -1,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 224,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 36,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "免费升级",
+                  "TextColor3": "#ffffff",
+                  "TextScaled": false,
+                  "TextSize": 17,
+                  "TextTransparency": 0,
+                  "TextWrapped": true,
+                  "TextXAlignment": "Left",
                   "TextYAlignment": "Center",
                   "Visible": true,
                   "ZIndex": 5
@@ -868,14 +930,14 @@
             ],
             "className": "ImageButton",
             "id": "5c773aea-de4b-4423-bc79-e35903bb131a",
-            "name": "SetDiamondsBtn",
+            "name": "SetFreeUpgradesBtn",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
                 "y": 0
               },
               "AutoLocalize": true,
-              "BackgroundColor3": "#67ed14",
+              "BackgroundColor3": "#638079",
               "BackgroundTransparency": 0,
               "ClipsDescendants": false,
               "Image": "rbxassetid://82793028306773",
@@ -884,11 +946,11 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 476,
+                  "offset": 332,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 20,
+                  "offset": 58,
                   "scale": 0
                 }
               },
@@ -896,11 +958,11 @@
               "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 140,
+                  "offset": 300,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 34,
+                  "offset": 36,
                   "scale": 0
                 }
               },
@@ -972,8 +1034,8 @@
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 2,
@@ -995,7 +1057,7 @@
                     "y": 0
                   },
                   "AutoLocalize": true,
-                  "BackgroundColor3": "#7d2519",
+                  "BackgroundColor3": "#263e36",
                   "BackgroundTransparency": 0.2,
                   "ClipsDescendants": false,
                   "LayoutOrder": 0,
@@ -1005,15 +1067,15 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": 30,
-                      "scale": 0
+                      "offset": -4,
+                      "scale": 1
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 4,
@@ -1055,32 +1117,94 @@
                   "LayoutOrder": 0,
                   "Position": {
                     "x": {
-                      "offset": 0,
+                      "offset": 236,
                       "scale": 0
                     },
                     "y": {
-                      "offset": 0,
+                      "offset": -1,
                       "scale": 0
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 0,
-                      "scale": 1
+                      "offset": 51,
+                      "scale": 0
                     },
                     "y": {
-                      "offset": 0,
-                      "scale": 1
+                      "offset": 36,
+                      "scale": 0
                     }
                   },
                   "Text": "",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
-                  "TextSize": 16,
+                  "TextSize": 17,
                   "TextTransparency": 0,
                   "TextWrapped": true,
-                  "TextXAlignment": "Center",
+                  "TextXAlignment": "Right",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              },
+              {
+                "children": [
+                  {
+                    "children": [],
+                    "className": "UIStroke",
+                    "id": "f58f6ede-1b46-488b-a84a-da6f7b94ee8c",
+                    "name": "TextStroke",
+                    "properties": {
+                      "Color": "#20231c",
+                      "Enabled": true,
+                      "Thickness": 2,
+                      "Transparency": 0
+                    }
+                  }
+                ],
+                "className": "TextLabel",
+                "id": "e86cd385-0dbf-4b22-819b-f7ac1db5029f",
+                "name": "CaptionTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 13,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": -1,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 224,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 36,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "锻造必定成功",
+                  "TextColor3": "#ffffff",
+                  "TextScaled": false,
+                  "TextSize": 17,
+                  "TextTransparency": 0,
+                  "TextWrapped": true,
+                  "TextXAlignment": "Left",
                   "TextYAlignment": "Center",
                   "Visible": true,
                   "ZIndex": 5
@@ -1089,14 +1213,14 @@
             ],
             "className": "ImageButton",
             "id": "4db2527a-2e65-4854-ae4b-eb6a9fe45355",
-            "name": "ResetDataBtn",
+            "name": "SetGuaranteedForgeBtn",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
                 "y": 0
               },
               "AutoLocalize": true,
-              "BackgroundColor3": "#f2654d",
+              "BackgroundColor3": "#638079",
               "BackgroundTransparency": 0,
               "ClipsDescendants": false,
               "Image": "rbxassetid://82793028306773",
@@ -1105,11 +1229,11 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 20,
+                  "offset": 332,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 66,
+                  "offset": 102,
                   "scale": 0
                 }
               },
@@ -1117,11 +1241,11 @@
               "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 140,
+                  "offset": 300,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 34,
+                  "offset": 36,
                   "scale": 0
                 }
               },
@@ -1193,8 +1317,8 @@
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 2,
@@ -1226,15 +1350,15 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": 30,
-                      "scale": 0
+                      "offset": -4,
+                      "scale": 1
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 4,
@@ -1280,7 +1404,7 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": -2,
+                      "offset": -1,
                       "scale": 0
                     }
                   },
@@ -1295,10 +1419,10 @@
                       "scale": 1
                     }
                   },
-                  "Text": "立即保存",
+                  "Text": "发放 1 级剑",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
-                  "TextSize": 16,
+                  "TextSize": 17,
                   "TextTransparency": 0,
                   "TextWrapped": true,
                   "TextXAlignment": "Center",
@@ -1310,7 +1434,7 @@
             ],
             "className": "ImageButton",
             "id": "77ee0d23-2e34-4d1e-a452-dbcf2e511dcf",
-            "name": "SaveNowBtn",
+            "name": "GiveLevelOneSwordBtn",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
@@ -1326,11 +1450,11 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 172,
+                  "offset": 332,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 66,
+                  "offset": 146,
                   "scale": 0
                 }
               },
@@ -1338,11 +1462,11 @@
               "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 140,
+                  "offset": 300,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 34,
+                  "offset": 36,
                   "scale": 0
                 }
               },
@@ -1358,417 +1482,6 @@
               },
               "Visible": true,
               "ZIndex": 3
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [],
-                "className": "UIStroke",
-                "id": "f35e392e-ddac-4cc6-b37d-9998e145777e",
-                "name": "TextStroke",
-                "properties": {
-                  "Color": "#000000",
-                  "Enabled": true,
-                  "Thickness": 1,
-                  "Transparency": 0
-                }
-              }
-            ],
-            "className": "TextLabel",
-            "id": "d076d1a5-09d5-4d0d-9a2d-a68ce4bfb6fe",
-            "name": "Param1LabelTxt",
-            "properties": {
-              "AnchorPoint": {
-                "x": 0,
-                "y": 0
-              },
-              "AutoLocalize": false,
-              "BackgroundColor3": "#ffffff",
-              "BackgroundTransparency": 1,
-              "ClipsDescendants": false,
-              "Font": "GothamBold",
-              "LayoutOrder": 0,
-              "Position": {
-                "x": {
-                  "offset": 20,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 224,
-                  "scale": 0
-                }
-              },
-              "Rotation": 0,
-              "Size": {
-                "x": {
-                  "offset": 190,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 24,
-                  "scale": 0
-                }
-              },
-              "Text": "参数 1",
-              "TextColor3": "#FFFFFF",
-              "TextScaled": false,
-              "TextSize": 16,
-              "TextTransparency": 0,
-              "TextWrapped": false,
-              "TextXAlignment": "Left",
-              "TextYAlignment": "Center",
-              "Visible": true,
-              "ZIndex": 5
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [],
-                "className": "UICorner",
-                "id": "be132a5f-63fd-485d-ac92-5fda5d8017c7",
-                "name": "UICorner",
-                "properties": {
-                  "CornerRadius": {
-                    "offset": 6,
-                    "scale": 0
-                  }
-                }
-              },
-              {
-                "children": [],
-                "className": "UIStroke",
-                "id": "427a9d4a-e202-4b92-97a0-5ae4878a0ca0",
-                "name": "UIStroke",
-                "properties": {
-                  "Color": "#000000",
-                  "Enabled": true,
-                  "Thickness": 2,
-                  "Transparency": 0
-                }
-              }
-            ],
-            "className": "TextBox",
-            "id": "add2eac5-c836-47a0-949a-f7e23f4cfb04",
-            "name": "Param1Input",
-            "properties": {
-              "AnchorPoint": {
-                "x": 0,
-                "y": 0
-              },
-              "AutoLocalize": false,
-              "BackgroundColor3": "#17221F",
-              "BackgroundTransparency": 0.12,
-              "ClipsDescendants": false,
-              "Font": "GothamBold",
-              "LayoutOrder": 0,
-              "PlaceholderText": "",
-              "Position": {
-                "x": {
-                  "offset": 20,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 252,
-                  "scale": 0
-                }
-              },
-              "Rotation": 0,
-              "Size": {
-                "x": {
-                  "offset": 190,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 36,
-                  "scale": 0
-                }
-              },
-              "Text": "",
-              "TextColor3": "#FFFFFF",
-              "TextScaled": false,
-              "TextSize": 16,
-              "TextTransparency": 0,
-              "TextWrapped": false,
-              "TextXAlignment": "Center",
-              "TextYAlignment": "Center",
-              "Visible": true,
-              "ZIndex": 5
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [],
-                "className": "UIStroke",
-                "id": "9214bb62-0748-4e79-85b2-27dc775236b5",
-                "name": "TextStroke",
-                "properties": {
-                  "Color": "#000000",
-                  "Enabled": true,
-                  "Thickness": 1,
-                  "Transparency": 0
-                }
-              }
-            ],
-            "className": "TextLabel",
-            "id": "4ef0b5e5-c4bd-4e27-9191-ff954ef9e1ba",
-            "name": "Param2LabelTxt",
-            "properties": {
-              "AnchorPoint": {
-                "x": 0,
-                "y": 0
-              },
-              "AutoLocalize": false,
-              "BackgroundColor3": "#ffffff",
-              "BackgroundTransparency": 1,
-              "ClipsDescendants": false,
-              "Font": "GothamBold",
-              "LayoutOrder": 0,
-              "Position": {
-                "x": {
-                  "offset": 230,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 224,
-                  "scale": 0
-                }
-              },
-              "Rotation": 0,
-              "Size": {
-                "x": {
-                  "offset": 190,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 24,
-                  "scale": 0
-                }
-              },
-              "Text": "参数 2",
-              "TextColor3": "#FFFFFF",
-              "TextScaled": false,
-              "TextSize": 16,
-              "TextTransparency": 0,
-              "TextWrapped": false,
-              "TextXAlignment": "Left",
-              "TextYAlignment": "Center",
-              "Visible": true,
-              "ZIndex": 5
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [],
-                "className": "UICorner",
-                "id": "7da9aa3f-bb9c-4a63-ae55-10ecc9ebec6e",
-                "name": "UICorner",
-                "properties": {
-                  "CornerRadius": {
-                    "offset": 6,
-                    "scale": 0
-                  }
-                }
-              },
-              {
-                "children": [],
-                "className": "UIStroke",
-                "id": "bc81942a-9dfd-4ae5-a40a-b8c54b8acf85",
-                "name": "UIStroke",
-                "properties": {
-                  "Color": "#000000",
-                  "Enabled": true,
-                  "Thickness": 2,
-                  "Transparency": 0
-                }
-              }
-            ],
-            "className": "TextBox",
-            "id": "0382fbcb-386f-4369-940c-c0409acdd627",
-            "name": "Param2Input",
-            "properties": {
-              "AnchorPoint": {
-                "x": 0,
-                "y": 0
-              },
-              "AutoLocalize": false,
-              "BackgroundColor3": "#17221F",
-              "BackgroundTransparency": 0.12,
-              "ClipsDescendants": false,
-              "Font": "GothamBold",
-              "LayoutOrder": 0,
-              "PlaceholderText": "",
-              "Position": {
-                "x": {
-                  "offset": 230,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 252,
-                  "scale": 0
-                }
-              },
-              "Rotation": 0,
-              "Size": {
-                "x": {
-                  "offset": 190,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 36,
-                  "scale": 0
-                }
-              },
-              "Text": "",
-              "TextColor3": "#FFFFFF",
-              "TextScaled": false,
-              "TextSize": 16,
-              "TextTransparency": 0,
-              "TextWrapped": false,
-              "TextXAlignment": "Center",
-              "TextYAlignment": "Center",
-              "Visible": true,
-              "ZIndex": 5
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [],
-                "className": "UIStroke",
-                "id": "31dc58fa-4bd7-4800-97db-b2611d0585a5",
-                "name": "TextStroke",
-                "properties": {
-                  "Color": "#000000",
-                  "Enabled": true,
-                  "Thickness": 1,
-                  "Transparency": 0
-                }
-              }
-            ],
-            "className": "TextLabel",
-            "id": "79f438b0-b0af-4bb2-8940-6f0d30d3bdc6",
-            "name": "Param3LabelTxt",
-            "properties": {
-              "AnchorPoint": {
-                "x": 0,
-                "y": 0
-              },
-              "AutoLocalize": false,
-              "BackgroundColor3": "#ffffff",
-              "BackgroundTransparency": 1,
-              "ClipsDescendants": false,
-              "Font": "GothamBold",
-              "LayoutOrder": 0,
-              "Position": {
-                "x": {
-                  "offset": 440,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 224,
-                  "scale": 0
-                }
-              },
-              "Rotation": 0,
-              "Size": {
-                "x": {
-                  "offset": 190,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 24,
-                  "scale": 0
-                }
-              },
-              "Text": "参数 3",
-              "TextColor3": "#FFFFFF",
-              "TextScaled": false,
-              "TextSize": 16,
-              "TextTransparency": 0,
-              "TextWrapped": false,
-              "TextXAlignment": "Left",
-              "TextYAlignment": "Center",
-              "Visible": true,
-              "ZIndex": 5
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [],
-                "className": "UICorner",
-                "id": "12a59af9-3635-423f-88f3-246c2606acbd",
-                "name": "UICorner",
-                "properties": {
-                  "CornerRadius": {
-                    "offset": 6,
-                    "scale": 0
-                  }
-                }
-              },
-              {
-                "children": [],
-                "className": "UIStroke",
-                "id": "b9245381-ae3b-47ae-b242-71b5ce87b5be",
-                "name": "UIStroke",
-                "properties": {
-                  "Color": "#000000",
-                  "Enabled": true,
-                  "Thickness": 2,
-                  "Transparency": 0
-                }
-              }
-            ],
-            "className": "TextBox",
-            "id": "ae009598-ab31-481e-900f-8e592df1316c",
-            "name": "Param3Input",
-            "properties": {
-              "AnchorPoint": {
-                "x": 0,
-                "y": 0
-              },
-              "AutoLocalize": false,
-              "BackgroundColor3": "#17221F",
-              "BackgroundTransparency": 0.12,
-              "ClipsDescendants": false,
-              "Font": "GothamBold",
-              "LayoutOrder": 0,
-              "PlaceholderText": "",
-              "Position": {
-                "x": {
-                  "offset": 440,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 252,
-                  "scale": 0
-                }
-              },
-              "Rotation": 0,
-              "Size": {
-                "x": {
-                  "offset": 190,
-                  "scale": 0
-                },
-                "y": {
-                  "offset": 36,
-                  "scale": 0
-                }
-              },
-              "Text": "",
-              "TextColor3": "#FFFFFF",
-              "TextScaled": false,
-              "TextSize": 16,
-              "TextTransparency": 0,
-              "TextWrapped": false,
-              "TextXAlignment": "Center",
-              "TextYAlignment": "Center",
-              "Visible": true,
-              "ZIndex": 5
             }
           },
           {
@@ -1825,8 +1538,8 @@
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 2,
@@ -1858,15 +1571,15 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": 30,
-                      "scale": 0
+                      "offset": -4,
+                      "scale": 1
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 140,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 4,
@@ -1912,7 +1625,7 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": -2,
+                      "offset": -1,
                       "scale": 0
                     }
                   },
@@ -1927,10 +1640,10 @@
                       "scale": 1
                     }
                   },
-                  "Text": "添加道具",
+                  "Text": "补足升级材料",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
-                  "TextSize": 16,
+                  "TextSize": 17,
                   "TextTransparency": 0,
                   "TextWrapped": true,
                   "TextXAlignment": "Center",
@@ -1942,7 +1655,7 @@
             ],
             "className": "ImageButton",
             "id": "f8ade16c-7ed6-41a6-852d-2911d02011f5",
-            "name": "AddItemBtn",
+            "name": "PrepareUpgradeBtn",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
@@ -1958,11 +1671,11 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 324,
+                  "offset": 332,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 66,
+                  "offset": 190,
                   "scale": 0
                 }
               },
@@ -1970,11 +1683,11 @@
               "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 140,
+                  "offset": 300,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 34,
+                  "offset": 36,
                   "scale": 0
                 }
               },
@@ -2046,8 +1759,8 @@
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 292,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 2,
@@ -2069,7 +1782,7 @@
                     "y": 0
                   },
                   "AutoLocalize": true,
-                  "BackgroundColor3": "#225a07",
+                  "BackgroundColor3": "#7d2519",
                   "BackgroundTransparency": 0.2,
                   "ClipsDescendants": false,
                   "LayoutOrder": 0,
@@ -2079,15 +1792,15 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": 30,
-                      "scale": 0
+                      "offset": -4,
+                      "scale": 1
                     }
                   },
                   "Rotation": 0,
                   "Size": {
                     "x": {
-                      "offset": 292,
-                      "scale": 0
+                      "offset": 0,
+                      "scale": 1
                     },
                     "y": {
                       "offset": 4,
@@ -2133,7 +1846,7 @@
                       "scale": 0
                     },
                     "y": {
-                      "offset": -2,
+                      "offset": -1,
                       "scale": 0
                     }
                   },
@@ -2148,10 +1861,10 @@
                       "scale": 1
                     }
                   },
-                  "Text": "一键达到当前重生所需等级",
+                  "Text": "测试锻造损毁",
                   "TextColor3": "#ffffff",
                   "TextScaled": false,
-                  "TextSize": 16,
+                  "TextSize": 17,
                   "TextTransparency": 0,
                   "TextWrapped": true,
                   "TextXAlignment": "Center",
@@ -2163,14 +1876,14 @@
             ],
             "className": "ImageButton",
             "id": "b1e20960-cd43-484f-870a-eff5fffd1cc8",
-            "name": "ReachRebirthLevelBtn",
+            "name": "BreakSwordBtn",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
                 "y": 0
               },
               "AutoLocalize": true,
-              "BackgroundColor3": "#67ed14",
+              "BackgroundColor3": "#f2654d",
               "BackgroundTransparency": 0,
               "ClipsDescendants": false,
               "Image": "rbxassetid://82793028306773",
@@ -2179,11 +1892,11 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 20,
+                  "offset": 332,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 112,
+                  "offset": 234,
                   "scale": 0
                 }
               },
@@ -2191,11 +1904,11 @@
               "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 292,
+                  "offset": 300,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 34,
+                  "offset": 36,
                   "scale": 0
                 }
               },
@@ -2218,7 +1931,7 @@
               {
                 "children": [],
                 "className": "UICorner",
-                "id": "4ab0d304-a6e2-4b11-81fa-b843430f1472",
+                "id": "f21caf29-090a-4aca-a7ae-08fdeacf9345",
                 "name": "UICorner",
                 "properties": {
                   "CornerRadius": {
@@ -2226,193 +1939,275 @@
                     "scale": 0
                   }
                 }
-              },
-              {
-                "children": [],
-                "className": "UIStroke",
-                "id": "38b14d12-fa39-46b3-91e0-b00a30e02a5a",
-                "name": "UIStroke",
-                "properties": {
-                  "Color": "#000000",
-                  "Enabled": true,
-                  "Thickness": 3,
-                  "Transparency": 0
-                }
-              },
-              {
-                "children": [],
-                "className": "Frame",
-                "id": "ab676704-1df5-4f16-b374-66f021798704",
-                "name": "TopHighlightImg",
-                "properties": {
-                  "AnchorPoint": {
-                    "x": 0,
-                    "y": 0
-                  },
-                  "AutoLocalize": true,
-                  "BackgroundColor3": "#ffffff",
-                  "BackgroundTransparency": 0.58,
-                  "ClipsDescendants": false,
-                  "LayoutOrder": 0,
-                  "Position": {
-                    "x": {
-                      "offset": 0,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 0,
-                      "scale": 0
-                    }
-                  },
-                  "Rotation": 0,
-                  "Size": {
-                    "x": {
-                      "offset": 292,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 2,
-                      "scale": 0
-                    }
-                  },
-                  "Visible": true,
-                  "ZIndex": 4
-                }
-              },
-              {
-                "children": [],
-                "className": "Frame",
-                "id": "97df5c1f-06d7-49b9-b326-3e6ebaf2c116",
-                "name": "BottomEdgeImg",
-                "properties": {
-                  "AnchorPoint": {
-                    "x": 0,
-                    "y": 0
-                  },
-                  "AutoLocalize": true,
-                  "BackgroundColor3": "#225a07",
-                  "BackgroundTransparency": 0.2,
-                  "ClipsDescendants": false,
-                  "LayoutOrder": 0,
-                  "Position": {
-                    "x": {
-                      "offset": 0,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 30,
-                      "scale": 0
-                    }
-                  },
-                  "Rotation": 0,
-                  "Size": {
-                    "x": {
-                      "offset": 292,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": 4,
-                      "scale": 0
-                    }
-                  },
-                  "Visible": true,
-                  "ZIndex": 4
-                }
-              },
-              {
-                "children": [
-                  {
-                    "children": [],
-                    "className": "UIStroke",
-                    "id": "e7c864e6-1038-4c59-a151-d5acc76cf790",
-                    "name": "TextStroke",
-                    "properties": {
-                      "Color": "#20231c",
-                      "Enabled": true,
-                      "Thickness": 2,
-                      "Transparency": 0
-                    }
-                  }
-                ],
-                "className": "TextLabel",
-                "id": "fa0c294d-e33f-461f-b855-408c5f7b0c72",
-                "name": "ButtonTxt",
-                "properties": {
-                  "AnchorPoint": {
-                    "x": 0,
-                    "y": 0
-                  },
-                  "AutoLocalize": false,
-                  "BackgroundColor3": "#ffffff",
-                  "BackgroundTransparency": 1,
-                  "ClipsDescendants": false,
-                  "Font": "GothamBold",
-                  "LayoutOrder": 0,
-                  "Position": {
-                    "x": {
-                      "offset": 0,
-                      "scale": 0
-                    },
-                    "y": {
-                      "offset": -2,
-                      "scale": 0
-                    }
-                  },
-                  "Rotation": 0,
-                  "Size": {
-                    "x": {
-                      "offset": 0,
-                      "scale": 1
-                    },
-                    "y": {
-                      "offset": 0,
-                      "scale": 1
-                    }
-                  },
-                  "Text": "一键解锁全部图鉴",
-                  "TextColor3": "#ffffff",
-                  "TextScaled": false,
-                  "TextSize": 16,
-                  "TextTransparency": 0,
-                  "TextWrapped": true,
-                  "TextXAlignment": "Center",
-                  "TextYAlignment": "Center",
-                  "Visible": true,
-                  "ZIndex": 5
-                }
               }
             ],
-            "className": "ImageButton",
-            "id": "b7037c04-ed24-41d7-8a91-18147ca6a81c",
-            "name": "UnlockAllCollectionsBtn",
+            "className": "TextBox",
+            "id": "b5d9113a-51e0-4b9a-af8a-5fa91eaa6892",
+            "name": "GiveBlankIdInput",
             "properties": {
               "AnchorPoint": {
                 "x": 0,
                 "y": 0
               },
-              "AutoLocalize": true,
-              "BackgroundColor3": "#67ed14",
-              "BackgroundTransparency": 0,
+              "AutoLocalize": false,
+              "BackgroundColor3": "#f1f3f2",
+              "BackgroundTransparency": 0.12,
               "ClipsDescendants": false,
-              "Image": "rbxassetid://82793028306773",
-              "ImageColor3": "#ffffff",
-              "ImageTransparency": 0,
+              "Font": "Gotham",
               "LayoutOrder": 0,
+              "PlaceholderText": "剑胚编号",
               "Position": {
                 "x": {
-                  "offset": 324,
+                  "offset": 151,
                   "scale": 0
                 },
                 "y": {
-                  "offset": 112,
+                  "offset": 68,
                   "scale": 0
                 }
               },
               "Rotation": 0,
-              "ScaleType": "Tile",
               "Size": {
                 "x": {
-                  "offset": 292,
+                  "offset": 84,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 36,
+                  "scale": 0
+                }
+              },
+              "Text": "",
+              "TextColor3": "#182322",
+              "TextScaled": false,
+              "TextSize": 16,
+              "TextTransparency": 0,
+              "TextWrapped": false,
+              "TextXAlignment": "Center",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 5
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "44524ef9-74e2-496e-ae71-6bf411f5f7e9",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              }
+            ],
+            "className": "TextBox",
+            "id": "fbe4a684-3484-4a37-9c6e-ffafae055931",
+            "name": "GiveBlankAmountInput",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": false,
+              "BackgroundColor3": "#f1f3f2",
+              "BackgroundTransparency": 0.12,
+              "ClipsDescendants": false,
+              "Font": "Gotham",
+              "LayoutOrder": 0,
+              "PlaceholderText": "数量",
+              "Position": {
+                "x": {
+                  "offset": 243,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 68,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 61,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 36,
+                  "scale": 0
+                }
+              },
+              "Text": "",
+              "TextColor3": "#182322",
+              "TextScaled": false,
+              "TextSize": 16,
+              "TextTransparency": 0,
+              "TextWrapped": false,
+              "TextXAlignment": "Center",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 5
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "284e42e8-37ab-4dae-80b7-ebf809e97c8e",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              }
+            ],
+            "className": "TextBox",
+            "id": "bec540f3-6f3b-4bf2-937f-57ff7b01a470",
+            "name": "GiveOreIdInput",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": false,
+              "BackgroundColor3": "#f1f3f2",
+              "BackgroundTransparency": 0.12,
+              "ClipsDescendants": false,
+              "Font": "Gotham",
+              "LayoutOrder": 0,
+              "PlaceholderText": "矿石编号",
+              "Position": {
+                "x": {
+                  "offset": 151,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 126,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 84,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 36,
+                  "scale": 0
+                }
+              },
+              "Text": "",
+              "TextColor3": "#182322",
+              "TextScaled": false,
+              "TextSize": 16,
+              "TextTransparency": 0,
+              "TextWrapped": false,
+              "TextXAlignment": "Center",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 5
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "c6675391-2ec8-416a-90fa-8222568a5b37",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              }
+            ],
+            "className": "TextBox",
+            "id": "b692a19a-dcea-4a5f-8cca-c557ec52e26c",
+            "name": "GiveOreAmountInput",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": false,
+              "BackgroundColor3": "#f1f3f2",
+              "BackgroundTransparency": 0.12,
+              "ClipsDescendants": false,
+              "Font": "Gotham",
+              "LayoutOrder": 0,
+              "PlaceholderText": "数量",
+              "Position": {
+                "x": {
+                  "offset": 243,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 126,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 61,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 36,
+                  "scale": 0
+                }
+              },
+              "Text": "",
+              "TextColor3": "#182322",
+              "TextScaled": false,
+              "TextSize": 16,
+              "TextTransparency": 0,
+              "TextWrapped": false,
+              "TextXAlignment": "Center",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 5
+            }
+          },
+          {
+            "children": [],
+            "className": "TextLabel",
+            "id": "77bd515d-9b92-4b16-b198-25278c84dfea",
+            "name": "GrantHeadingTxt",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": false,
+              "BackgroundColor3": "#ffffff",
+              "BackgroundTransparency": 1,
+              "ClipsDescendants": false,
+              "Font": "GothamBold",
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 18,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 15,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 286,
                   "scale": 0
                 },
                 "y": {
@@ -2420,9 +2215,97 @@
                   "scale": 0
                 }
               },
-              "TileSize": {
+              "Text": "发放物品",
+              "TextColor3": "#ffffff",
+              "TextScaled": false,
+              "TextSize": 21,
+              "TextTransparency": 0,
+              "TextWrapped": true,
+              "TextXAlignment": "Left",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 4
+            }
+          },
+          {
+            "children": [],
+            "className": "TextLabel",
+            "id": "aca8f124-4443-46e4-aca7-2d775951c531",
+            "name": "TestHeadingTxt",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": false,
+              "BackgroundColor3": "#ffffff",
+              "BackgroundTransparency": 1,
+              "ClipsDescendants": false,
+              "Font": "GothamBold",
+              "LayoutOrder": 0,
+              "Position": {
                 "x": {
-                  "offset": 28,
+                  "offset": 332,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 15,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 300,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 34,
+                  "scale": 0
+                }
+              },
+              "Text": "功能测试",
+              "TextColor3": "#ffffff",
+              "TextScaled": false,
+              "TextSize": 21,
+              "TextTransparency": 0,
+              "TextWrapped": true,
+              "TextXAlignment": "Left",
+              "TextYAlignment": "Center",
+              "Visible": true,
+              "ZIndex": 4
+            }
+          },
+          {
+            "children": [],
+            "className": "TextLabel",
+            "id": "ba521e4f-2db7-4d0e-985c-10d8555f0117",
+            "name": "GrantHintTxt",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": false,
+              "BackgroundColor3": "#ffffff",
+              "BackgroundTransparency": 1,
+              "ClipsDescendants": false,
+              "Font": "GothamBold",
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 18,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 228,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 286,
                   "scale": 0
                 },
                 "y": {
@@ -2430,8 +2313,16 @@
                   "scale": 0
                 }
               },
+              "Text": "数量留空时默认为 1。",
+              "TextColor3": "#d6ddda",
+              "TextScaled": false,
+              "TextSize": 16,
+              "TextTransparency": 0,
+              "TextWrapped": true,
+              "TextXAlignment": "Left",
+              "TextYAlignment": "Center",
               "Visible": true,
-              "ZIndex": 3
+              "ZIndex": 4
             }
           }
         ],
@@ -2745,7 +2636,7 @@
               "LayoutOrder": 0,
               "Position": {
                 "x": {
-                  "offset": 124,
+                  "offset": 70,
                   "scale": 0
                 },
                 "y": {
@@ -2756,7 +2647,7 @@
               "Rotation": 0,
               "Size": {
                 "x": {
-                  "offset": 438,
+                  "offset": 510,
                   "scale": 0
                 },
                 "y": {
@@ -2764,13 +2655,13 @@
                   "scale": 0
                 }
               },
-              "Text": "GM 管理面板",
+              "Text": "GM 面板",
               "TextColor3": "#ffffff",
               "TextScaled": false,
-              "TextSize": 20,
+              "TextSize": 22,
               "TextTransparency": 0,
               "TextWrapped": false,
-              "TextXAlignment": "Left",
+              "TextXAlignment": "Center",
               "TextYAlignment": "Center",
               "Visible": true,
               "ZIndex": 6
@@ -2886,8 +2777,8 @@
     "name": "GMPanelUI",
     "properties": {
       "AutoLocalize": true,
-      "DisplayOrder": 0,
-      "Enabled": true
+      "DisplayOrder": 20,
+      "Enabled": false
     }
   },
   "version": 4

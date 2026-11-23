@@ -1,5 +1,5 @@
 --[[
-福利中心统一接入契约（离线 / 每日钻石 / 签到 / 在线 / 任务）
+福利中心统一接入契约（每日钻石 / 签到 / 在线 / 任务）
 
 【一、公共约定与完整数据结构】
   Config、State 均为完整表，以下标为必填的字段无默认值。
@@ -9,9 +9,6 @@
   View 内按 Text.TrSource 或 Text.Tr 查询。ID 不翻译。
 
 【二、Config：完整配置】
-  offline: table，必填。
-    rewardId: string，必填；稳定离线奖励批次 ID，不是奖励物品 ID。
-    boostMultiplier: number，必填；大于 1 的配置倍率，仅表示请求倍率，不用于 View 计算奖励。
   diamonds: table，必填。
     rewardId: string，必填；稳定每日钻石奖励业务 ID。
     loginAmount: number，必填；登录奖励钻石数量。
@@ -41,22 +38,6 @@
         （RGB 三个分量，各 0..255）；当前布局只有一个大奖槽，至多一项。
 
 【三、State：Render 的完整输入】
-  offline: table，必填；以下 seconds/training/boostedTraining/status/boostPrice/boostCurrency 必填。
-    seconds: number，非负离线秒数；本页不单独显示时长。
-    training: number，非负基础奖励数量。
-    boostedTraining: number，非负加成奖励数量，由业务层提供，View 不自行计算。
-    boostAvailable: boolean，必填；业务确认加成奖励高于普通奖励时为 true。
-    status: Status；Claimed 时隐藏两个领取按钮，保留权威奖励数值。
-    boostPrice: number，非负显示价格，不代表支付授权。
-    boostCurrency: "Coin" | "Gem" | "Robux"，价格货币，对应设计中的图片库图标。
-    pending: boolean，可选，省略 false；请求中禁用两个领取按钮。
-    pendingMultiplier: number，可选；1 或配置加成倍率，仅被点击按钮显示 Claiming。
-    error: string，可选，错误原文。
-    errorText: string，可选，最终译文，优先于 error。
-    状态提示优先级：pending > Claimed > errorText > error > 无奖励；无提示时隐藏。
-    仅 status=Claimable 且 training>0 时显示两个按钮；普通领取独立可用，
-    加成领取还须 boostAvailable=true，无额外收益时保留数值并禁用加成按钮。
-    失败保留 Claimable 与奖励数值，清 pending 后允许重试；成功任意一种后互斥锁定。
   diamonds: table，必填。
     amount: number，必填；服务端确认的本日��领钻石数，单位钻石。
     status: Status，必填；不由 amount 推导，0 不自动禁用 Claimable。
@@ -82,10 +63,6 @@
 
 【四、最小完整数据（接入 Ctor 调用父构造之后）】
   self.Config = {
-      offline = {
-          rewardId = "offline_session_1",
-          boostMultiplier = 2,
-      },
       diamonds = { rewardId = "daily_diamonds", loginAmount = 100,
           premiumAmount = 50, friendAmount = 10, friendCap = 100 },
       groups = {
@@ -99,15 +76,6 @@
       },
   }
   self.State = {
-      offline = {
-          seconds = 9000,
-          training = 259,
-          boostedTraining = 518,
-          boostAvailable = true,
-          status = "Claimable",
-          boostPrice = 29,
-          boostCurrency = "Robux",
-      },
       diamonds = { amount = 100, status = "Claimable" },
       onlineMinutes = 0, signInDay = 1,
       entries = { online = {}, signin = {},
@@ -137,9 +105,6 @@
     Claim -> { kind: "online" | "signin" | "task", rewardId: string }；
       rewardId 对应该组 Item.id，不是 Item.reward.id。
     ClaimDiamonds -> { rewardId: string }；对应 Config.diamonds.rewardId。
-    ClaimOffline -> { rewardId: string, multiplier: number }；
-      rewardId 对应 Config.offline.rewardId，multiplier 仅为 1 或配置加成倍率。
-      不传价格，不在 View 扣费；服务端确认资格、余额、扣费与最终发放数量。
     没有 Close 或 SelectTab 动作；关闭直接 Hide，页签切换由 View 本地处理。
   必需 FormatNumber(value: number) -> string，全部数量统一经此格式化。
     游戏接入复用统一数量格式器，返回不带加号的显示数量；如 259、1.04K。
@@ -147,26 +112,23 @@
   GetRewardDisplay 可返回 image:string?，View 替换对应奖励图片节点，省略沿用设计占位。
   Config.allowUnavailableAction:boolean?，true 灰色未达标或已领取按钮仍允许点击解释原因。
   State.busy:boolean? 全局请求锁，不能只用私有任务变量防重。
-  offline/diamonds/Entry.errorText:string? 最终译文，优先于error原文。
+  diamonds/Entry.errorText:string? 最终译文，优先于error原文。
   Config.diamonds.passes:{Pass}?，两项分别替代原Premium/Friends说明卡；提供时旧加成字段不再必填。
     Pass.name:string 原文；amount:number 每日钻石；remaining:number 剩余领取天数；claimedToday:boolean 今日已领。
-  Render / RenderButton / RenderOffline / RenderDiamonds 继承，不能在接入层重复展示。
+  Render / RenderButton / RenderDiamonds 继承，不能在接入层重复展示。
   父类默认 GetUIConfig/GetUIState 已可读取上述数据。
-  请求前将对应 Entry / diamonds / offline 的 pending=true、error=nil 并刷新；
-  离线请求同时设置 pendingMultiplier=1 或配置加成倍率，并清 error/errorText。
-  成功后 pending=false、pendingMultiplier=nil、status="Claimed"；数值采用��威结果。
+  请求前将对应 Entry / diamonds 的 pending=true、error=nil 并刷新；
+  成功后 pending=false、status="Claimed"；数值采用��威结果。
   失败 pending=false、保留最新真实数值及可重试状态，设置 error，再刷新。
-  真实业务重新校验日期、批次、资格、倍数及领取幂等，并执行发放/持久化。
-  钻石与离线状态跨打开/重建须保持当天真实结果，不能每次 Show 重置可领取；
-  跨天由业务更新新一天完整状态。加成离线领取未内置真实支付流程。
+  真实业务重新校验日期、资格及领取幂等，并执行发放/持久化。
+  钻石状态跨打开/重建须保持当天真实结果；跨天由业务更新完整状态。
 
 【六、页签、列表与计时】
-  每次 Show 默认 offline；当天 offline.status=Claimed 时隐藏离线页签，
-  默认 diamonds；本次打开领取后保留当前页，下次 Show 才重新决定页签显隐。
+  每次 Show 默认打开每日钻石。
   签到仅在 Show 时检查：非空组的全部配置项均 Claimed 才隐藏该页签；
   空组不算完成，不能只检查 signInDay 或最后一天状态。
   页签红点只读完整状态：存在配置项 Claimable 且非 pending 才显示；
-  离线另要求 training>0；浏览不清红点，状态变化后 RefreshUI 更新。
+  浏览不清红点，状态变化后 RefreshUI 更新。
   Templates 始终隐藏；分组首次访问时克隆，以 kind/Item.id 复用和清理。
   非当前分组不执行 SyncItems，配置增删在下次访问该分组时同步。
   运行期保持 groups 的 kind/page 及已存在条目的原型分档稳定：
@@ -225,15 +187,13 @@ local TranslationTexts = Text.Define("WelfareHub", {
     OnlineProgress = "{current:int} / {target:int} min",
     NoOnlineRewards = "No online rewards available",
     NextReward = "Next reward in {time}",
-    NoOfflineRewards = "No offline rewards",
     RewardAmount = "{name} ×{amount}",
     TaskQuantity = "x{amount}",
     MoneyAmount = "{amount}",
     DailyAmount = "+{value} Diamonds per day",
     PassTomorrow = "Next claim tomorrow",
     PassRemaining = "{days:int} claims left · {status}",
-    PassInactive = "Use this pass from your backpack to activate it.",
-    ClaimBoost = "Claim {multiplier}X",
+    PassInactive = "No weekly pass active.",
 })
 
 -- 暴露只读文案定义，供接入子类通过 self.BaseViewTranslationTexts 复用。
@@ -449,33 +409,12 @@ function CWelfareView:OnReady()
             container.ElasticBehavior = Enum.ElasticBehavior.Never
         end
     end
-    self.ActiveTab = "offline"
-    local tabs = { { "offline", "OfflineTabBtn" }, { "diamonds", "DiamondsTabBtn" }, { "signin", "SignInTabBtn" }, { "online", "OnlineTabBtn" }, { "task", "TasksTabBtn" } }
+    self.ActiveTab = "diamonds"
+    local tabs = { { "diamonds", "DiamondsTabBtn" }, { "signin", "SignInTabBtn" }, { "online", "OnlineTabBtn" }, { "task", "TasksTabBtn" } }
     for _, tab in ipairs(tabs) do
         self:TrackConnection(Loader:Here(self.Root, "TabsBox." .. tab[2]).Activated:Connect(function()
             self.ActiveTab = tab[1]
             self:RefreshUI()
-        end))
-    end
-    for index, claim in ipairs({ { name = "SingleClaimBtn", boosted = false }, { name = "BoostClaimBtn", boosted = true } }) do
-        local button = Loader:Here(self.Root, "PopupPanelImg.OfflineBox." .. claim.name)
-        self:TrackConnection(button.Activated:Connect(function()
-            -- 两种领取共享批次 ID；请求中及成功后不再发送另一种领取。
-            local state = self:GetUIState().offline
-            if state.status ~= "Claimable" or state.pending or state.training <= 0 then
-                return
-            end
-            if claim.boosted and not state.boostAvailable then
-                return
-            end
-            local multiplier = 1
-            if claim.boosted then
-                multiplier = self:GetUIConfig().offline.boostMultiplier
-            end
-            self:EmitUIAction("ClaimOffline", {
-                rewardId = self:GetUIConfig().offline.rewardId,
-                multiplier = multiplier,
-            })
         end))
     end
     self:TrackConnection(Loader:Here(self.Root, "PopupPanelImg.DiamondsBox.ClaimBtn").Activated:Connect(function()
@@ -496,8 +435,6 @@ end
 function CWelfareView:OnShow()
     self._glowVisible = true
     local state = self:GetUIState()
-    local showOffline = state.offline.status ~= "Claimed"
-    Loader:Here(self.Root, "TabsBox.OfflineTabBtn").Visible = showOffline
     local allSignInClaimed = false
     for _, group in ipairs(self:GetUIConfig().groups) do
         if group.kind == "signin" then
@@ -512,10 +449,7 @@ function CWelfareView:OnShow()
         end
     end
     Loader:Here(self.Root, "TabsBox.SignInTabBtn").Visible = not allSignInClaimed
-    self.ActiveTab = "offline"
-    if not showOffline then
-        self.ActiveTab = "diamonds"
-    end
+    self.ActiveTab = "diamonds"
     self:RefreshUI()
 end
 
@@ -561,8 +495,8 @@ function CWelfareView:FormatNumber(value)
 end
 
 -- 领取动作必须由游戏接入实现。
--- @param action string Claim、ClaimDiamonds 或 ClaimOffline
--- @param payload table Claim 为 kind/rewardId；钻石为 rewardId；离线为 rewardId/multiplier，见文件头
+-- @param action string Claim或 ClaimDiamonds
+-- @param payload table Claim 为 kind/rewardId；钻石为 rewardId，见文件头
 function CWelfareView:OnUIAction(action, payload)
     error("Welfare integration must implement OnUIAction")
 end
@@ -801,9 +735,8 @@ function CWelfareView:RenderDiamonds(state)
 end
 
 -- 接入提供状态，View 只组织页面和条目展示，不改根节点的显隐。
--- @param state table 完整 State：offline、diamonds、entries、onlineMinutes、signInDay，见文件头
+-- @param state table 完整 State：diamonds、entries、onlineMinutes、signInDay，见文件头
 function CWelfareView:Render(state)
-    self:RenderOffline(state.offline)
     self:RenderDiamonds(state.diamonds)
     local tabs = { online = "OnlineTabBtn", signin = "SignInTabBtn", task = "TasksTabBtn" }
     for _, group in ipairs(self:GetUIConfig().groups) do
@@ -884,61 +817,6 @@ function CWelfareView:RenderOnlineProgress(group, state)
     local subtitleTxt = Loader:Here(page, "SubtitleTxt")
     progressTxt.Text = progress
     subtitleTxt.Text = hint
-end
-
--- 离线奖励及价格仅作展示；领取数量、余额与支付结果全部由业务层确认。
--- @param state table 完整 State.offline，包含业务提供的基础与加成奖励，见文件头
-function CWelfareView:RenderOffline(state)
-    local page = Loader:Here(self.Root, "PopupPanelImg.OfflineBox")
-    page.Visible = self.ActiveTab == "offline"
-    local boostMultiplier = self:GetUIConfig().offline.boostMultiplier
-    assert(boostMultiplier > 1, "Offline boost multiplier must exceed 1")
-    Loader:Here(page, "NormalRewardImg.AmountTxt").Text = "+" .. self:FormatNumber(state.training)
-    Loader:Here(page, "BoostRewardImg.AmountTxt").Text = "+" .. self:FormatNumber(state.boostedTraining)
-    local claimable = state.status == "Claimable" and state.training > 0
-    local single = Loader:Here(page, "SingleClaimBtn")
-    local boost = Loader:Here(page, "BoostClaimBtn")
-    single.Visible = claimable
-    boost.Visible = claimable
-    self:SetButtonEnabled(single, claimable and not state.pending)
-    self:SetButtonEnabled(boost, claimable and state.boostAvailable and not state.pending)
-    local singleLabel = Text.Tr(TranslationTexts.Claim)
-    local boostLabel = Text.Tr(TranslationTexts.ClaimBoost, { multiplier = self:FormatNumber(boostMultiplier) })
-    if state.pending and state.pendingMultiplier == 1 then
-        singleLabel = Text.Tr(TranslationTexts.Claiming)
-    elseif state.pending and state.pendingMultiplier == boostMultiplier then
-        boostLabel = Text.Tr(TranslationTexts.Claiming)
-    end
-    Loader:Here(single, "ButtonTxt").Text = singleLabel
-    Loader:Here(boost, "ButtonTxt").Text = boostLabel
-    local priceBox = Loader:Here(boost, "PriceBox")
-    Loader:Here(priceBox, "PriceTxt").Text = self:FormatNumber(state.boostPrice)
-    assert(state.boostCurrency == "Coin" or state.boostCurrency == "Gem" or state.boostCurrency == "Robux", "Unsupported offline price currency")
-    for index, currency in ipairs({ "Coin", "Gem", "Robux" }) do
-        Loader:Here(priceBox, currency .. "IconImg").Visible = state.boostCurrency == currency
-    end
-    local status = Loader:Here(page, "StatusTxt")
-    local hint = ""
-    if state.pending then
-        hint = Text.Tr(TranslationTexts.ConfirmingReward)
-    elseif state.status == "Claimed" then
-        hint = Text.Tr(TranslationTexts.Claimed)
-    elseif state.errorText ~= nil then
-        hint = state.errorText
-    elseif state.error ~= nil then
-        hint = Text.TrSource(state.error)
-    elseif not claimable then
-        hint = Text.Tr(TranslationTexts.NoOfflineRewards)
-    end
-    status.Text = hint
-    status.Visible = hint ~= ""
-    local tab = Loader:Here(self.Root, "TabsBox.OfflineTabBtn")
-    Loader:Here(tab, "RedDotImg").Visible = claimable and not state.pending
-    self:RenderButton(tab, nil, true)
-    if self.ActiveTab ~= "offline" then
-        tab.BackgroundColor3 = Color3.fromRGB(99, 128, 121)
-        Loader:Here(tab, "BottomEdgeImg").BackgroundColor3 = Color3.fromRGB(38, 62, 54)
-    end
 end
 
 return CWelfareView

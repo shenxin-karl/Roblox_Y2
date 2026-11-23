@@ -5,11 +5,20 @@ local Fields = _G.PlayerDataConfig
 local Rules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Utility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
 local Config = _G.GameConfig.CommonConfig
-local Texts = FX.Text.Define("WeaponEconomy", {
+local TranslationTexts = FX.Text.Define("WeaponEconomy", {
     Sold = "Weapon sold for ${value}.",
     Offline = "Claimed ${value} offline income.",
     GiftSent = "Sword blank sent to {name}.",
     GiftReceived = "Received a sword blank from {name}.",
+    GiftRequested = "Gift request sent to {name}. Waiting for their reply.",
+    GiftBusy = "A gift request is already pending. Please wait for it to finish.",
+    GiftDeclined = "{name} declined your gift.",
+    GiftExpired = "The gift request expired.",
+    GiftUnavailable = "This gift request is no longer available.",
+    GiftTooFar = "You are too far apart to complete the gift.",
+    GiftItemChanged = "The sword blank offered for this gift is no longer available.",
+    GiftBackpackFull = "The recipient's backpack is full. The sword blank was not transferred.",
+    GiftFailed = "Couldn't complete the gift. Please try again.",
     Failed = "Action failed. Check your equipped item, distance and backpack space.",
 })
 local Comp = FX.Class("SEconomyCompClass", "FSPlayerCompClass")
@@ -47,12 +56,12 @@ function Comp:Sell(grid, expected)
     local item = items[tostring(grid)]
     if inventory:GetEquippedGrid() ~= grid or not item or item.itemId ~= Rules.ItemId
         or item.stackCount ~= 1 or not Rules.IsValid(item.extraData) then
-        self:GetPlayerObject():ShowLocalizedTips(Texts.Failed)
+        self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.Failed)
         return
     end
     for index, key in ipairs({"Quality", "Level", "MutationId", "blankLuckLevel", "StoredMoney"}) do
         if item.extraData[key] ~= expected[key] then
-            self:GetPlayerObject():ShowLocalizedTips(Texts.Failed)
+            self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.Failed)
             return
         end
     end
@@ -62,13 +71,14 @@ function Comp:Sell(grid, expected)
         return self:SetTable(Fields.Inventory, items)
             and self:RequireComponent("FSRewardComp"):AddRewards({{Type = "Money", Currency = "Money", Count = price}})
     end)
-    self:GetPlayerObject():ShowLocalizedTips(success and Texts.Sold or Texts.Failed,
+    self:GetPlayerObject():ShowLocalizedTips(success and TranslationTexts.Sold or TranslationTexts.Failed,
         success and {value = Utility.NumberToText(price)} or nil)
 end
 
 --- 金币入账与待领额清零在一个玩家事务中完成；重试不会重复领取。
 --- @param boosted boolean 是否消耗配置钻石领取两倍金币。
 --- @return boolean 是否成功扣费并领取本次收益。
+--- @return boolean? 是否因钻石不足被拒绝；其他失败不设置此标记。
 function Comp:ClaimOffline(boosted)
     if not self:CanRequest() then
         return false
@@ -80,8 +90,12 @@ function Comp:ClaimOffline(boosted)
     end
     local costs = {}
     if boosted then
-        if Config.OfflineDoubleClaimDiamondCost > 0 then
-            costs = {{Type = "Money", Currency = "Diamonds", Count = Config.OfflineDoubleClaimDiamondCost}}
+        local diamondCost = Config.OfflineDoubleClaimDiamondCost
+        if diamondCost > 0 then
+            if self:GetNumber(Fields.Diamonds) < diamondCost then
+                return false, true
+            end
+            costs = {{Type = "Money", Currency = "Diamonds", Count = diamondCost}}
         end
         amount *= 2
     end
@@ -92,7 +106,7 @@ function Comp:ClaimOffline(boosted)
                 {{Type = "Money", Currency = "Money", Count = amount}})
     end)
     if success then
-        self:GetPlayerObject():ShowLocalizedTips(Texts.Offline, {value = Utility.NumberToText(amount)})
+        self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.Offline, {value = Utility.NumberToText(amount)})
     end
     return success
 end
@@ -110,7 +124,7 @@ function Comp:IsNear(other)
         and (humanoid.RootPart.Position - targetHumanoid.RootPart.Position).Magnitude <= Config.GiftDistance
 end
 
---- 提议只锁定当前手持剑胚的快照，不提前扣除；每人最多一笔30秒待确认赠送。
+--- 保存当前手持剑胚快照并告知发送方等待确认；30 秒无回复则通知双方。
 --- @param targetId any 客户端选择的接收者 UserId。
 function Comp:OfferGift(targetId)
     if not self:CanRequest() or type(targetId) ~= "number" or targetId % 1 ~= 0 or targetId == self:GetPlayerId() then
@@ -123,21 +137,31 @@ function Comp:OfferGift(targetId)
     local items = self:GetTable(Fields.Inventory)
     local item = grid and items[tostring(grid)]
     local traits = item and item.itemId == Rules.BlankItemId and Rules.GetTraits(item.extraData)
-    local now = os.clock()
-    if not other or not self:IsNear(other) or not traits or item.stackCount ~= 1
-        or (self._outgoing and self._outgoing.Expires > now)
-        or (other._offer and other._offer.Expires > now) then
-        self:GetPlayerObject():ShowLocalizedTips(Texts.Failed)
+    local senderPlayer = self:GetPlayerObject()
+    if not other or not self:IsNear(other) or not traits or item.stackCount ~= 1 then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.Failed)
+        return
+    end
+    if self._outgoing or other._offer then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftBusy)
         return
     end
     local offer = {Token = HttpService:GenerateGUID(false), Sender = self, Receiver = other, Grid = grid,
-        MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel, Expires = now + 30}
+        MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel, Expires = os.clock() + 30}
     self._outgoing, other._offer = offer, offer
+    offer.Timeout = FX.Task:Delay(30, function()
+        if self._outgoing == offer and other._offer == offer then
+            self._outgoing, other._offer = nil, nil
+            senderPlayer:ShowLocalizedTips(TranslationTexts.GiftExpired)
+            player:ShowLocalizedTips(TranslationTexts.GiftExpired)
+        end
+    end)
     FX.Network:SendMsgToClient(targetId, "S2C_RawSwordOffer", offer.Token, self:GetPlayerNode().DisplayName,
         offer.MutationId, offer.blankLuckLevel)
+    senderPlayer:ShowLocalizedTips(TranslationTexts.GiftRequested, {name = other:GetPlayerNode().DisplayName})
 end
 
---- 接收者确认后重新检查会话、距离、物品与容量；两个玩家各自提交，接收失败即恢复发送方。
+--- 确认时重新检查距离、物品和容量；拒绝、超时和提交失败均反馈实际结果。
 --- @param token any 服务端生成并发给本接收者的赠送令牌。
 --- @param accepted any 接收者的明确确认或拒绝。
 function Comp:ReplyGift(token, accepted)
@@ -145,17 +169,38 @@ function Comp:ReplyGift(token, accepted)
         return
     end
     local offer = self._offer
+    local receiverPlayer = self:GetPlayerObject()
     if not offer or offer.Token ~= token then
+        if accepted then
+            receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftUnavailable)
+        end
         return
     end
     self._offer = nil
     local sender = offer.Sender
     if sender._outgoing ~= offer then
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftUnavailable)
         return
     end
     sender._outgoing = nil
-    if not accepted or offer.Expires < os.clock() or not sender:IsNear(self)
-        or _G.SPlayerObjectManager:GetPlayerObject(sender:GetPlayerId()) ~= sender:GetPlayerObject() then
+    FX.Task:Cancel(offer.Timeout)
+    local senderPlayer = sender:GetPlayerObject()
+    if _G.SPlayerObjectManager:GetPlayerObject(sender:GetPlayerId()) ~= senderPlayer then
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftUnavailable)
+        return
+    end
+    if offer.Expires <= os.clock() then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftExpired)
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftExpired)
+        return
+    end
+    if not accepted then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftDeclined, {name = self:GetPlayerNode().DisplayName})
+        return
+    end
+    if not sender:IsNear(self) then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftTooFar)
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftTooFar)
         return
     end
     local items = sender:GetTable(Fields.Inventory)
@@ -163,43 +208,55 @@ function Comp:ReplyGift(token, accepted)
     local traits = item and item.itemId == Rules.BlankItemId and Rules.GetTraits(item.extraData)
     if not traits or item.stackCount ~= 1 or traits.MutationId ~= offer.MutationId
         or traits.blankLuckLevel ~= offer.blankLuckLevel then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftItemChanged)
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftItemChanged)
         return
     end
     local rewards = {{Type = "Item", ItemId = Rules.BlankItemId, Count = 1,
         ExtraData = {MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel}}}
     local reward = self:RequireComponent("FSRewardComp")
     if not reward:CanAddRewards(rewards) then
-        self:GetPlayerObject():ShowLocalizedTips(Texts.Failed)
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftBackpackFull)
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftBackpackFull)
         return
     end
     local remaining = sender:GetTable(Fields.Inventory)
     remaining[tostring(offer.Grid)] = nil
-    local removed = sender:GetPlayerObject():RunDataTransaction(function()
+    local removed = senderPlayer:RunDataTransaction(function()
         return sender:SetTable(Fields.Inventory, remaining)
     end)
     if not removed then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
         return
     end
-    local success = self:GetPlayerObject():RunDataTransaction(function()
+    local success = receiverPlayer:RunDataTransaction(function()
         return reward:AddRewards(rewards)
     end)
     if not success then
         sender:SetTable(Fields.Inventory, items)
-    end
-    if success then
-        sender:GetPlayerObject():ShowLocalizedTips(Texts.GiftSent, {name = self:GetPlayerNode().DisplayName})
-        self:GetPlayerObject():ShowLocalizedTips(Texts.GiftReceived, {name = sender:GetPlayerNode().DisplayName})
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
+    else
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftSent, {name = self:GetPlayerNode().DisplayName})
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftReceived, {name = sender:GetPlayerNode().DisplayName})
     end
 end
 
---- 离服令牌立即失效，不把待确认赠送转移到新会话。
+--- 离服时立即取消旧会话的赠送，并告知另一方请求失效。
 function Comp:OnPlayerLogout()
     self._active = false
     if self._outgoing and self._outgoing.Receiver._offer == self._outgoing then
-        self._outgoing.Receiver._offer = nil
+        local receiver = self._outgoing.Receiver
+        FX.Task:Cancel(self._outgoing.Timeout)
+        receiver._offer = nil
+        receiver:GetPlayerObject():ShowLocalizedTips(TranslationTexts.GiftUnavailable)
     end
     if self._offer and self._offer.Sender._outgoing == self._offer then
-        self._offer.Sender._outgoing = nil
+        local sender = self._offer.Sender
+        FX.Task:Cancel(self._offer.Timeout)
+        sender._outgoing = nil
+        sender:GetPlayerObject():ShowLocalizedTips(TranslationTexts.GiftUnavailable)
     end
     self._outgoing, self._offer = nil, nil
 end

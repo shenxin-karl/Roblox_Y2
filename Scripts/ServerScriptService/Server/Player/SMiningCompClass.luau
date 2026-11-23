@@ -30,6 +30,21 @@ function Comp:OnUpdate(serverTime)
     end
 end
 
+--- 从主界面到公共矿区；落点取服务端矿面中心，不接收客户端位置。
+function Comp:TeleportToMine()
+    if not self._active or os.clock() - self._lastRequest < Settings.RequestCooldown then
+        return
+    end
+    local forge = self:RequireComponent("SForgeComp")
+    local character, humanoid = forge:GetLivingCharacter()
+    if not character then
+        return
+    end
+    self._lastRequest = os.clock()
+    forge:Teleport(character, humanoid, _G.SMiningManager:GetArrival())
+    forge:Release()
+end
+
 --- 所有操作共用冷却，拒绝未登录、死亡、远程伪造坐标和连点请求。
 --- @param action string 由服务端协议固定的 Mine 或 Smelt。
 --- @param rock any 私人矿石的本轮编号，兑换时不需要。

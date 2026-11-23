@@ -4,6 +4,13 @@ local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local GameConfig = _G.GameConfig
 local Rules = GameConfig.CommonConfig
+local GameUtility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
+local TranslationTexts = FX.Text.Define("BaseInteraction", {
+    HomeUnavailable = "Your base is not ready yet. Please try again shortly.",
+    SlotUnlocked = "Weapon slot {slot:int} unlocked!",
+    SlotNotEnoughCash = "Not enough cash to unlock this slot. You need ${value}.",
+    SlotUnlockFailed = "Couldn't unlock the weapon slot. Please try again.",
+})
 local Comp = FX.Class("SBaseCompClass", "FSPlayerCompClass")
 
 --- 持有本次玩家会话的基地与冷却，离服后不把它们写入存档。
@@ -90,16 +97,20 @@ function Comp:PositionCharacter(character)
     end)
 end
 
---- 回家与楼层圆环共享节流，仅允许存活角色返回本人基地，并释放占用的锻造台。
+--- 回家与楼层圆环共享节流；基地尚未分配时提示稍后再试。
 function Comp:ReturnHome()
     local player = self:GetPlayerNode()
     local character = player and player.Character
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    if not self._active or not self._base or not humanoid or humanoid.Health <= 0
+    if not self._active or not humanoid or humanoid.Health <= 0
         or not humanoid.RootPart or os.clock() - self._lastTeleport < 1.5 then
         return
     end
     self._lastTeleport = os.clock()
+    if not self._base then
+        self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.HomeUnavailable)
+        return
+    end
     local forge = self:GetPlayerObject():GetComponent("SForgeComp")
     if forge then
         forge:Release()
@@ -140,7 +151,7 @@ function Comp:CreateSlotPrompt(slotId, slot)
     end))
 end
 
---- 服务端重新校验本人角色、距离与节流，金币和解锁进度由奖励框架一起提交。
+--- 服务端校验解锁资格，按余额或实际扣费结果反馈。
 --- @param slotId number 由展示台交互回调固定的全局槽位编号。
 --- @return boolean 是否成功解锁所选展示台。
 function Comp:UnlockSlot(slotId)
@@ -163,10 +174,20 @@ function Comp:UnlockSlot(slotId)
         return false
     end
     local costs = {}
+    local playerObject = self:GetPlayerObject()
     if config.UnlockPrice > 0 then
+        if self:GetNumber(Fields.Money) < config.UnlockPrice then
+            playerObject:ShowLocalizedTips(TranslationTexts.SlotNotEnoughCash,
+                {value = GameUtility.NumberToText(config.UnlockPrice)})
+            return false
+        end
         costs = {{Type = "Money", Currency = "Money", Count = config.UnlockPrice}}
     end
-    return self:RequireComponent("FSRewardComp"):ExchangeRewards(costs, {{Type = "BaseSlotUnlock", SlotId = slotId}})
+    local success = self:RequireComponent("FSRewardComp"):ExchangeRewards(costs,
+        {{Type = "BaseSlotUnlock", SlotId = slotId}})
+    playerObject:ShowLocalizedTips(success and TranslationTexts.SlotUnlocked or TranslationTexts.SlotUnlockFailed,
+        success and {slot = slotId} or nil)
+    return success
 end
 
 --- 在圆环中央生成服务端触碰区，落点远离圆环，避免到达后立即来回传送。

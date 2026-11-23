@@ -41,8 +41,11 @@ function Comp:Upgrade(upgradeId, expectedLevel)
     if upgradeId == "income" then
         self:RequireComponent("SSlotSwordComp"):Accrue()
     end
-    return self:RequireComponent("FSRewardComp"):ExchangeRewards(
-        {{Type = "Money", Currency = "Money", Count = Rules.GetPrice(upgradeId, expectedLevel)}},
+    local costs = {}
+    if self:GetPlayerNode():GetAttribute("GMFreeUpgrades") ~= true then
+        costs = {{Type = "Money", Currency = "Money", Count = Rules.GetPrice(upgradeId, expectedLevel)}}
+    end
+    return self:RequireComponent("FSRewardComp"):ExchangeRewards(costs,
         {{Type = "UpgradeWorkshop", UpgradeId = upgradeId, ExpectedLevel = expectedLevel}}
     )
 end
