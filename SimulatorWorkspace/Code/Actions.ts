@@ -1,6 +1,6 @@
 import { BaseAction } from "@game-simulator/framework";
 import type { BaseActionOptions, CurveValue, MacroActionBlocker } from "@game-simulator/framework";
-import { calculateBaseIncome, calculateForgeProbabilities, calculatePlayerUpgradeEffect, calculatePlayerUpgradePrice, calculateSlotUnlockPrice, calculateSmeltingLuckDistribution, calculateSwordUpgradePlan, calculateSwordUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
+import { calculateBaseIncome, calculateForgeProbabilities, calculatePlayerUpgradePrice, calculateSlotUnlockPrice, calculateSmeltingLuckDistribution, calculateSwordUpgradePlan, calculateSwordUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
 import type { ProjectConfig } from "./Main";
 import type { ForgeResultState, MiningOreState, State, SwordState } from "./State";
 
@@ -89,6 +89,15 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
         ? ore : best, undefined);
   }
 
+  private getTargetOffset(): number {
+    const slotId = this.payload?.slotId;
+    if (slotId === undefined) {
+      return 1;
+    }
+    return this.state.pendingReplacements.find((request) => request.slotId === slotId)?.targetOffset
+      ?? this.state.forgeTargetOffset;
+  }
+
   GetBlocker(): MacroActionBlocker | null {
     if (this.payload?.slotId !== undefined) {
       const slot = this.state.slots.find((item) => item.id === this.payload!.slotId);
@@ -98,7 +107,8 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
       if (!slot.unlocked) {
         return { kind: "slotLocked", reason: "槽位尚未解锁" };
       }
-      if (!Number.isInteger(this.state.forgeTargetOffset) || this.state.forgeTargetOffset < 1 || this.state.forgeTargetOffset > 4) {
+      const targetOffset = this.getTargetOffset();
+      if (!Number.isInteger(targetOffset) || targetOffset < 1 || targetOffset > 4) {
         return { kind: "invalidForgeTarget", reason: "置换目标须为 +1～+4" };
       }
     }
@@ -110,8 +120,9 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
       return { kind: "oreNotFound", reason: "没有可获取的矿石" };
     }
     const level = this.state.playerUpgradeLevels.smelting;
-    if (!Number.isInteger(level) || level < 1 || !Number.isInteger(this.state.playerLuck) || this.state.playerLuck < 1) {
-      return { kind: "invalidLuck", reason: "熔炼和人物幸运须为正整数" };
+    const forgingLevel = this.state.playerUpgradeLevels.forging;
+    if (!Number.isInteger(level) || level < 1 || !Number.isInteger(forgingLevel) || forgingLevel < 1) {
+      return { kind: "invalidLuck", reason: "熔炼和锻造等级须为正整数" };
     }
     const distribution = calculateSmeltingLuckDistribution(this.config.smeltingLuckWeightCurve, level);
     const totalWeight = distribution.reduce((total, item) => total + item.weight, 0);
@@ -137,13 +148,13 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
         break;
       }
     }
-    const playerLuck = this.state.playerLuck;
-    const targetOffset = this.payload?.slotId !== undefined ? this.state.forgeTargetOffset : 1;
-    let quality = Math.max(1, playerLuck - 4);
+    const forgingLevel = this.state.playerUpgradeLevels.forging;
+    const targetOffset = this.getTargetOffset();
+    let quality = Math.max(1, forgingLevel - 4);
     let hammerCount = 0;
     let outcome: ForgeResultState["outcome"] = "targetReached";
-    while (quality < playerLuck + targetOffset) {
-      const probabilities = calculateForgeProbabilities(materialLuck, playerLuck, quality);
+    while (quality < forgingLevel + targetOffset) {
+      const probabilities = calculateForgeProbabilities(materialLuck, forgingLevel, quality);
       const roll = this.rng.randomFloat01() * 100;
       hammerCount += 1;
       if (roll < probabilities.success) {
@@ -168,7 +179,7 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
         id: this.state.swords.reduce((max, item) => Math.max(max, item.id), 0) + 1,
         mutationId: ore.mutationId,
         luck: materialLuck,
-        playerLuck,
+        playerLuck: forgingLevel,
         quality,
         level: 1,
       };
@@ -188,7 +199,7 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
     }
     this.state.currentSwordId = swordId;
     this.state.lastForgeResult = {
-      oreId: ore.id, mutationId: ore.mutationId, materialLuck, playerLuck, quality,
+      oreId: ore.id, mutationId: ore.mutationId, materialLuck, playerLuck: forgingLevel, quality,
       hammerCount, outcome, swordId, slotId,
     };
     return true;
@@ -207,7 +218,9 @@ export class ReplaceSwordAction extends ForgeSwordAction {
     if (!super.Apply()) {
       return false;
     }
-    this.state.pendingReplacementSlotIds = this.state.pendingReplacementSlotIds.filter((id) => id !== this.payload?.slotId);
+    if (this.state.lastForgeResult?.slotId === this.payload!.slotId) {
+      this.state.pendingReplacements = this.state.pendingReplacements.filter((request) => request.slotId !== this.payload!.slotId);
+    }
     return true;
   }
 }
@@ -243,11 +256,11 @@ export class SetForgeTargetAction extends BaseAction<SetForgeTargetPayload, Stat
 
 BaseAction.register("setForgeTarget", (value) => new SetForgeTargetAction(value.payload?.offset as number, value));
 
-type QueueSwordReplacementPayload = { slotId: number };
+type QueueSwordReplacementPayload = { slotId: number; targetOffset?: number };
 
 export class QueueSwordReplacementAction extends BaseAction<QueueSwordReplacementPayload, State, ProjectConfig> {
-  constructor(slotId: number, options: Omit<BaseActionOptions<QueueSwordReplacementPayload>, "type" | "payload"> = {}) {
-    super({ ...options, type: "queueSwordReplacement", payload: { slotId } });
+  constructor(slotId: number, targetOffset: number | undefined, options: Omit<BaseActionOptions<QueueSwordReplacementPayload>, "type" | "payload"> = {}) {
+    super({ ...options, type: "queueSwordReplacement", payload: targetOffset === undefined ? { slotId } : { slotId, targetOffset } });
   }
 
   GetBlocker(): MacroActionBlocker | null {
@@ -258,8 +271,12 @@ export class QueueSwordReplacementAction extends BaseAction<QueueSwordReplacemen
     if (!slot.unlocked) {
       return { kind: "slotLocked", reason: "槽位尚未解锁" };
     }
-    if (this.state.pendingReplacementSlotIds.includes(slot.id)) {
+    if (this.state.pendingReplacements.some((request) => request.slotId === slot.id)) {
       return { kind: "replacementQueued", reason: "该槽位已加入置换队列" };
+    }
+    const targetOffset = this.payload?.targetOffset ?? this.state.forgeTargetOffset;
+    if (!Number.isInteger(targetOffset) || targetOffset < 1 || targetOffset > 4) {
+      return { kind: "invalidForgeTarget", reason: "置换目标须为 +1～+4" };
     }
     return null;
   }
@@ -268,13 +285,14 @@ export class QueueSwordReplacementAction extends BaseAction<QueueSwordReplacemen
     if (this.GetBlocker()) {
       return false;
     }
-    this.state.pendingReplacementSlotIds.push(this.payload!.slotId);
+    const { slotId, targetOffset = this.state.forgeTargetOffset } = this.payload!;
+    this.state.pendingReplacements.push({ slotId, targetOffset });
     return true;
   }
 }
 
 BaseAction.register("queueSwordReplacement", (value) =>
-  new QueueSwordReplacementAction(value.payload?.slotId as number, value));
+  new QueueSwordReplacementAction(value.payload?.slotId as number, value.payload?.targetOffset as number | undefined, value));
 
 type PlaceSwordPayload = { swordId: number; slotId: number };
 
@@ -427,9 +445,6 @@ export class UpgradePlayerAction extends BaseAction<UpgradePlayerPayload, State,
     const curves = getPlayerUpgradeCurves(this.config, kind);
     this.state.money -= calculatePlayerUpgradePrice(curves, level);
     this.state.playerUpgradeLevels[kind] += 1;
-    if (kind === "forging") {
-      this.state.playerLuck += calculatePlayerUpgradeEffect(this.config, kind, level + 1) - calculatePlayerUpgradeEffect(this.config, kind, level);
-    }
     return true;
   }
 }

@@ -4,6 +4,7 @@ import { calculateBaseIncome, type PlayerUpgradeKind } from "./Formulas";
 
 export type SlotState = { id: number; unlocked: boolean; swordId: number | null };
 export type MiningOreState = { id: number; mutationId: number };
+type ReplacementRequest = { slotId: number; targetOffset: number };
 export type SwordState = { id: number; mutationId: number; luck: number; playerLuck: number; quality: number; level: number };
 export type ForgeResultState = {
   oreId: number;
@@ -23,11 +24,10 @@ export type StateValues = {
   miningOres: MiningOreState[];
   miningRefreshElapsedSeconds: number;
   oreCollectElapsedSeconds: number;
-  playerLuck: number;
   swords: SwordState[];
   currentSwordId: number | null;
   lastForgeResult: ForgeResultState | null;
-  pendingReplacementSlotIds: number[];
+  pendingReplacements: ReplacementRequest[];
   playerUpgradeLevels: Record<PlayerUpgradeKind, number>;
   forgeTargetOffset: number;
   diamonds: number;
@@ -43,11 +43,10 @@ export class State extends BaseState<StateValues> {
   miningOres: MiningOreState[] = [];
   miningRefreshElapsedSeconds = -1;
   oreCollectElapsedSeconds = 0;
-  playerLuck = 1;
   swords: SwordState[] = [];
   currentSwordId: number | null = null;
   lastForgeResult: ForgeResultState | null = null;
-  pendingReplacementSlotIds: number[] = [];
+  pendingReplacements: ReplacementRequest[] = [];
   playerUpgradeLevels: Record<PlayerUpgradeKind, number> = { smelting: 1, forging: 1, income: 1 };
   forgeTargetOffset = 1;
   diamonds: number;
@@ -72,7 +71,7 @@ export class State extends BaseState<StateValues> {
   }
 
   getSummary(): string {
-    return `金钱：${this.money.toFixed(2)}，钻石：${this.diamonds}，付费倍率档位：${this.paidMultiplierTier}，槽位：${this.slots.length}，矿石：${this.miningOres.length}，武器：${this.swords.length}，刷新计时：${this.miningRefreshElapsedSeconds}秒，待置换：${this.pendingReplacementSlotIds.length}，置换目标：+${this.forgeTargetOffset}，玩家升级：${this.playerUpgradeLevels.smelting}/${this.playerUpgradeLevels.forging}/${this.playerUpgradeLevels.income}`;
+    return `金钱：${this.money.toFixed(2)}，钻石：${this.diamonds}，付费倍率档位：${this.paidMultiplierTier}，槽位：${this.slots.length}，矿石：${this.miningOres.length}，武器：${this.swords.length}，刷新计时：${this.miningRefreshElapsedSeconds}秒，待置换：${this.pendingReplacements.length}，新请求目标：+${this.forgeTargetOffset}，玩家升级：${this.playerUpgradeLevels.smelting}/${this.playerUpgradeLevels.forging}/${this.playerUpgradeLevels.income}`;
   }
 
   getFieldDisplayNames(): Record<string, string> {
@@ -92,7 +91,6 @@ export class State extends BaseState<StateValues> {
       "miningOres[].mutationId": "变异 ID",
       miningRefreshElapsedSeconds: "矿石刷新已过秒数",
       oreCollectElapsedSeconds: "打造取矿冷却已过秒数",
-      playerLuck: "人物幸运 P",
       forgeTargetOffset: "一键置换目标品质偏移",
       playerUpgradeLevels: "玩家升级等级",
       "playerUpgradeLevels.smelting": "熔炼幸运等级",
@@ -102,16 +100,18 @@ export class State extends BaseState<StateValues> {
       "swords[].id": "武器 ID",
       "swords[].mutationId": "继承变异 ID",
       "swords[].luck": "原料幸运 W",
-      "swords[].playerLuck": "打造时人物幸运 P",
+      "swords[].playerLuck": "打造时的 P（现取锻造等级）",
       "swords[].quality": "武器品质 Q",
       "swords[].level": "成品武器等级",
       currentSwordId: "当前展示武器 ID",
       lastForgeResult: "最近一次打造",
-      pendingReplacementSlotIds: "待置换槽位队列",
+      pendingReplacements: "待置换队列",
+      "pendingReplacements[].slotId": "槽位",
+      "pendingReplacements[].targetOffset": "置换目标偏移",
       "lastForgeResult.oreId": "消耗矿石 ID",
       "lastForgeResult.mutationId": "继承变异 ID",
       "lastForgeResult.materialLuck": "原料幸运 W",
-      "lastForgeResult.playerLuck": "人物幸运 P",
+      "lastForgeResult.playerLuck": "打造时的 P（现取锻造等级）",
       "lastForgeResult.quality": "结束品质 Q",
       "lastForgeResult.hammerCount": "敲击次数",
       "lastForgeResult.outcome": "出炉结果",
@@ -132,17 +132,16 @@ export class State extends BaseState<StateValues> {
       miningOres: this.miningOres.map((ore) => ({ ...ore })),
       miningRefreshElapsedSeconds: this.miningRefreshElapsedSeconds,
       oreCollectElapsedSeconds: this.oreCollectElapsedSeconds,
-      playerLuck: this.playerLuck,
       swords: this.swords.map((sword) => ({ ...sword })),
       currentSwordId: this.currentSwordId,
       lastForgeResult: this.lastForgeResult ? { ...this.lastForgeResult } : null,
-      pendingReplacementSlotIds: [...this.pendingReplacementSlotIds],
+      pendingReplacements: this.pendingReplacements.map((request) => ({ ...request })),
       playerUpgradeLevels: { ...this.playerUpgradeLevels },
       forgeTargetOffset: this.forgeTargetOffset,
     };
   }
 
-  loadJSON(values: StateValues): void {
+  loadJSON(values: StateValues | (Omit<StateValues, "pendingReplacements"> & { pendingReplacementSlotIds: number[] })): void {
     this.money = values.money;
     this.diamonds = values.diamonds;
     this.paidMultiplierTier = values.paidMultiplierTier;
@@ -153,11 +152,12 @@ export class State extends BaseState<StateValues> {
     this.miningOres = values.miningOres.map((ore) => ({ ...ore }));
     this.miningRefreshElapsedSeconds = values.miningRefreshElapsedSeconds;
     this.oreCollectElapsedSeconds = values.oreCollectElapsedSeconds;
-    this.playerLuck = values.playerLuck;
     this.swords = values.swords.map((sword) => ({ ...sword }));
     this.currentSwordId = values.currentSwordId;
     this.lastForgeResult = values.lastForgeResult ? { ...values.lastForgeResult } : null;
-    this.pendingReplacementSlotIds = [...values.pendingReplacementSlotIds];
+    this.pendingReplacements = "pendingReplacements" in values
+      ? values.pendingReplacements.map((request) => ({ ...request }))
+      : values.pendingReplacementSlotIds.map((slotId) => ({ slotId, targetOffset: values.forgeTargetOffset }));
     this.playerUpgradeLevels = { ...values.playerUpgradeLevels };
     this.forgeTargetOffset = values.forgeTargetOffset;
   }

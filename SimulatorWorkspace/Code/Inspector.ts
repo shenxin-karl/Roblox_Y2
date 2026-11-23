@@ -104,14 +104,14 @@ export class SlotInspector extends BaseInspector<ProjectConfig, State> {
       replace.Visible = slot.unlocked;
       upgrade.Visible = slot.unlocked;
       hint.Visible = slot.unlocked;
-      const replaceBlocker = this.getActionBlocker(new QueueSwordReplacementAction(slot.id));
+      const replaceBlocker = this.getActionBlocker(new QueueSwordReplacementAction(slot.id, state.forgeTargetOffset));
       const recommended = (this.game as Game).isSlotReplacementRecommended(slot.id);
       replace.Disabled = !recommended || replaceBlocker !== null;
-      const queueIndex = state.pendingReplacementSlotIds.indexOf(slot.id);
+      const queueIndex = state.pendingReplacements.findIndex((request) => request.slotId === slot.id);
       replace.Text = queueIndex >= 0 ? "已加入置换队列 (R)" : "一键置换升级 (R)";
       const executionBlocker = this.getActionBlocker(new ReplaceSwordAction(slot.id));
       hint.Text = queueIndex >= 0
-        ? `目标 +${state.forgeTargetOffset} · 排队 #${queueIndex + 1}\n${executionBlocker?.reason ?? "待执行一次"}`
+        ? `目标 +${state.pendingReplacements[queueIndex].targetOffset} · 排队 #${queueIndex + 1}\n${executionBlocker?.reason ?? "等待锻造"}`
         : `目标 +${state.forgeTargetOffset} · ${recommended ? executionBlocker?.reason ?? "可置换" : "仅推荐置换槽位可置换"}`;
       const blocker = this.getActionBlocker(new UnlockSlotAction(slot.id));
       unlock.Disabled = blocker !== null;
