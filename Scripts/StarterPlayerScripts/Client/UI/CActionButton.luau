@@ -1,9 +1,11 @@
--- 人物右侧交互按钮：背景独立渐变，标题与说明保持原色，复用框架悬停缩放。
+-- 人物右侧交互按钮：背景独立渐变，整组按主界面可用空间缩放。
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local FXLoader = _G.FX.Loader
 local ActionButton = {}
 local PopupNames = {"UpgradeWorkshopUI", "OfflineIncomeUI", "WelfareUI", "GMPanelUI", "AuraShopUI"}
+local BUTTON_WIDTH, BUTTON_HEIGHT = 180, 60
+local BUTTON_GAP, EDGE_PADDING = 8, 12
 local worldLayer
 local buttons = {}
 local followConnection
@@ -21,7 +23,7 @@ function ActionButton.GetWorldLayer()
     return worldLayer
 end
 
---- 以人物的屏幕投影为锚点，动作纵向排列在人物右侧并限制在屏幕内。
+--- 以人物投影为锚点，按主界面参考分辨率缩放按钮组，并把它限制在可用区域内。
 local function Layout()
     local playerGui = worldLayer.Parent.Parent
     for index, name in ipairs(PopupNames) do
@@ -32,15 +34,26 @@ local function Layout()
         end
     end
     worldLayer.Visible = true
+    local size = worldLayer.AbsoluteSize
+    local visibleCount = 0
+    for index, button in ipairs(buttons) do
+        if button.Visible then
+            visibleCount += 1
+        end
+    end
+    if visibleCount == 0 or size.X <= 0 or size.Y <= 0 then
+        return
+    end
+
+    local groupHeight = visibleCount * BUTTON_HEIGHT + (visibleCount - 1) * BUTTON_GAP
+    -- 小屏通常保留至少 45 个 UI 单位的点击高度；空间不足时优先容纳整组。
+    local scale = math.clamp(math.min(size.X / 1280, size.Y / 720), 0.75, 1.25)
+    scale = math.min(scale, size.X / (BUTTON_WIDTH + 2 * EDGE_PADDING), size.Y / (groupHeight + 2 * EDGE_PADDING))
+    local padding = EDGE_PADDING * scale
+    local origin = worldLayer.AbsolutePosition
     local camera = workspace.CurrentCamera
     local character = Players.LocalPlayer.Character
     local root = character and character:FindFirstChild("HumanoidRootPart")
-    local totalHeight = 0
-    for index, button in ipairs(buttons) do
-        if button.Visible then
-            totalHeight += button.AbsoluteSize.Y + 8
-        end
-    end
     local point, onScreen
     local rightPoint
     if camera and root then
@@ -50,20 +63,17 @@ local function Layout()
     local offset = 0
     for index, button in ipairs(buttons) do
         if button.Visible then
+            button.ResponsiveScale.Scale = scale
             if not onScreen then
                 button.Position = UDim2.fromOffset(-1000, -1000)
             else
-                local parent = button.Parent
-                local size = button.AbsoluteSize
-                local origin = parent.AbsolutePosition
-                local x = point.X + math.max(28, math.abs(rightPoint.X - point.X)) + 16 - origin.X
-                local groupHeight = totalHeight - 8
-                local y = math.clamp(point.Y - origin.Y - groupHeight / 2,
-                    12, math.max(12, parent.AbsoluteSize.Y - groupHeight - 12)) + offset
-                x = math.clamp(x, 12, math.max(12, parent.AbsoluteSize.X - size.X - 12))
+                local x = point.X + math.max(28 * scale, math.abs(rightPoint.X - point.X)) + 16 * scale - origin.X
+                local y = math.clamp(point.Y - origin.Y - groupHeight * scale / 2,
+                    padding, math.max(padding, size.Y - groupHeight * scale - padding)) + offset
+                x = math.clamp(x, padding, math.max(padding, size.X - BUTTON_WIDTH * scale - padding))
                 button.Position = UDim2.fromOffset(x, y)
             end
-            offset += button.AbsoluteSize.Y + 8
+            offset += (BUTTON_HEIGHT + BUTTON_GAP) * scale
         end
     end
 end
@@ -85,17 +95,16 @@ function ActionButton.New(name)
     local button = Instance.new("TextButton")
     button.Name = name
     button.Position = UDim2.fromOffset(-1000, -1000)
-    button.Size = UDim2.fromScale(0.14, 0.085)
+    button.Size = UDim2.fromOffset(BUTTON_WIDTH, BUTTON_HEIGHT)
     button.BackgroundColor3 = Color3.fromRGB(12, 57, 65)
     button.BorderSizePixel = 0
     button.Text = ""
     button.AutoButtonColor = false
     button.Visible = false
     Round(button)
-    local bounds = Instance.new("UISizeConstraint")
-    bounds.MinSize = Vector2.new(172, 58)
-    bounds.MaxSize = Vector2.new(240, 72)
-    bounds.Parent = button
+    local scale = Instance.new("UIScale")
+    scale.Name = "ResponsiveScale"
+    scale.Parent = button
 
     local face = Instance.new("Frame")
     face.Name = "Face"
@@ -171,7 +180,6 @@ function ActionButton.New(name)
         followConnection = RunService.RenderStepped:Connect(Layout)
     end
     button:GetPropertyChangedSignal("Visible"):Connect(Layout)
-    button:GetPropertyChangedSignal("AbsoluteSize"):Connect(Layout)
     button.Destroying:Connect(function()
         table.remove(buttons, table.find(buttons, button))
         if #buttons == 0 then

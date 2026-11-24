@@ -8,7 +8,6 @@ local Fields = _G.PlayerDataConfig
 local Comp = FX.Class("CBaseCompClass", "FCPlayerCompClass")
 local TranslationTexts = Text.Define("BaseInteraction", {
     UnlockSlot = "解锁武器位 {slot:int}",
-    Price = "{value} 金币",
 })
 
 --- 复用原生交互与框架数据订阅，支持晚复制到客户端的基地提示。
@@ -63,7 +62,7 @@ function Comp:GetCompName()
     return "CBaseComp"
 end
 
---- 仅显示本人所选未解锁展示台的价格，金额统一走公共格式化方法。
+--- 仅显示本人所选未解锁展示台的价格，金额沿用钱包的 $ 格式。
 --- @param prompt ProximityPrompt 服务端创建并标记的解锁交互。
 function Comp:RefreshPrompt(prompt)
     local slotId = prompt:GetAttribute("SlotId")
@@ -75,7 +74,7 @@ function Comp:RefreshPrompt(prompt)
     if prompt.Enabled then
         prompt.AutoLocalize = false
         prompt.ActionText = Text.Tr(TranslationTexts.UnlockSlot, {slot = slotId})
-        prompt.ObjectText = Text.Tr(TranslationTexts.Price, {value = GameUtility.NumberToText(config.UnlockPrice)})
+        prompt.ObjectText = "$" .. GameUtility.NumberToText(config.UnlockPrice)
     end
 end
 

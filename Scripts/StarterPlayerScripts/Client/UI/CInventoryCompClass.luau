@@ -4,13 +4,20 @@ local FX = _G.FX
 local FXLoader = FX.Loader
 FXLoader:RequireShared("Scripts.Framework.Client.Player.FCInventoryCompClass")
 local Display = FXLoader:RequireFromParent(script, "CInventoryDisplay")
-local ItemData = FXLoader:RequireShared("Scripts.Game.Configs.ItemConfig").Data
+local Items = FXLoader:RequireShared("Scripts.Game.Configs.ItemConfig")
+local MiningSettings = FXLoader:RequireShared("Scripts.Game.Shared.MiningSettings")
+local SwordRules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Inventory = FX.Class("CInventoryCompClass", "FCInventoryCompClass")
+local OreMutations = {}
+for grade, mutation in pairs(_G.GameConfig.MiningRockData) do
+    OreMutations[mutation.OreItemId] = mutation
+end
 
 local TranslationTexts = FX.Text.Define("Y2InventoryCategories", {
     Ore = "Ore",
     SwordBlank = "Sword Blanks",
     ForgedSword = "Forged Swords",
+    MiningStick = "Wooden Stick",
 })
 
 --- 将本项目的道具类型适配为通用页签规则。
@@ -37,6 +44,7 @@ local BackpackTabs = {
 function Inventory:Ctor(owner)
     local config = _G.Provider:GetInventoryConfig()
     Inventory.Super.Ctor(self, owner, config.ShortcutCapacity, config.BackpackCapacity)
+    self._badgeConnections = {}
 end
 
 --- @return string 项目的背包组件协作名称。
@@ -44,18 +52,32 @@ function Inventory:GetCompName()
     return "CInventoryComp"
 end
 
---- 从真实库存生成显示数据，展示布局不修改存档格号。
+--- 渲染库存道具和独立的矿场木棍；木棍不占用库存格。
 --- @param slots table 以真实格号为键的库存快照。
 function Inventory:OnSlotsChanged(slots)
     local displaySlots = {}
+    local seenTools = {}
     local usedBackpackSlots = 0
     for grid, slot in pairs(slots) do
-        local itemId = slot.tool:GetAttribute("FrameworkItemId")
-        local item = itemId and ItemData[itemId]
+        local tool = slot.tool
+        seenTools[tool] = true
+        if not self._badgeConnections[tool] then
+            self._badgeConnections[tool] = tool.AttributeChanged:Connect(function(attribute)
+                if attribute == "FrameworkItemId" or attribute == "MutationId" then
+                    self:_QueueRefresh()
+                end
+            end)
+        end
+        local itemId = tool:GetAttribute("FrameworkItemId")
+        local item = itemId and Items.Data[itemId]
+        local mutationId = tool:GetAttribute("MutationId")
+        local mutation = if item and item.Type == "Ore" then OreMutations[itemId]
+            else mutationId and SwordRules.GetMutation(mutationId)
         displaySlots[grid] = {
             token = slot.tool,
             name = slot.name,
             icon = slot.icon,
+            badgeIcon = mutation and mutation.IconId,
             count = slot.count,
             equipped = slot.equipped,
             itemType = item and item.Type,
@@ -64,11 +86,29 @@ function Inventory:OnSlotsChanged(slots)
             usedBackpackSlots += 1
         end
     end
+    for tool, connection in pairs(self._badgeConnections) do
+        if not seenTools[tool] then
+            connection:Disconnect()
+            self._badgeConnections[tool] = nil
+        end
+    end
+    local player = self:GetPlayerNode()
+    local character = player.Character
+    local backpack = player:FindFirstChildOfClass("Backpack")
+    local stick = character and character:FindFirstChild(MiningSettings.StickName)
+        or backpack and backpack:FindFirstChild(MiningSettings.StickName)
+    if stick and stick:IsA("Tool") then
+        displaySlots.miningStick = {
+            icon = stick.TextureId,
+            label = TranslationTexts.MiningStick,
+            equipped = stick.Parent == character,
+        }
+    end
     self._display:Render(displaySlots, usedBackpackSlots)
     self:_TryRevealBackpackDrop()
 end
 
---- 初始化视图后接管原生界面；背包可以独立于快捷栏启用。
+--- 初始化视图并接管原生界面；独立工具的装备由矿场组件处理。
 function Inventory:OnReady()
     if self._totalCapacity == 0 then
         return
@@ -84,6 +124,9 @@ function Inventory:OnReady()
         shortcutCapacity = self._shortcutCapacity,
         backpackCapacity = self._backpackCapacity,
         backpackTabs = BackpackTabs,
+        onSelectMiningStick = function()
+            FX.Network:SendMsgToServer("C2S_SwingMiningStick", true)
+        end,
     }, function(grid, expectedSlot)
         self:_SelectGrid(grid, expectedSlot.token)
     end, function(sourceGrid, targetGrid, expectedSlot, reveal)
@@ -167,6 +210,9 @@ end
 --- 先停止展示和输入，再由基类解除数据监听。
 function Inventory:Dtor()
     self._pendingBackpackDrop = nil
+    for tool, connection in pairs(self._badgeConnections) do
+        connection:Disconnect()
+    end
     if self._display then
         self:Hide()
         self._display:Destroy()

@@ -5,8 +5,6 @@ return {
         "C2S_SaveSettings",
         -- 无客户端目标参数，只能回到服务端为本人分配的基地。
         "C2S_ReturnHome",
-        -- 仅请求前往锻造庭院入口，落点由服务端决定。
-        "C2S_TeleportToForge",
         -- 仅请求进入或离开，不接受客户端指定的台位或传送坐标。
         "C2S_EnterForge",
         "C2S_LeaveForge",
@@ -20,8 +18,9 @@ return {
         "C2S_ClaimOfflineIncome",
         "C2S_OfferRawSword",
         "C2S_ReplyRawSword",
-        -- 仅提交公共石头节点；次数、矿石奖励和兑换配方由服务端确定。
-        "C2S_MineRock",
+        -- 拾取只提交公共矿石编号；挥棍和熔炼不接受客户端目标。
+        "C2S_PickUpOre",
+        "C2S_SwingMiningStick",
         "C2S_SmeltSword",
         -- upgradeId: smelt/forge/income；expectedLevel: 整数 0..19；服务端决定价格与新等级。
         "C2S_UpgradeWorkshop",
@@ -40,6 +39,6 @@ return {
     },
     -- S2C_UpgradeWorkshopResult(upgradeId: string, success: boolean)，真实等级沿用玩家字段同步。
     -- S2C_OfflineIncomeResult(requestId: number, success: boolean, insufficientDiamonds: boolean)。
-    ServerMsgID = {"S2C_ForgeSwordResult", "S2C_MiningReward", "S2C_UpgradeWorkshopResult", "S2C_RawSwordOffer",
+    ServerMsgID = {"S2C_ForgeSwordResult", "S2C_UpgradeWorkshopResult", "S2C_RawSwordOffer",
         "S2C_OfflineIncomeResult", "S2C_ForgeRecoveryInsufficientDiamonds"},
 }

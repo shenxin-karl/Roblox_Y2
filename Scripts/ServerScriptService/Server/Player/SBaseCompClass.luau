@@ -1,10 +1,13 @@
 -- 玩家基地组件：进度来自玩家档案，解锁、楼层克隆及圆环传送均由服务端裁定。
 local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local GameConfig = _G.GameConfig
 local Rules = GameConfig.CommonConfig
 local GameUtility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
+local ForgeSettings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
+local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local TranslationTexts = FX.Text.Define("BaseInteraction", {
     HomeUnavailable = "Your base is not ready yet. Please try again shortly.",
     SlotUnlocked = "Weapon slot {slot:int} unlocked!",
@@ -46,6 +49,10 @@ function Comp:OnPlayerLogin()
     self:WatchDataChanged(Fields.BaseData, function()
         self:Refresh()
     end)
+    --- 只按熔炉等级更新私人炉体，锻造和收益升级不会切换外观。
+    self:WatchDataChanged(Fields.UpgradeWorkshop, function()
+        self:RefreshFurnaceAppearance()
+    end)
     self:TryAllocate()
 end
 
@@ -66,6 +73,7 @@ function Comp:TryAllocate()
     if not self._base then
         return
     end
+    self:RefreshFurnaceAppearance()
     self:SetNumber(Fields.BaseId, self._base.Id)
     self:BindRing(self._base.Floors[1], 1)
     self:Refresh()
@@ -73,6 +81,57 @@ function Comp:TryAllocate()
     if character then
         self:PositionCharacter(character)
     end
+end
+
+--- 登录和升级时套用当前档位。保留原石台作为位置、碰撞和熔炼交互的固定锚点。
+function Comp:RefreshFurnaceAppearance()
+    if not self._active or not self._base then
+        return
+    end
+    local level = WorkshopRules.GetLevel(self:GetTableView(Fields.UpgradeWorkshop).smelt)
+    if level < 8 then
+        self:ClearFurnaceAppearance()
+        return
+    end
+    local name = level < 16 and "CobaltGate" or "EmeraldDragon"
+    if self._furnaceAppearance and self._furnaceAppearance.Name == name then
+        return
+    end
+    local workshop = ForgeSettings.FindPersonalWorkshop(self._base.Id)
+    local hearth = workshop and FX.Loader:Find(workshop, ForgeSettings.PersonalFurnacePart)
+    local template = FX.Loader:Find(ReplicatedStorage, "Assets.Decorations.FurnaceVisuals." .. name)
+    if not hearth or not template or not template:IsA("Model") then
+        return
+    end
+    local furnace = hearth.Parent
+    local visual = template:Clone()
+    visual:PivotTo(hearth.CFrame)
+    if self._furnaceAppearance then
+        self._furnaceAppearance:Destroy()
+    else
+        self._furnaceOriginal = Instance.new("Folder")
+        for _, child in furnace:GetChildren() do
+            if child ~= hearth then
+                child.Parent = self._furnaceOriginal
+            end
+        end
+    end
+    visual.Parent = furnace
+    self._furnaceAppearance = visual
+end
+
+--- 降回初始档或释放地块时归还原炉体，避免下一位玩家继承外观。
+function Comp:ClearFurnaceAppearance()
+    if not self._furnaceAppearance then
+        return
+    end
+    local furnace = self._furnaceAppearance.Parent
+    self._furnaceAppearance:Destroy()
+    for _, child in self._furnaceOriginal:GetChildren() do
+        child.Parent = furnace
+    end
+    self._furnaceOriginal:Destroy()
+    self._furnaceAppearance, self._furnaceOriginal = nil, nil
 end
 
 --- 等待角色根节点后重新检查本次会话，防止旧角色或离服任务被传送。
@@ -97,13 +156,16 @@ function Comp:PositionCharacter(character)
     end)
 end
 
---- 回家与楼层圆环共享节流；基地尚未分配时提示稍后再试。
+--- 扛矿时必须步行回家；未搬运时沿用回家传送与楼层圆环的节流。
 function Comp:ReturnHome()
     local player = self:GetPlayerNode()
     local character = player and player.Character
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     if not self._active or not humanoid or humanoid.Health <= 0
         or not humanoid.RootPart or os.clock() - self._lastTeleport < 1.5 then
+        return
+    end
+    if _G.SMiningManager:IsCarrying(self:GetPlayerObject()) then
         return
     end
     self._lastTeleport = os.clock()
@@ -291,6 +353,7 @@ end
 function Comp:OnPlayerLogout()
     self._active = false
     FX.Task:Cancel(self._spawnTask)
+    self:ClearFurnaceAppearance()
     self._manager:Release(self:GetPlayerId())
     self._slotPrompts = {}
     self._base = nil

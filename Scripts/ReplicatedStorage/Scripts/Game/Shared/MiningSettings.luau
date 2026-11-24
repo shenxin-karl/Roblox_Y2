@@ -1,25 +1,30 @@
--- 中央矿场交互几何；私人刷新与兑换数值统一由源配置表维护。
+-- 公共矿场的交互距离、搬运状态和木棍规则。
 local Settings = {
     GroundPath = "Decorations.MiningAreaDecorations.QuarryGround.InnerMiningSurface",
-    FurnacePath = "Decorations.Forge.PublicFurnace.ProjectingStoneHearth",
     RockTag = "PublicMiningRock",
     InteractDistance = 9,
     RequestCooldown = 0.4,
+    RefreshAttribute = "PublicOreRefreshAt",
+    CarryAttribute = "CarryingMiningOre",
+    CarrySpeedMultiplier = 0.75,
+    BaseDepositHeight = 9,
+    QuarryVerticalRange = 12,
+    StickName = "Wooden Stick",
+    StickSwingAttribute = "MiningStickSwingAt",
+    StickRange = 7,
+    StickCooldown = 0.75,
+    KnockdownDuration = 1.5,
 }
 
---- 按物体包围盒判断火炉交互距离，避免使用烟囱抬高后的模型中心。
---- @param part BasePart 已确认的火炉炉台。
---- @param position Vector3 当前角色位置。
---- @return number 到炉台表面的距离。
-function Settings.DistanceToPart(part, position)
-    local offset = part.CFrame:PointToObjectSpace(position)
-    local half = part.Size / 2
-    local nearest = Vector3.new(
-        math.clamp(offset.X, -half.X, half.X),
-        math.clamp(offset.Y, -half.Y, half.Y),
-        math.clamp(offset.Z, -half.Z, half.Z)
-    )
-    return (offset - nearest).Magnitude
+--- 按横放的椭圆矿面判断刷新区，距地太远也不算在矿区内。
+--- @param ground BasePart 横放的矿面。
+--- @param position Vector3 角色根部位置。
+--- @return boolean 是否在矿区内。
+function Settings.IsInQuarry(ground, position)
+    local offset = ground.CFrame:PointToObjectSpace(position)
+    local size = ground.Size
+    return math.abs(offset.X) <= Settings.QuarryVerticalRange
+        and (offset.Y / (size.Y / 2)) ^ 2 + (offset.Z / (size.Z / 2)) ^ 2 <= 1
 end
 
 return Settings

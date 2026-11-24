@@ -7,15 +7,13 @@ local FXLoader = FX.Loader
 local Text = FX.Text
 local Fields = _G.PlayerDataConfig
 local Settings = FXLoader:RequireShared("Scripts.Game.Shared.ForgeSettings")
+local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Effects = FXLoader:RequireFromParent(script, "CForgeEffects")
 local ForgeView = FXLoader:Require(script.Parent.Parent, "UI.CForgeView")
 local ActionButton = FXLoader:Require(script.Parent.Parent, "UI.CActionButton")
 local DiamondPurchase = FXLoader:Require(script.Parent.Parent, "UI.CDiamondPurchase")
 local TranslationTexts = Text.Define("ForgeInteraction", {
-    Enter = "前往锻造台",
-    Leave = "离开锻造台",
-    Recipe = "使用剑胚逐锤锻造，可随时出炉。",
-    Return = "返回庭院",
+    Leave = "Leave Forge",
     PersonalForge = "Forge Sword",
     PersonalSmelt = "Smelt Sword Blank",
 })
@@ -33,16 +31,14 @@ end
 
 --- 数据就绪后绑定锻造界面，并用服务端同步的品质变化触发换剑。
 function Comp:OnReady()
-    self._area = FXLoader:Workspace(Settings.AreaPath)
-    self._forge = FXLoader:Workspace(Settings.StationPath)
     self._view = ForgeView.New(FXLoader:PlayerGui("Forge"))
     self._mainHUD = FXLoader:PlayerGui("Main.HUD")
     self._renderName = "ForgeCamera_" .. self:GetPlayerId()
     self._actionName = "ForgeInput_" .. self:GetPlayerId()
     self._hiddenCharacter = {}
     self._personalPrompts = {}
-    local button, title, detail = ActionButton.New("ForgeInteraction")
-    self._buttonTitle, self._buttonDetail = title, detail
+    local button, title = ActionButton.New("ForgeInteraction")
+    title.Text = Text.Tr(TranslationTexts.Leave)
     self._rootNode = button
     self._lastRequest = -math.huge
     self._lastRecoveryRequest = -math.huge
@@ -51,14 +47,13 @@ function Comp:OnReady()
             return
         end
         self._lastRequest = os.clock()
-        local message = self:GetNumber(Fields.ForgeStation) > 0 and "C2S_LeaveForge" or "C2S_EnterForge"
-        FX.Network:SendMsgToServer(message)
+        FX.Network:SendMsgToServer("C2S_LeaveForge")
     end))
     self:WatchDataChanged(Fields.ForgeStation, function()
         self:Refresh()
     end)
     self:TrackConnection(FC.Localization.Changed:Connect(function()
-        self._textAssigned = nil
+        title.Text = Text.Tr(TranslationTexts.Leave)
         for action, prompt in pairs(self._personalPrompts) do
             prompt.ActionText = Text.Tr(action.Text)
         end
@@ -106,7 +101,7 @@ function Comp:OnReady()
     end)
 end
 
---- 从同步状态识别本次品质提升；进台回放和手动领取不重播动画。
+--- 刚上台时保留剑胚的外观和变异光环，首次升品质时切换到新武器。
 --- @param data table 服务端同步的最新锻造状态。
 --- @param previous table? 上一次同步状态；进台时不传。
 function Comp:ApplyForgeData(data, previous)
@@ -123,7 +118,10 @@ function Comp:ApplyForgeData(data, previous)
             upgraded = data.HammerCount > previous.HammerCount and data.Quality > previous.Quality
         end
     end
-    self._effects:ApplyWeapon(data.Quality, data.Active == true and data.Outcome ~= "Destroyed", upgraded)
+    local displayQuality = data.HammerCount == 0 and 1 or data.Quality
+    local upgradeFrom = upgraded and (previous.HammerCount == 0 and 1 or data.Quality - 1) or nil
+    local mutationId = data.HammerCount == 0 and data.MutationId or nil
+    self._effects:ApplyWeapon(displayQuality, data.Active == true and data.Outcome ~= "Destroyed", upgradeFrom, mutationId)
 end
 
 --- 只请求恢复当前显示的损毁武器；费用和恢复结果以服务端为准。
@@ -169,7 +167,7 @@ function Comp:RefreshPersonalPrompts(workshop, enabled)
     end
 end
 
---- 根据权威占用切换文案，并分别显示公共庭院按钮和本人基地的工位提示。
+--- 仅显示本人基地的工位提示，台位尚未加载时仍可退出。
 function Comp:Refresh()
     local character = self:GetPlayerCharacter()
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -178,42 +176,22 @@ function Comp:Refresh()
     local assigned = stationId > 0
     local workshop = Settings.FindPersonalWorkshop(self:GetNumber(Fields.BaseId))
     self:RefreshPersonalPrompts(workshop, root ~= nil and humanoid.Health > 0 and not assigned)
-    local visible = false
-    if root and humanoid.Health > 0 then
-        local offset = self._area.CFrame:PointToObjectSpace(root.Position)
-        visible = assigned or (math.abs(offset.X) <= self._area.Size.X / 2 + Settings.ShowDistance
-            and math.abs(offset.Z) <= self._area.Size.Z / 2 + Settings.ShowDistance
-            and math.abs(offset.Y - self._area.Size.Y / 2) <= Settings.HeightTolerance)
-    end
+    local visible = assigned and root ~= nil and humanoid.Health > 0
     if self._stationId and (stationId ~= self._stationId or not visible) then
         self:CloseView()
     end
-    if assigned and visible and not self._effects and not self._opening then
+    if visible and not self._effects and not self._opening then
         self:TryOpenView(stationId)
     end
     self._rootNode.Visible = visible and not self._effects
-    if self._textAssigned ~= stationId then
-        self._textAssigned = stationId
-        self._buttonTitle.Text = Text.Tr(assigned and TranslationTexts.Leave or TranslationTexts.Enter)
-        if stationId > Settings.PersonalStationOffset then
-            self._buttonDetail.Text = ""
-        else
-            self._buttonDetail.Text = Text.Tr(assigned and TranslationTexts.Return or TranslationTexts.Recipe)
-        end
-    end
+
 end
 
 --- 等台位复制齐全后打开近景，直接呈现进入时的权威武器状态。
 --- @param stationId number 服务端同步的当前台位编号。
 function Comp:TryOpenView(stationId)
-    local station
-    if stationId > Settings.PersonalStationOffset then
-        local workshop = Settings.FindPersonalWorkshop(stationId - Settings.PersonalStationOffset)
-        station = workshop and workshop:FindFirstChild("ForgeTable")
-    else
-        local side = stationId <= 4 and "Lower_" or "Upper_"
-        station = self._forge:FindFirstChild(side .. ((stationId - 1) % 4 + 1))
-    end
+    local workshop = Settings.FindPersonalWorkshop(stationId - Settings.PersonalStationOffset)
+    local station = workshop and workshop:FindFirstChild("ForgeTable")
     local desktop = station and station:FindFirstChild("ThickSteelDesktop")
     local board = station and station:FindFirstChild("BlankDisplayBoard")
     local panel = board and board:FindFirstChild("BlankWoodPanel")
@@ -283,17 +261,33 @@ function Comp:HandlePreviewInput(actionName, inputState, inputObject)
     return Enum.ContextActionResult.Sink
 end
 
---- 主动出炉沿用服务端进度与容量校验，挥锤期间不提交收手请求。
+--- 至少敲过一锤才提交主动出炉，挥锤期间等待当前结果。
 function Comp:FinishSword()
     if self._effects and not self._effects:IsBusy() then
-        FX.Network:SendMsgToServer("C2S_FinishSword")
+        local data = self:GetTable(Fields.ForgeData)
+        if data.Active and (data.HammerCount > 0 or data.Finished) then
+            FX.Network:SendMsgToServer("C2S_FinishSword")
+        end
     end
 end
 
---- 落锤时只请求一次服务端敲击，结果由同步进度与回执驱动。
+--- 台上有剑才挥锤；仍在台位上时可先放入手持的新剑胚。
 --- @param powerful boolean 沿用动画接口，实际锻造固定使用普通敲击。
 function Comp:Strike(powerful)
-    if self._effects and self._effects:Strike(powerful, function()
+    if not self._effects or self._effects:IsBusy() then
+        return
+    end
+    if not self:GetTable(Fields.ForgeData).Active then
+        local character = self:GetPlayerCharacter()
+        local tool = character and character:FindFirstChildOfClass("Tool")
+        if not tool or tool:GetAttribute("FrameworkItemId") ~= Rules.BlankItemId then
+            self._view:ShowFailure()
+            return
+        end
+        FX.Network:SendMsgToServer("C2S_EnterForge")
+        return
+    end
+    if self._effects:Strike(powerful, function()
         FX.Network:SendMsgToServer("C2S_ForgeSword")
     end) then
         self._view:SetBusy(true)

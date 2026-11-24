@@ -144,17 +144,18 @@ function Effects.New(station)
     return self
 end
 
---- 替换本地剑并重新对齐接触点；白色填充只覆盖外观，不包含透明定位部件。
+--- 按品质和变异重建台上的本地剑，并按实际厚度对齐锤头和火星。
 --- @param quality number 服务端同步的当前品质。
-function Effects:SetQuality(quality)
-    if self._quality == quality then
+--- @param mutationId string? 剑胚的变异 ID，切换到锻造后的外观时不传。
+function Effects:SetQuality(quality, mutationId)
+    if self._quality == quality and self._mutationId == mutationId then
         return
     end
-    self._quality = quality
+    self._quality, self._mutationId = quality, mutationId
     if self._sword then
         self._sword:Destroy()
     end
-    self._sword = WeaponVisual.Create(quality, 4)
+    self._sword = WeaponVisual.Create(quality, 5.5, mutationId)
     self._sword.Name = "ForgeSword"
     self._swordHeight = self._desktopHalfHeight + self._sword.Size.Z / 2 + 0.03
     local contactHeight = self._swordHeight + self._sword.Size.Z / 2
@@ -169,7 +170,7 @@ function Effects:SetQuality(quality)
     self._weaponHighlight.Adornee = self._sword:FindFirstChildOfClass("Model")
 end
 
---- 只改变本人近景中武器的可见性。
+--- 隐藏本人近景中的剑时同时关闭剑胚光环并清理已发出的粒子。
 --- @param visible boolean 是否显示本地外观。
 function Effects:SetWeaponVisible(visible)
     for index, node in ipairs(self._sword:GetDescendants()) do
@@ -177,13 +178,25 @@ function Effects:SetWeaponVisible(visible)
             node.LocalTransparencyModifier = visible and 0 or 1
         end
     end
+    local aura = self._sword:FindFirstChild("MutationAura")
+    if aura then
+        for index, node in ipairs(aura:GetDescendants()) do
+            if node:IsA("ParticleEmitter") then
+                node.Enabled = visible
+                if not visible then
+                    node:Clear()
+                end
+            end
+        end
+    end
 end
 
 --- 品质提升时先保留旧剑；动画期间只更新揭晓后的最终可见性。
---- @param quality number? 服务端同步的目标品质。
+--- @param quality number? 目标展示品质，刚放上时使用原剑胚外观。
 --- @param visible boolean 动画结束后剑是否仍留在台上。
---- @param upgraded boolean 此次同步是否确认了一次新的品质提升。
-function Effects:ApplyWeapon(quality, visible, upgraded)
+--- @param upgradeFrom number? 本次升品质前的展示品质；未升级时不传。
+--- @param mutationId string? 台上还是剑胚时的变异 ID。
+function Effects:ApplyWeapon(quality, visible, upgradeFrom, mutationId)
     local upgrade = self._weaponUpgrade
     if upgrade and upgrade.Quality == quality then
         upgrade.Visible = visible
@@ -191,16 +204,15 @@ function Effects:ApplyWeapon(quality, visible, upgraded)
     end
     self._weaponUpgrade = nil
     self._weaponHighlight.Enabled = false
-    if upgraded then
-        -- 第一锤前可能没有摆剑，先摆出服务端本次升级前的品质。
-        self:SetQuality(quality - 1)
+    if upgradeFrom then
+        self:SetQuality(upgradeFrom, self._mutationId)
         self:SetWeaponVisible(true)
         self._weaponUpgrade = {Quality = quality, Visible = visible, Age = 0}
         self._weaponHighlight.FillTransparency = 1
         self._weaponHighlight.Enabled = true
     else
         if quality then
-            self:SetQuality(quality)
+            self:SetQuality(quality, mutationId)
         end
         self:SetWeaponVisible(visible)
     end

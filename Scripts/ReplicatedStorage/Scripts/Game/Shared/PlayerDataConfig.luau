@@ -74,10 +74,10 @@ return {
         Type = "table", Key = "Inventory", DefVal = {},
         KVTable = PlayerKVEnum.ePlayerData, Sync = false,
     },
-    -- 私人矿场保存本轮矿石和绝对刷新时间，重进不会补回已采次数。
+    -- 保留旧私人矿场存档键；公共矿场不再读取或同步该字段。
     MiningData = {
         Type = "table", Key = "MiningData", DefVal = {NextRefresh = 0, Rocks = {}},
-        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+        KVTable = PlayerKVEnum.ePlayerData, Sync = false,
     },
     Guide = {
         Type = "table", Key = "Guide",

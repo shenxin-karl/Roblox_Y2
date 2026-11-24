@@ -158,13 +158,14 @@ function Manager:SetUnlockedSlots(floor, unlockedSlots)
     end
 end
 
---- 只同步可序列化的公开状态，不广播实例、连接、存档槽位内容或传送冷却。
+--- 同步基地的公开归属和坐标，让方向提示不依赖基地模型是否已流送。
 function Manager:Publish()
     local states = {}
     for id, base in pairs(self._bases) do
         states[tostring(id)] = {
             OwnerUserId = base.OwnerUserId, UnlockedSlotCount = base.UnlockedSlotCount,
             FloorCount = base.FloorCount,
+            Position = base.Floors[1].Part.Position,
         }
     end
     FX.SyncManager:SetTable(_G.ServerDataConfig.Bases, states)

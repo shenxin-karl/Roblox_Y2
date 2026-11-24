@@ -8,18 +8,18 @@ local TranslationTexts = Text.Define("ForgeView", {
     Title = "武器锻造",
     Station = "Base income",
     Strikes = "敲击次数",
-    Ready = "需要剑胚才能锻造，请先到熔炉熔炼矿石。",
+    Ready = "Equip a sword blank to start forging. You can smelt one at the furnace.",
+    BlankPlaced = "Sword blank placed. Strike to start forging.",
     SuccessEffect = "已获得成品武器",
     GreatSuccessEffect = "大成功效果",
     Broken = "锻造终止：保留当前品质",
     Damaged = "Finish broken",
     Unchanged = "Unchanged",
     Success = "锻造成功",
-    Notice = "{value} G/s",
     Quality = "+{quality:int}",
     DestroyChance = "Destroyed",
     Hint = "F：敲击 · G：出炉 · E：暂停并离开",
-    Failed = "没有可用的剑胚，请先到熔炉熔炼矿石。",
+    Failed = "Hold a sword blank before striking.",
     Busy = "锻造中…",
     StrikeButton = "F · 敲击",
     GreatStrikeButton = "G · 武器出炉",
@@ -99,6 +99,7 @@ function View.New(root)
     for index, name in ipairs({"Title", "Station", "Count", "CountCaption", "Result", "Notice", "Quality"}) do
         self._labels[name] = FXLoader:Here(self._panel, name)
     end
+    self._resultTextSize = self._labels.Result.TextSize
     for index, name in ipairs(OutcomeNames) do
         self._outcomes[name] = FXLoader:Here(self._panel, "Outcomes." .. name .. ".Label")
         self._values[name] = FXLoader:Here(self._panel, "Outcomes." .. name .. ".Value")
@@ -193,13 +194,13 @@ function View:Impact(powerful, count)
     flashTween:Play()
 end
 
---- 服务端拒绝剑胚时说明材料来源，不将缺少材料误报为背包容量问题。
+--- 开锻缺少手持剑胚时，在木牌上提示如何继续。
 function View:ShowFailure()
     self._failed = true
     self:RefreshText()
 end
 
---- 按权威品质刷新木牌、四项真实概率和分段条；语言切换时重新翻译。
+--- 刷新木牌、概率和操作文案；放大简短的成功提示，长提示保留模板字号。
 function View:RefreshText()
     local data = self._forgeData
     local canRecover = self._root.Enabled and data ~= nil and data.Outcome == "Destroyed" and data.RecoveryId ~= nil
@@ -216,19 +217,21 @@ function View:RefreshText()
     self._labels.Count.Text = tostring(self._count)
     self._labels.CountCaption.Text = Text.Tr(TranslationTexts.Strikes)
     self._labels.Quality.Text = data and data.Quality and Text.Tr(TranslationTexts.Quality, {quality = data.Quality}) or ""
-    self._labels.Notice.Text = data and data.Quality and Text.Tr(TranslationTexts.Notice, {
-        value = GameUtility.NumberToText(Rules.GetIncome({Quality = data.Quality, Level = 1, MutationId = data.MutationId})),
-    }) or "—"
+    local income = data and data.Quality
+        and Rules.GetIncome({Quality = data.Quality, Level = 1, MutationId = data.MutationId})
+    self._labels.Notice.Text = income and "$" .. GameUtility.NumberToText(income) .. "/s" or "—"
     local resultKey = TranslationTexts.Ready
     local resultColor = Color3.fromRGB(255, 241, 217)
     if self._failed then
         resultKey = TranslationTexts.Failed
         resultColor = Color3.fromRGB(255, 130, 110)
+    elseif data and data.Active and data.HammerCount == 0 then
+        resultKey = TranslationTexts.BlankPlaced
     elseif self._powerful ~= nil then
         resultKey = self._powerful and TranslationTexts.GreatSuccessEffect or TranslationTexts.SuccessEffect
         resultColor = self._powerful and Color3.fromRGB(221, 166, 255) or Color3.fromRGB(128, 215, 255)
     end
-    if data and data.Outcome then
+    if not self._failed and data and data.Outcome then
         if data.Active and data.Finished then
             resultKey = TranslationTexts.PendingClaim
         elseif data.Outcome == "Destroyed" then
@@ -251,6 +254,7 @@ function View:RefreshText()
     end
     self._labels.Result.Text = Text.Tr(resultKey)
     self._labels.Result.TextColor3 = resultColor
+    self._labels.Result.TextSize = resultKey == TranslationTexts.Success and 36 or self._resultTextSize
     local probabilities
     if data and data.Active and not data.Finished then
         if Players.LocalPlayer:GetAttribute("GMGuaranteedForge") == true then
@@ -279,9 +283,10 @@ function View:RefreshText()
     self.LeaveButton.Text = Text.Tr(TranslationTexts.LeaveButton)
 end
 
---- 只展示同步的进度；不在客户端抽取或预测锻造结果。
+--- 新进度替换上次尝试的提示；不在客户端抽取或预测锻造结果。
 --- @param data table 服务端同步的锻造状态。
 function View:SetForgeData(data)
+    self._failed = false
     self._forgeData = data
     self._count = data.HammerCount or 0
     self:RefreshText()

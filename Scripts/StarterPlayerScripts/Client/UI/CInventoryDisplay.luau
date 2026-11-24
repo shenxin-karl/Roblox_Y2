@@ -25,6 +25,7 @@ local OutlineColor = Color3.fromRGB(8, 9, 11)
 local TextColor = Color3.fromRGB(246, 247, 248)
 local TopbarButtonSize = 40
 local TopbarPadding = 8
+local TopbarCenterOffsetY = 5
 local TopbarDark = Color3.fromRGB(27, 29, 32)
 local TopbarLight = Color3.fromRGB(240, 243, 246)
 
@@ -114,7 +115,7 @@ local function styleInventory(bar, panel, list)
     grid.CellPadding = UDim2.fromOffset(SlotGap, SlotGap)
 end
 
---- 初始化按钮的通用显示字段。
+--- 为快捷格和背包格绑定图标、变异角标和绿色堆叠数量。
 --- @param button GuiButton 快捷格或可回收的背包格。
 --- @return table 按钮及其显示节点。
 local function bindSlot(button)
@@ -140,6 +141,7 @@ local function bindSlot(button)
     count.Position = UDim2.new(1, -4, 1, -5)
     count.Size = UDim2.new(1, -8, 0, 14)
     count.TextXAlignment = Enum.TextXAlignment.Right
+    count.TextColor3 = Color3.fromRGB(117, 255, 82)
     count.Text = ""
     count.Visible = true
     count.Parent = button
@@ -157,23 +159,59 @@ local function bindSlot(button)
     icon.ScaleType = Enum.ScaleType.Fit
     icon.Size = UDim2.fromScale(0.72, 0.72)
     icon.Position = UDim2.fromScale(0.5, 0.46)
+    local badge = Instance.new("Frame")
+    badge.Name = "MutationBadge"
+    badge.AnchorPoint = Vector2.new(1, 0)
+    badge.Position = UDim2.new(1, -3, 0, 3)
+    badge.Size = UDim2.fromOffset(26, 26)
+    badge.BackgroundColor3 = OutlineColor
+    badge.BackgroundTransparency = 1
+    badge.BorderSizePixel = 0
+    badge.ZIndex = icon.ZIndex + 1
+    badge.Interactable = false
+    badge.Visible = false
+    badge.Parent = button
+    local badgeCorner = Instance.new("UICorner")
+    badgeCorner.CornerRadius = UDim.new(0, 6)
+    badgeCorner.Parent = badge
+    local badgeImage = Instance.new("ImageLabel")
+    badgeImage.Name = "Icon"
+    badgeImage.BackgroundTransparency = 1
+    badgeImage.Position = UDim2.fromOffset(2, 2)
+    badgeImage.Size = UDim2.new(1, -4, 1, -4)
+    badgeImage.ScaleType = Enum.ScaleType.Fit
+    badgeImage.ZIndex = badge.ZIndex + 1
+    badgeImage.Interactable = false
+    badgeImage.Parent = badge
+    --- 专用图片加载前保持透明，避免角标先露出空底框。
+    local function refreshBadgeImage()
+        badge.BackgroundTransparency = if badgeImage.IsLoaded then 0 else 1
+    end
+    badgeImage:GetPropertyChangedSignal("IsLoaded"):Connect(refreshBadgeImage)
     return {
         button = button,
         border = border,
         icon = icon,
+        badge = badge,
+        badgeImage = badgeImage,
+        refreshBadgeImage = refreshBadgeImage,
         name = name,
         count = count,
         indicator = indicator,
     }
 end
 
---- 刷新一个显示节点，空格同样可作为拖拽目标。
+--- 刷新格子的名称、角标和堆叠数量，单件不显示数量。
 --- @param cell table 格子的显示节点。
 --- @param slot table? 该格当前展示的道具快照。
 local function renderSlot(cell, slot)
     cell.icon.Image = slot and slot.icon or ""
-    cell.name.Text = slot and slot.icon == "" and Text.TrSource(slot.name) or ""
-    cell.count.Text = slot and slot.count and slot.count > 1 and tostring(slot.count) or ""
+    cell.badgeImage.Image = slot and slot.badgeIcon or ""
+    cell.badge.Visible = cell.badgeImage.Image ~= ""
+    cell.refreshBadgeImage()
+    cell.name.Text = if slot and slot.icon == "" then
+        (if slot.label then Text.Tr(slot.label) else Text.TrSource(slot.name)) else ""
+    cell.count.Text = slot and slot.count and slot.count > 1 and ("X" .. tostring(slot.count)) or ""
     local equipped = slot ~= nil and slot.equipped
     local selected = equipped and cell.isShortcut == true
     cell.indicator.Visible = equipped and not selected
@@ -224,16 +262,30 @@ local function createTopbarButton(root, bagButton)
     return topbar, button, icon
 end
 
---- 收起背包时只显示有道具的快捷格；打开时保留可用的拖拽落点。
+--- 将独立工具计入快捷栏的显示和触屏宽度，空库存格只在打开背包时显示。
 function Display:_RefreshShortcutVisibility()
     local hasShortcutItem = false
+    local visibleCount = 0
     for grid, cell in ipairs(self._shortcutCells) do
         local occupied = self._slots[grid] ~= nil
         hasShortcutItem = hasShortcutItem or occupied
         cell.button.Visible = occupied or self._panel.Visible
+        if cell.button.Visible then
+            visibleCount += 1
+        end
+    end
+    if self._miningStickCell then
+        local visible = self._slots.miningStick ~= nil
+        self._miningStickCell.button.Visible = visible
+        if visible then
+            hasShortcutItem = true
+            visibleCount += 1
+        end
     end
     local canDragFromBackpack = self._panel.Visible and self._usedBackpackSlots > 0 and self._shortcutCapacity > 0
     self._bar.Visible = hasShortcutItem or canDragFromBackpack
+    self._visibleShortcutCount = visibleCount
+    self._resize()
 end
 
 --- 分类放到标题下方，让空提示和物品区域都对齐面板中心。
@@ -399,7 +451,7 @@ end
 
 --- 接管现有 SvnHotbar 的展示，不依赖库存存档或网络协议。
 --- @param root ScreenGui 当前玩家的 SvnHotbar。
---- @param config table 槽位容量与可选的 backpackTabs。
+--- @param config table 槽位容量、背包分类及独立木棍格的选择回调。
 --- 页签按数组顺序创建，每项包含唯一 id、Text.Define 文案 label 和筛选函数 matches(slot)。
 --- All 由展示层创建；不提供分类时保留原背包布局。
 --- @param onSelect function 快捷格点击或按键回调。
@@ -479,6 +531,8 @@ function Display.new(root, config, onSelect, onSwap)
             button.Visible = grid <= config.shortcutCapacity
         end
     end
+    -- 球棍占用第一个数字键；普通道具仍使用原库存格号。
+    local keyOffset = if config.onSelectMiningStick then 1 else 0
     for grid = 1, config.shortcutCapacity do
         local button = bar:FindFirstChild("Slot" .. grid)
         if not button then
@@ -490,15 +544,37 @@ function Display.new(root, config, onSelect, onSwap)
         end
         button.Size = UDim2.fromOffset(SlotSize, SlotSize)
         local key = FXLoader:Here(button, "Key")
-        key.Visible = keyCodes[grid] ~= nil
+        key.Visible = keyCodes[grid + keyOffset] ~= nil
         if key.Visible then
-            key.Text = tostring(grid % 10)
+            key.Text = tostring((grid + keyOffset) % 10)
         end
         local cell = bindSlot(button)
         cell.isShortcut = true
         self._shortcutCells[grid] = cell
         self._drag:RegisterSlot(button, function()
             return grid
+        end)
+    end
+
+    local miningStickConnection
+    if config.onSelectMiningStick then
+        local button = templateButton:Clone()
+        button.Name = "MiningStickSlot"
+        button.LayoutOrder = 0
+        button.Size = UDim2.fromOffset(SlotSize, SlotSize)
+        local key = FXLoader:Here(button, "Key")
+        key.Visible = true
+        key.Text = "1"
+        local cell = bindSlot(button)
+        cell.isShortcut = true
+        self._miningStickCell = cell
+        button.Visible = false
+        button.Parent = bar
+        table.insert(self._createdShortcuts, button)
+        miningStickConnection = button.Activated:Connect(function()
+            if self._slots.miningStick then
+                config.onSelectMiningStick()
+            end
         end)
     end
 
@@ -520,7 +596,7 @@ function Display.new(root, config, onSelect, onSwap)
     end
 
     local barScale = FXLoader:Here(bar, "Scale")
-    local barCount = config.shortcutCapacity
+    local barCount = config.shortcutCapacity + (self._miningStickCell and 1 or 0)
     local barWidth = SlotSize * barCount + SlotGap * math.max(0, barCount - 1)
     local contentWidth = math.max(barWidth, panel.Size.X.Offset)
     local originalInsets = root.ScreenInsets
@@ -529,18 +605,34 @@ function Display.new(root, config, onSelect, onSwap)
         {node = panel, scale = panelScale, position = panel.Position, baseScale = panelScale.Scale},
     }
     root.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets
-    -- 按宽高等比缩放，让宽屏保留参考图的占比，窄屏仍能完整显示格子。
+    --- 桌面沿用原缩放；触屏快捷栏独立按可见格数适配宽度，并给底边留出触控空间。
     local function resize()
         local size = root.AbsoluteSize
         if size.X <= 0 or size.Y <= 0 then
             return
         end
         local scale = math.min(1.4, size.X / (contentWidth + HorizontalMargin), size.Y / DesignHeight)
-        for _, entry in ipairs(scales) do
-            entry.node.Position = scaleOffsets(entry.position, scale)
-            entry.scale.Scale = entry.baseScale * scale
+        local barEntry, panelEntry = scales[1], scales[2]
+        local touchEnabled = UserInputService.TouchEnabled
+        local shortcutScale = scale
+        local bottomGap = -barEntry.position.Y.Offset * scale
+        if touchEnabled then
+            local count = math.max(1, self._visibleShortcutCount or barCount)
+            local visibleWidth = SlotSize * count + SlotGap * (count - 1)
+            shortcutScale = math.min(1.2, math.max(1, size.Y / DesignHeight),
+                math.max(1, size.X - HorizontalMargin) / (visibleWidth * barEntry.baseScale))
+            bottomGap = 16
         end
+        bar.Position = UDim2.new(0.5, 0, 1, -bottomGap)
+        barScale.Scale = barEntry.baseScale * shortcutScale
+        local panelPosition = scaleOffsets(panelEntry.position, scale)
+        if touchEnabled then
+            panelPosition = UDim2.new(0.5, 0, 1, -(bottomGap + SlotSize * barScale.Scale + 12))
+        end
+        panel.Position = panelPosition
+        panelScale.Scale = panelEntry.baseScale * scale
     end
+    self._resize = resize
     self._restoreLayout = function()
         root.ScreenInsets = originalInsets
         for _, entry in ipairs(scales) do
@@ -550,6 +642,7 @@ function Display.new(root, config, onSelect, onSwap)
     end
     self._connections = {
         root:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize),
+        UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(resize),
         UserInputService.InputBegan:Connect(function(input, processed)
             if processed or not root.Enabled or input.UserInputType ~= Enum.UserInputType.Keyboard then
                 return
@@ -558,7 +651,14 @@ function Display.new(root, config, onSelect, onSwap)
                 self:ToggleBackpack()
                 return
             end
-            local grid = table.find(keyCodes, input.KeyCode)
+            local keyIndex = table.find(keyCodes, input.KeyCode)
+            if keyIndex == 1 and config.onSelectMiningStick then
+                if self._slots.miningStick then
+                    config.onSelectMiningStick()
+                end
+                return
+            end
+            local grid = keyIndex and keyIndex - keyOffset
             local slot = grid and self._shortcutCells[grid] and self._slots[grid]
             if slot then
                 onSelect(grid, slot)
@@ -568,6 +668,9 @@ function Display.new(root, config, onSelect, onSwap)
             self:Render(self._slots, self._usedBackpackSlots)
         end),
     }
+    if miningStickConnection then
+        table.insert(self._connections, miningStickConnection)
+    end
     if self._backpackCapacity > 0 then
         local function refreshGrid()
             self:_RefreshBackpackGrid()
@@ -622,7 +725,7 @@ function Display.new(root, config, onSelect, onSwap)
         self._topbarIcon = icon
         local topNav = FXLoader:Here(root.Parent, "Main.HUD.TopNav")
 
-        --- 按主导航的实际边界避让；顶栏放不下时移到左下方。
+        --- 对齐 Roblox 顶栏按钮的中心并避开主导航；顶栏放不下时移到左下方。
         local function positionTopbarButton()
             local area = GuiService:GetInsetArea(Enum.ScreenInsets.TopbarSafeInsets)
             local navMin = topNav.AbsolutePosition
@@ -641,11 +744,13 @@ function Display.new(root, config, onSelect, onSwap)
             end
 
             local topbarLeft = area.Min.X + TopbarPadding
-            local topbarTop = area.Min.Y + area.Height / 2 - halfButton
+            -- 原生按钮的中心比安全区中线略低，空间不足时仍把按钮留在安全区内。
+            local centerY = math.min(area.Height / 2 + TopbarCenterOffsetY, area.Height - halfButton)
+            local topbarTop = area.Min.Y + centerY - halfButton
             if area.Width >= TopbarButtonSize + TopbarPadding and area.Height >= TopbarButtonSize
                 and not overlapsNavigation(topbarLeft, topbarTop) then
                 topbar.ScreenInsets = Enum.ScreenInsets.TopbarSafeInsets
-                button.Position = UDim2.new(0, TopbarPadding, 0.5, 0)
+                button.Position = UDim2.fromOffset(TopbarPadding, centerY)
             else
                 local fallbackTop = TopbarPadding
                 if overlapsNavigation(TopbarPadding, fallbackTop) then
@@ -689,13 +794,16 @@ function Display:ToggleBackpack()
 end
 
 --- 每次只绘制快捷栏和当前虚拟格子。
---- @param slots table 以真实格号为键的显示快照。
+--- @param slots table 真实格号的显示快照；miningStick 为独立工具。
 --- @param usedBackpackSlots number 背包区域的已用格数。
 function Display:Render(slots, usedBackpackSlots)
     self._slots = slots
     self._usedBackpackSlots = usedBackpackSlots
     for grid, cell in ipairs(self._shortcutCells) do
         renderSlot(cell, slots[grid])
+    end
+    if self._miningStickCell then
+        renderSlot(self._miningStickCell, slots.miningStick)
     end
     self:_RefreshShortcutVisibility()
     self._countLabel.Text = string.format("%d / %d", usedBackpackSlots, self._backpackCapacity)
@@ -728,6 +836,7 @@ function Display:Destroy()
     self._restoreLayout()
     for _, cell in ipairs(self._shortcutCells) do
         cell.count:Destroy()
+        cell.badge:Destroy()
     end
     for _, button in ipairs(self._createdShortcuts) do
         button:Destroy()

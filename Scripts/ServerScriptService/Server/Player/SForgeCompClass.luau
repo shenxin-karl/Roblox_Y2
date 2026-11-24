@@ -8,8 +8,8 @@ local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorksh
 local TranslationTexts = FX.Text.Define("FinishSword", {
     Success = "Forged weapon added to your backpack.",
     Failed = "Couldn't collect your weapon. Check your backpack space and try again.",
-    StationsFull = "All public forges are occupied. Try again when one is free.",
     StationTooFar = "Move closer to a forge to start forging.",
+    NeedBlank = "Equip a sword blank before using the forge.",
 })
 local Comp = FX.Class("SForgeCompClass", "FSPlayerCompClass")
 
@@ -31,11 +31,33 @@ function Comp:CanUseStation()
     local station = self._station
     local userId = self:GetPlayerId()
     return character ~= nil and station ~= nil and station.OwnerUserId == userId
-        and (not station.Base or station.Base.OwnerUserId == userId)
+        and station.Base.OwnerUserId == userId
         and (humanoid.RootPart.Position - station.Arrival.Position).Magnitude <= 8
 end
 
---- 每次请求只敲一锤，剑胚先进入持久化进度；所有概率与结果均由服务端裁定。
+--- 空台只接收角色实际装备的剑胚，库存消耗和锻造进度一起提交。
+--- @return boolean 是否成功将该剑胚放上锻造台。
+function Comp:PlaceEquippedBlank()
+    local inventory = self:RequireComponent("FSInventoryComp")
+    local items = self:GetTable(Fields.Inventory)
+    local grid = inventory:GetEquippedGrid()
+    local item = grid and items[tostring(grid)]
+    local traits = item and item.itemId == Rules.BlankItemId and item.stackCount == 1
+        and Rules.GetTraits(item.extraData)
+    if not traits then
+        return false
+    end
+    local forgeLevel = WorkshopRules.GetLevel(self:GetTableView(Fields.UpgradeWorkshop).forge)
+    local data = {Active = true, Finished = false, MutationId = traits.MutationId,
+        blankLuckLevel = traits.blankLuckLevel, forgeLevel = forgeLevel,
+        Quality = math.max(1, forgeLevel - 4), HammerCount = 0}
+    items[tostring(grid)] = nil
+    return self:GetPlayerObject():RunDataTransaction(function()
+        return self:SetTable(Fields.Inventory, items) and self:SetTable(Fields.ForgeData, data)
+    end)
+end
+
+--- 只敲台上已有的武器，放剑胚不计作敲击或抽取结果。
 function Comp:ForgeSword()
     local station = self._station
     if os.clock() - self._lastForge < Settings.RequestCooldown then
@@ -45,28 +67,7 @@ function Comp:ForgeSword()
     if self:CanUseStation() then
         local data = self:GetTable(Fields.ForgeData)
         if not data.Active then
-            local inventory = self:RequireComponent("FSInventoryComp")
-            local items = self:GetTable(Fields.Inventory)
-            local grid = inventory:GetEquippedGrid()
-            if not grid or not items[tostring(grid)] or items[tostring(grid)].itemId ~= Rules.BlankItemId then
-                grid = inventory:FindItemById(Rules.BlankItemId)
-            end
-            local item = grid and items[tostring(grid)]
-            local traits = item and Rules.GetTraits(item.extraData)
-            if not traits or item.stackCount ~= 1 then
-                FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, false)
-                return
-            end
-            local forgeLevel = WorkshopRules.GetLevel(self:GetTableView(Fields.UpgradeWorkshop).forge)
-            data = {Active = true, Finished = false, MutationId = traits.MutationId,
-                blankLuckLevel = traits.blankLuckLevel, forgeLevel = forgeLevel,
-                Quality = math.max(1, forgeLevel - 4), HammerCount = 0}
-            items[tostring(grid)] = nil
-            if not self:GetPlayerObject():RunDataTransaction(function()
-                return self:SetTable(Fields.Inventory, items) and self:SetTable(Fields.ForgeData, data)
-            end) then
-                return
-            end
+            return
         end
         if data.Finished then
             self:FinishSword()
@@ -141,7 +142,7 @@ function Comp:BreakCurrentSword()
     return true
 end
 
---- 主动出炉或领取已结束成品；失败保留原结果，不能再次抽取概率。
+--- 至少敲过一锤才可主动出炉；已结束成品领取失败时保留原结果。
 --- @param showResult boolean? 主动点击时显示结果，自动出炉仍沿用锻造表现。
 --- @return boolean 是否成功领取一把成品。
 function Comp:FinishSword(showResult)
@@ -149,7 +150,7 @@ function Comp:FinishSword(showResult)
         return false
     end
     local data = self:GetTable(Fields.ForgeData)
-    if not data.Active then
+    if not data.Active or (data.HammerCount == 0 and not data.Finished) then
         return false
     end
     data.Finished = true
@@ -209,38 +210,30 @@ function Comp:Teleport(character, humanoid, target)
     humanoid.RootPart.AssemblyAngularVelocity = Vector3.zero
 end
 
---- 顶部导航前往庭院入口，复用角色校验、节流与固定落点，并释放原台位。
-function Comp:TeleportToArea()
+--- 先确认台位再放入手持剑胚；已有进度或待修复武器可以直接进入。
+function Comp:Enter()
     local character, humanoid = self:GetLivingCharacter()
     if not character or os.clock() - self._lastRequest < Settings.RequestCooldown then
         return
     end
     self._lastRequest = os.clock()
-    self:Teleport(character, humanoid, self._manager:GetExit())
-    self:Release()
-end
-
---- 优先进入本人锻造台；无法进入公共台时区分距离与满员。
-function Comp:Enter()
-    local character, humanoid = self:GetLivingCharacter()
-    if not character or self._station or os.clock() - self._lastRequest < Settings.RequestCooldown then
+    local data = self:GetTableView(Fields.ForgeData)
+    if self._station then
+        if not data.Active and self:CanUseStation() and not self:PlaceEquippedBlank() then
+            FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", self._station.Id, false)
+        end
         return
     end
-    self._lastRequest = os.clock()
     local position = humanoid.RootPart.Position
     local base = self:RequireComponent("SBaseComp"):GetBase()
     local station = self._manager:GetPersonalStation(base, self:GetPlayerId(), position)
     if not station then
-        local player = self:GetPlayerObject()
-        if not self._manager:IsNear(position) then
-            player:ShowLocalizedTips(TranslationTexts.StationTooFar)
-            return
-        end
-        station = self._manager:Allocate(self:GetPlayerId())
-        if not station then
-            player:ShowLocalizedTips(TranslationTexts.StationsFull)
-            return
-        end
+        self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.StationTooFar)
+        return
+    end
+    if not data.Active and not self:PlaceEquippedBlank() and not data.RecoveryId then
+        self:GetPlayerObject():ShowLocalizedTips(TranslationTexts.NeedBlank)
+        return
     end
     self._station = station
     self._deathConnection = humanoid.Died:Connect(function()
@@ -250,26 +243,22 @@ function Comp:Enter()
     self:SetNumber(Fields.ForgeStation, station.Id)
 end
 
---- 私人台退出后留在原地；公共台退出时回庭院入口并归还空台位。
+--- 退出私人台位并留在原地。
 function Comp:Leave()
-    local character, humanoid = self:GetLivingCharacter()
+    local character = self:GetLivingCharacter()
     if not character or not self._station or os.clock() - self._lastRequest < Settings.RequestCooldown then
         return
     end
     self._lastRequest = os.clock()
-    if not self._station.Base then
-        self:Teleport(character, humanoid, self._manager:GetExit())
-    end
     self:Release()
 end
 
---- 清理台位、死亡监听与同步状态；多次调用不会释放别人的台位。
+--- 清理本人台位、死亡监听与同步状态。
 function Comp:Release()
     if self._deathConnection then
         self._deathConnection:Disconnect()
         self._deathConnection = nil
     end
-    self._manager:Release(self:GetPlayerId())
     if self._station then
         self._station = nil
         self:SetNumber(Fields.ForgeStation, 0)

@@ -1,13 +1,8 @@
--- 公共与私人锻造工位的场景路径、距离和落点。
+-- 私人锻造工位的场景路径、距离和落点。
 local FX = _G.FX
 local Settings = {
-    AreaPath = "BlockMeshs.ground.营地铺地.锻造庭院",
-    StationPath = "Decorations.Forge",
-    ShowDistance = 10,
-    HeightTolerance = 12,
     StationClearance = 3,
     ArrivalHeight = 3.5,
-    ExitInset = 8,
     RequestCooldown = 0.5,
     RecoveryDiamondCost = 88,
     PersonalStationOffset = 8,

@@ -69,13 +69,12 @@ function Provider:GetInventoryConfig()
     }
 end
 
---- 框架原生背包在自定义界面接管前仍沿用原来的启用规则。
+--- 项目快捷栏独立处理装备，启动时就关闭框架原生背包和道具激活输入。
 --- @return table 框架原生背包配置。
 function Provider:GetNativeBackpackConfig()
-    local config = self:GetInventoryConfig()
     return {
-        ShortcutEnabled = config.ShortcutCapacity > 0,
-        InventoryCapacity = config.ShortcutCapacity + config.BackpackCapacity,
+        ShortcutEnabled = false,
+        InventoryCapacity = 0,
     }
 end
 

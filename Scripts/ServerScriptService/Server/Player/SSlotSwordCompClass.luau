@@ -80,7 +80,7 @@ function Comp:CreateAnchor(source, name, display)
     return part
 end
 
---- 仅克隆剑外观，并为每个占用槽位发布独立的收益与升级属性。
+--- 克隆成品剑外观和变异光环，并为每个占用槽位发布独立的收益与升级属性。
 --- @param slotId number 已解锁且放有成品剑的槽位编号。
 --- @param slot table 管理器持有的场景槽位。
 --- @param base table 本次会话的基地。
@@ -92,7 +92,8 @@ function Comp:CreateDisplay(slotId, slot, base)
     display.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
     display:SetAttribute("OwnerUserId", self:GetPlayerId())
     display:SetAttribute("SlotId", slotId)
-    local sword = WeaponVisual.Create(self:GetSword(slotId).Quality, 4)
+    local swordData = self:GetSword(slotId)
+    local sword = WeaponVisual.Create(swordData.Quality, 4, swordData.MutationId)
     sword.Name = "Sword"
     sword.Anchored, sword.CanCollide, sword.CanTouch, sword.CanQuery = true, false, false, false
     WeaponVisual.SetCFrame(sword, top.CFrame * CFrame.new(0, top.Size.Y / 2 + sword.Size.Y / 2 + 0.1, 0))

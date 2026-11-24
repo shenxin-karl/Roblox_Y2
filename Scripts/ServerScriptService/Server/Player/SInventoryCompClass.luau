@@ -5,6 +5,19 @@ local Items = _G.ItemConfig
 local WeaponVisual = FX.Loader:RequireShared("Scripts.Game.Shared.WeaponVisual")
 local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Comp = FX.Class("SInventoryCompClass", "FSInventoryCompClass")
+-- 握点按模型高度归一；弯柄和短柄使用源模型中量出的偏移。
+local DefaultSwordGripPoint = Vector3.new(0, -0.33, 0)
+local SwordGripPointOverrides = {
+    [4] = Vector3.new(0.02, -0.33, 0),
+    [10] = Vector3.new(0.025, -0.33, 0),
+    [19] = Vector3.new(-0.09, -0.33, 0),
+    [24] = Vector3.new(0, -0.35, 0),
+    [28] = Vector3.new(-0.03, -0.33, 0),
+    [29] = Vector3.new(0, -0.36, 0),
+    [32] = Vector3.new(0, -0.37, 0),
+}
+-- Grip 是手部握点在 Handle 中的坐标系；反转后让剑刃朝前、剑尖略偏向右侧。
+local SwordGripRotation = CFrame.Angles(0, -math.pi / 2, 0) * CFrame.Angles(0, 0, math.rad(25))
 
 --- 固定容量在组件创建时读取，矿石按掉落配置复用对应品级的外观模板。
 --- @param owner table 当前服务端玩家对象。
@@ -48,15 +61,17 @@ function Comp:OnPlayerLogin()
     self:SyncTools()
 end
 
---- 创建手持外观；剑沿模型 Y 轴直立握持，握点落在剑柄，避免额外旋转使剑身沿手臂横放。
+--- 创建手持外观；将手对齐实际剑柄，并让剑尖稍向外倾斜，避开角色面部。
 --- @param itemId number 已配置的道具 ID。
---- @param extra table? 成品品质用于选择模型和图标；剑胚固定使用1级剑外观。
+--- @param extra table? 武器变异用于光环；成品品质用于选择模型和图标。
 --- @return Tool 不包含业务脚本的手持道具。
 function Comp:CreateTool(itemId, extra)
     local tool = Instance.new("Tool")
     tool.CanBeDropped = false
     tool.Enabled = false
     tool:SetAttribute("FrameworkItemId", itemId)
+    local mutationId = extra and extra.MutationId
+    tool:SetAttribute("MutationId", mutationId)
     local icon = Items.Display[itemId].IconId
     if icon ~= "rbxassetid://0" then
         tool.TextureId = icon
@@ -65,9 +80,10 @@ function Comp:CreateTool(itemId, extra)
     if Items.Data[itemId].HeldHandler == "Sword" then
         local quality = itemId == SwordRules.ItemId and extra.Quality or 1
         tool.TextureId = _G.GameConfig.WeaponData[quality].IconId
-        handle = WeaponVisual.Create(quality, 4)
+        handle = WeaponVisual.Create(quality, 4, mutationId)
         tool:SetAttribute("Quality", quality)
-        tool.Grip = CFrame.new(0, -1.4, 0)
+        local gripPoint = SwordGripPointOverrides[quality] or DefaultSwordGripPoint
+        tool.Grip = CFrame.new(gripPoint * handle.Size.Y) * SwordGripRotation
     else
         local model = self._oreModels[itemId]:Clone()
         local size = model:GetExtentsSize()
@@ -104,7 +120,7 @@ function Comp:CreateTool(itemId, extra)
     return tool
 end
 
---- 数据提交后只更新变动格子；武器品质改变时重建模型，避免沿用旧外观和名称。
+--- 数据提交后只更新变动格子；武器品质或变异改变时重建 Tool，避免沿用旧外观和角标。
 function Comp:SyncTools()
     if not self._active or self:GetTotalCapacity() == 0 then
         return
@@ -120,7 +136,8 @@ function Comp:SyncTools()
         local tool = self._tools[grid]
         if tool and (not entry or tool:GetAttribute("FrameworkItemId") ~= entry.itemId
             or (Items.Data[entry.itemId].HeldHandler == "Sword"
-                and tool:GetAttribute("Quality") ~= (entry.itemId == SwordRules.ItemId and entry.extraData.Quality or 1))
+                and (tool:GetAttribute("Quality") ~= (entry.itemId == SwordRules.ItemId and entry.extraData.Quality or 1)
+                    or tool:GetAttribute("MutationId") ~= (entry.extraData and entry.extraData.MutationId)))
             or (tool.Parent ~= backpack and tool.Parent ~= player.Character)) then
             tool:Destroy()
             self._tools[grid] = nil
@@ -138,7 +155,6 @@ function Comp:SyncTools()
             tool:SetAttribute("FrameworkGrid", grid)
             tool:SetAttribute("WeaponLevel", entry.extraData and entry.extraData.Level)
             tool:SetAttribute("StoredMoney", entry.extraData and entry.extraData.StoredMoney)
-            tool:SetAttribute("MutationId", entry.extraData and entry.extraData.MutationId)
             tool:SetAttribute("blankLuckLevel", entry.extraData and entry.extraData.blankLuckLevel)
             tool:SetAttribute("FrameworkStackCount", entry.stackCount)
             if not tool.Parent then

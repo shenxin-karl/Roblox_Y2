@@ -15,7 +15,6 @@ local PlayerDataConfig = _G.PlayerDataConfig
 local TranslationTexts = Text.Define("MainItemDescription", {
     Traits = "{description}\nMutation: {mutation}\nBlank luck level: {blankLuckLevel:int}",
     GM = "GM",
-    Forge = "Forge Area",
     Multiplier = "×{rate} Cash",
     MultiplierMaxed = "Max level",
 })
@@ -97,20 +96,10 @@ function Component:BindCommerceNavigation()
     local right = FXLoader:Here(self._topNav, "Shop")
     self:TrackConnection(left.Activated:Connect(DiamondPurchase.Open))
 
-    local miningEnabled = table.find(_G.NetworkProtocol.ClientMsgID, "C2S_TeleportToMine") ~= nil
-    FXLoader:Here(right, "NavigationIcon").Visible = miningEnabled
+    FXLoader:Here(right, "NavigationIcon").Visible = true
     self:TrackConnection(right.Activated:Connect(function()
-        FX.Network:SendMsgToServer(miningEnabled and "C2S_TeleportToMine" or "C2S_TeleportToForge")
+        FX.Network:SendMsgToServer("C2S_TeleportToMine")
     end))
-    if not miningEnabled then
-        right.AutoLocalize = false
-        --- 旧传送协议仍落在锻造区，入口名称随语言刷新。
-        local function RefreshForgeLabel()
-            right.Text = Text.Tr(TranslationTexts.Forge)
-        end
-        self:TrackConnection(FC.Localization.Changed:Connect(RefreshForgeLabel))
-        RefreshForgeLabel()
-    end
 
     local welfare = FXLoader:Here(self._rootNode, "SideNav.Shop")
     local welfareCaption = FXLoader:Here(welfare, "Caption")
