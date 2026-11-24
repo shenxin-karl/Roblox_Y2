@@ -24,9 +24,9 @@ export function calculatePlayerUpgradePrice(curves: CurveGroupValue, level: numb
   return sampleCurveGroupColumn(curves, "upgradeCost", level);
 }
 
-/** 幸运升级固定每级增加 1，初始加值为 0；只有收益倍率效果从配置采样。 */
-export function calculatePlayerUpgradeEffect(config: ProjectConfig, kind: PlayerUpgradeKind, level: number): number {
-  return kind === "income" ? sampleCurveGroupColumn(config.incomeUpgradeCurves, "effect", level) : level - 1;
+/** 用当前收益等级查配置，返回玩家金币收益倍率。 */
+function calculateIncomeUpgradeMultiplier(config: ProjectConfig, level: number): number {
+  return sampleCurveGroupColumn(config.incomeUpgradeCurves, "effect", level);
 }
 
 /** 按已购档位采样最终付费金币倍率，不连乘历史档位。 */
@@ -48,7 +48,7 @@ export function getNextPaidMultiplier(config: ProjectConfig, tier: number): { ti
 
 /** 汇总已解锁槽位内武器的在线秒收益，付费倍率只作用于金币，未入槽武器不产出。 */
 export function calculateBaseIncome(config: ProjectConfig, slots: readonly SlotState[], swords: readonly SwordState[], incomeLevel: number, paidMultiplierTier: number): number {
-  const playerMultiplier = calculatePlayerUpgradeEffect(config, "income", incomeLevel);
+  const playerMultiplier = calculateIncomeUpgradeMultiplier(config, incomeLevel);
   let income = 0;
   for (const slot of slots) {
     if (!slot.unlocked || slot.swordId === null) {
@@ -99,21 +99,21 @@ export function calculateSwordLevelMultiplier(curves: CurveGroupValue, level: nu
 export type ForgeProbabilities = { success: number; unchanged: number; broken: number; destroy: number };
 
 /**
- * 按锻造设计计算单锤概率（百分数）。P 为人物幸运，W 为原料幸运；
+ * 按锻造设计计算单锤概率（百分数）。P 为当前锻造等级，W 为原料幸运；
  * 允许敲击的当前品质为 P-4～P+3；达到 P+4 后停止，好坏料修正冲 +1～+4 的成功和破损率。
  */
-export function calculateForgeProbabilities(weaponLuck: number, playerLuck: number, quality: number): ForgeProbabilities {
-  const offset = quality - playerLuck;
-  if (!Number.isInteger(weaponLuck) || weaponLuck < 1 || !Number.isInteger(playerLuck) || playerLuck < 1 ||
+export function calculateForgeProbabilities(weaponLuck: number, forgingLevel: number, quality: number): ForgeProbabilities {
+  const offset = quality - forgingLevel;
+  if (!Number.isInteger(weaponLuck) || weaponLuck < 1 || !Number.isInteger(forgingLevel) || forgingLevel < 1 ||
       !Number.isInteger(offset) || offset < -4 || offset > 3) {
-    throw new RangeError("原料和人物幸运须为正整数，当前品质须在 P-4～P+3 范围内");
+    throw new RangeError("原料幸运和锻造等级须为正整数，当前品质须在 P-4～P+3 范围内");
   }
   const baseSuccess = [94, 93, 91, 88, 70, 50, 30, 10][offset + 4];
   const unchanged = [5, 5, 5, 5, 5, 15, 25, 40][offset + 4];
   const destroy = [0, 0, 0, 0, 3, 5, 10, 15][offset + 4];
   let success = baseSuccess;
   if (offset >= 0) {
-    const difference = Math.max(-10, Math.min(10, weaponLuck - playerLuck));
+    const difference = Math.max(-10, Math.min(10, weaponLuck - forgingLevel));
     success = difference > 0
       ? Math.min(baseSuccess * (1 + 0.2 * difference), 100 - unchanged - destroy)
       : baseSuccess * (1 + 0.05 * difference);

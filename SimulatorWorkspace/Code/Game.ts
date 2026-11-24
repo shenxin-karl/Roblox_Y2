@@ -145,7 +145,7 @@ export class Game extends BaseGame<ProjectConfig, State> {
     });
     this.replaceRecommendedButton.OnClick = () => {
       for (const slotId of this.getRecommendedReplacementSlotIds()) {
-        const action = new QueueSwordReplacementAction(slotId);
+        const action = new QueueSwordReplacementAction(slotId, this.state.forgeTargetOffset);
         if (!this.getActionBlocker(action)) {
           this.consumeAction(action, [`推荐槽位 ${slotId} 加入置换升级队列`]);
         }
@@ -229,9 +229,9 @@ export class Game extends BaseGame<ProjectConfig, State> {
     if (!this.isSlotReplacementRecommended(slotId)) {
       return;
     }
-    const action = new QueueSwordReplacementAction(slotId);
+    const action = new QueueSwordReplacementAction(slotId, this.state.forgeTargetOffset);
     if (!this.getActionBlocker(action)) {
-      this.consumeAction(action, [`槽位 ${slotId} 加入一次性置换队列`]);
+      this.consumeAction(action, [`槽位 ${slotId} 加入置换升级队列`]);
     }
     this.executeNextReplacement();
     this.UpdateUI();
@@ -239,8 +239,8 @@ export class Game extends BaseGame<ProjectConfig, State> {
 
   isSlotReplacementRecommended(slotId: number): boolean {
     const slot = this.state.slots.find((item) => item.id === slotId);
-    return slot?.unlocked === true && this.state.swords.some((sword) =>
-      sword.id === slot.swordId && sword.quality <= this.state.playerUpgradeLevels.forging);
+    return slot?.unlocked === true && (slot.swordId === null || this.state.swords.some((sword) =>
+      sword.id === slot.swordId && sword.quality <= this.state.playerUpgradeLevels.forging));
   }
 
   private getRecommendedReplacementSlotIds(): number[] {
@@ -252,7 +252,7 @@ export class Game extends BaseGame<ProjectConfig, State> {
     if (!slot?.unlocked) {
       return new UnlockSlotAction(slotId);
     }
-    return slot.swordId === null ? new QueueSwordReplacementAction(slotId) : new UpgradeSwordMaxAction(slotId);
+    return slot.swordId === null ? new QueueSwordReplacementAction(slotId, this.state.forgeTargetOffset) : new UpgradeSwordMaxAction(slotId);
   }
 
   upgradeSlot(slotId: number): void {
@@ -273,12 +273,15 @@ export class Game extends BaseGame<ProjectConfig, State> {
   }
 
   private executeNextReplacement(): void {
-    const slotId = this.state.pendingReplacementSlotIds[0];
-    if (slotId === undefined) {
+    const request = this.state.pendingReplacements[0];
+    if (!request) {
       return;
     }
+    const { slotId } = request;
     const action = new ReplaceSwordAction(slotId);
-    if (!this.getActionBlocker(action) && this.consumeAction(action, [`执行队首槽位 ${slotId} 的一次置换请求，完成后出队`])) {
+    if (!this.getActionBlocker(action) &&
+        this.consumeAction(action, [`尝试锻造并置换队首槽位 ${slotId}`]) &&
+        this.state.lastForgeResult?.slotId === slotId) {
       const upgrade = new UpgradeSwordMaxAction(slotId);
       if (!this.getActionBlocker(upgrade)) {
         this.consumeAction(upgrade, [`一键升级槽位 ${slotId} 内的武器`]);
@@ -312,7 +315,7 @@ export class Game extends BaseGame<ProjectConfig, State> {
     this.autoUnlockSlotsButton.BorderColor = this.state.autoUnlockSlots ? "#8bbfaf" : "#c6d1e1";
     const recommendedSlotIds = this.getRecommendedReplacementSlotIds();
     this.replaceRecommendedButton.Disabled = !recommendedSlotIds.some((slotId) =>
-      this.getActionBlocker(new QueueSwordReplacementAction(slotId)) === null);
+      this.getActionBlocker(new QueueSwordReplacementAction(slotId, this.state.forgeTargetOffset)) === null);
     const mutationNames = ["变异0", "变异1", "变异2", "变异3", "变异4", "变异5"];
     const mutationColors = ["#64748b", "#28834b", "#2872c4", "#8542bd", "#b87908", "#c23c51"];
     const oreCounts = new Map<number, number>();
@@ -365,7 +368,7 @@ export class Game extends BaseGame<ProjectConfig, State> {
       labels.statValues.TextColor = "#285e3c";
       labels.income.Text = hasSword ? `${income.toFixed(2)}/s` : "";
       labels.income.TextColor = "#a66f00";
-      const queued = slot.unlocked && this.state.pendingReplacementSlotIds.includes(slot.id);
+      const queued = slot.unlocked && this.state.pendingReplacements.some((request) => request.slotId === slot.id);
       labels.queue.Visible = queued || recommendReplacement;
       labels.queue.Text = queued ? "排队中" : recommendReplacement ? "推荐置换" : "";
       labels.button.ButtonColor = recommendReplacement ? "#fff0b3" : slot.unlocked ? (sword ? "#bde5cc" : "#e0f2e5") : "#e1ecfb";
