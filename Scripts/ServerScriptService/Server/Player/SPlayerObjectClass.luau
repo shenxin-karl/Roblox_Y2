@@ -20,6 +20,12 @@ function Player:Ctor(id)
     self:AddComponent("SAnalyticsCompClass")
 end
 
+--- 在基地分配前识别首次到访，基地不足也计入漏斗入口。
+function Player:OnPlayerLogin()
+    self:RequireComponent("SAnalyticsComp"):StartSession()
+    Player.Super.OnPlayerLogin(self)
+end
+
 --- 项目不执行旧存档迁移；保留框架登录所需的入口。
 --- @param version number 框架传入的历史版本，本项目不使用。
 function Player:MigrateData(version)

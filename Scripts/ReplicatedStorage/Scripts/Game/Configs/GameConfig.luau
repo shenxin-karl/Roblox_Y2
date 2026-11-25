@@ -211,7 +211,7 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1106,
             IconId = [[rbxassetid://73943238782407]],
-            mutationMultiplier = 1
+            mutationMultiplier = 1.5
         },
         [3] = {
             Id = 3,
@@ -226,7 +226,7 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1107,
             IconId = [[rbxassetid://77978837493631]],
-            mutationMultiplier = 1
+            mutationMultiplier = 2
         },
         [4] = {
             Id = 4,
@@ -241,7 +241,7 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1102,
             IconId = [[rbxassetid://106224256982724]],
-            mutationMultiplier = 1
+            mutationMultiplier = 3
         },
         [5] = {
             Id = 5,
@@ -256,7 +256,7 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1103,
             IconId = [[rbxassetid://131760910444430]],
-            mutationMultiplier = 1
+            mutationMultiplier = 5
         },
         [6] = {
             Id = 6,
@@ -271,7 +271,7 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1105,
             IconId = [[rbxassetid://73900159742590]],
-            mutationMultiplier = 1
+            mutationMultiplier = 8
         },
         [7] = {
             Id = 7,
@@ -286,7 +286,7 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1108,
             IconId = [[rbxassetid://105211433135609]],
-            mutationMultiplier = 1
+            mutationMultiplier = 15
         },
         [8] = {
             Id = 8,
@@ -301,7 +301,7 @@ return {
             HitsMultiplier = 1,
             OreItemId = 1109,
             IconId = [[rbxassetid://72403336030668]],
-            mutationMultiplier = 1
+            mutationMultiplier = 20
         },
         [9] = {
             Id = 9,

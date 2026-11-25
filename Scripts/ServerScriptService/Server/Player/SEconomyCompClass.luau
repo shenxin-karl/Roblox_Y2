@@ -238,6 +238,7 @@ function Comp:ReplyGift(token, accepted)
         senderPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
         receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
     else
+        sender:RequireComponent("SWelfareComp"):AdvanceTask("gift")
         senderPlayer:ShowLocalizedTips(TranslationTexts.GiftSent, {name = self:GetPlayerNode().DisplayName})
         receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftReceived, {name = sender:GetPlayerNode().DisplayName})
     end

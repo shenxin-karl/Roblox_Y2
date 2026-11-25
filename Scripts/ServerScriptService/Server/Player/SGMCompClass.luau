@@ -1,4 +1,4 @@
--- 项目开发者操作；所有命令仅处理当前开发者本人的会话和存档。
+-- 项目开发者操作；存档命令仅处理当前开发者本人的会话。
 local FX, FS = _G.FX, _G.FS
 local Text = FX.Text
 local TranslationTexts = Text.Define("GM", {
@@ -139,6 +139,10 @@ function Component:RequestGameplay(action, payload)
     if action == "BreakSword" then
         local success = self:RequireComponent("SForgeComp"):BreakCurrentSword()
         return {success = success, key = success and TranslationTexts.Success or TranslationTexts.NoActiveForge}
+    end
+    if action == "RefreshAllOres" and next(payload) == nil then
+        _G.SMiningManager:ReplaceGroundRocks(true)
+        return {success = true, key = TranslationTexts.Success}
     end
     return {success = false, key = TranslationTexts.Unknown}
 end

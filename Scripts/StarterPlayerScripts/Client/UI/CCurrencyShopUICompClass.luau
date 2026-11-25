@@ -1,5 +1,6 @@
 -- 货币商店展示由导出 View 管理；平台收据是 Robux 商品的到账依据。
 local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
 local FX, FC = _G.FX, _G.FC
 local Loader = FX.Loader
 local Text = FX.Text
@@ -29,11 +30,45 @@ function Component:OnReady()
     self:TrackConnection(FC.Localization.Changed:Connect(function()
         self:UpdateProducts()
     end))
-    self:TrackConnection(MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId, productId)
+    self:TrackConnection(MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId, productId, purchased)
         if userId == self:GetPlayerNode().UserId and productId == self._promptProductId then
+            if not purchased then
+                FX.Network:SendMsgToServer("C2S_CommerceAnalytics", "Canceled", productId, "CurrencyShop")
+                self._seenProducts[productId] = nil
+            end
             self:ClearPurchase()
         end
     end))
+    self._seenProducts = {}
+    local elapsed = 0
+    --- 每次打开期间只记录实际进入可见列表的报价。
+    --- @param dt number 距上一帧的秒数。
+    self:TrackConnection(RunService.Heartbeat:Connect(function(dt)
+        if not self.State.open or self.State.tab ~= "Robux" then
+            return
+        end
+        elapsed += dt
+        if elapsed >= 0.25 then
+            elapsed = 0
+            self:ObserveQuotes()
+        end
+    end))
+end
+
+--- 仅使用 View 已渲染的卡片位置统计曝光，不接管列表布局。
+function Component:ObserveQuotes()
+    local top = self.List.AbsolutePosition.Y
+    local bottom = top + self.List.AbsoluteWindowSize.Y
+    for index, product in ipairs(self.Config.products) do
+        local card = self.Cards[product.id]
+        local id = product.productId
+        if product.currency == "Robux" and not product.unavailable and card and not self._seenProducts[id]
+            and card.button.AbsolutePosition.Y < bottom
+            and card.button.AbsolutePosition.Y + card.button.AbsoluteSize.Y > top then
+            self._seenProducts[id] = true
+            FX.Network:SendMsgToServer("C2S_CommerceAnalytics", "Seen", id, "CurrencyShop")
+        end
+    end
 end
 
 --- 根据档位与商品映射构建稳定列表；没有平台 ID 的商品不可点击。
@@ -90,6 +125,7 @@ end
 --- 记录关闭状态，后续数据同步不会重新打开窗口。
 function Component:OnHide()
     self.State.open = false
+    self._seenProducts = {}
 end
 
 --- 恢复购买按钮和卡片，发货仍由服务端处理。
@@ -134,7 +170,7 @@ function Component:OnUIAction(action, payload)
                 commonUI:ShowLocalizedTips(TranslationTexts.Maxed)
             else
                 self:Hide()
-                self:GetOwner():RequireComponent("CMoneyMultiplierUICompClass"):OpenPurchase()
+                self:GetOwner():RequireComponent("CMoneyMultiplierUICompClass"):OpenPurchase("CurrencyShop")
             end
             return
         end
@@ -142,10 +178,14 @@ function Component:OnUIAction(action, payload)
         self.State.pending = {[product.id] = true}
         self._promptProductId = product.productId
         self:RefreshUI()
+        FX.Network:SendMsgToServer("C2S_CommerceAnalytics", "Seen", product.productId, "CurrencyShop")
+        FX.Network:SendMsgToServer("C2S_CommerceAnalytics", "Request", product.productId, "CurrencyShop")
         self._purchaseTask = task.defer(function()
             local ok, prompted = pcall(commonUI.ShowDeveloperBuyUI, commonUI, product.productId)
             self._purchaseTask = nil
             if not ok or not prompted then
+                FX.Network:SendMsgToServer("C2S_CommerceAnalytics", "PromptFailed", product.productId, "CurrencyShop")
+                self._seenProducts[product.productId] = nil
                 self:ClearPurchase()
                 commonUI:ShowLocalizedTips(self.BaseViewTranslationTexts.Unavailable)
             end

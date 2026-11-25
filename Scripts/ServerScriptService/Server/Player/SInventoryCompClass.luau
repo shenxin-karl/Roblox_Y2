@@ -61,7 +61,7 @@ function Comp:OnPlayerLogin()
     self:SyncTools()
 end
 
---- 创建手持外观；将手对齐实际剑柄，并让剑尖稍向外倾斜，避开角色面部。
+--- 创建手持外观；无手持模型的道具仍可装备查看说明，收益卡可点击使用。
 --- @param itemId number 已配置的道具 ID。
 --- @param extra table? 武器变异用于光环；成品品质用于选择模型和图标。
 --- @return Tool 不包含业务脚本的手持道具。
@@ -76,8 +76,14 @@ function Comp:CreateTool(itemId, extra)
     if icon ~= "rbxassetid://0" then
         tool.TextureId = icon
     end
+    local item = Items.Data[itemId]
+    if item.HeldHandler == "None" then
+        tool.RequiresHandle = false
+        tool.Enabled = item.Type == "IncomeCard"
+        return tool
+    end
     local handle
-    if Items.Data[itemId].HeldHandler == "Sword" then
+    if item.HeldHandler == "Sword" then
         local quality = itemId == SwordRules.ItemId and extra.Quality or 1
         tool.TextureId = _G.GameConfig.WeaponData[quality].IconId
         handle = WeaponVisual.Create(quality, 4, mutationId)
@@ -186,6 +192,22 @@ function Comp:GetEquippedGrid()
         end
     end
     return nil
+end
+
+--- 仅使用服务器当前装备的收益卡；扣卡和发奖走同一个存档事务。
+--- @param tool any 客户端点击时手持的 Tool 实例。
+function Comp:ActivateIncomeCard(tool)
+    local grid = self._active and self:GetEquippedGrid()
+    if not grid or self._tools[grid] ~= tool then
+        return
+    end
+    local item = self:GetGridData(grid)
+    if not item or Items.Data[item.itemId].Type ~= "IncomeCard" then
+        return
+    end
+    self:GetPlayerObject():RunDataTransaction(function()
+        return self:UseItem(grid, 1)
+    end)
 end
 
 --- 只装备当前快捷格里的本人道具；再次选择同一格则卸下。

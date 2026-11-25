@@ -28,7 +28,7 @@ end
 function Comp:Upgrade(upgradeId, expectedLevel)
     if not self._active or type(upgradeId) ~= "string" or not Rules.BasePrices[upgradeId]
         or type(expectedLevel) ~= "number" or expectedLevel < 0
-        or expectedLevel >= Rules.MaxLevel or expectedLevel % 1 ~= 0
+        or expectedLevel >= Rules.GetMaxLevel(upgradeId) or expectedLevel % 1 ~= 0
         or os.clock() - self._lastRequest < 0.2 then
         return false
     end
@@ -45,9 +45,13 @@ function Comp:Upgrade(upgradeId, expectedLevel)
     if self:GetPlayerNode():GetAttribute("GMFreeUpgrades") ~= true then
         costs = {{Type = "Money", Currency = "Money", Count = Rules.GetPrice(upgradeId, expectedLevel)}}
     end
-    return self:RequireComponent("FSRewardComp"):ExchangeRewards(costs,
+    local success = self:RequireComponent("FSRewardComp"):ExchangeRewards(costs,
         {{Type = "UpgradeWorkshop", UpgradeId = upgradeId, ExpectedLevel = expectedLevel}}
     )
+    if success and #costs > 0 then
+        self:RequireComponent("SAnalyticsComp"):WorkshopUpgraded(upgradeId, expectedLevel)
+    end
+    return success
 end
 
 return Comp

@@ -10,6 +10,8 @@ _G.Provider.BuyHandlers = require(Handlers.BuyHandlers)
 _G.Provider.RewardHandlers = require(Handlers.RewardHandlers)
 
 local Player = FXLoader:Here(script.Parent, "Player")
+local RankingServiceClass = FXLoader:Require(script.Parent, "Service.SRankingServiceClass")
+RankingServiceClass.New()
 local ConveyorService = FXLoader:Require(script.Parent, "Service.SConveyorService")
 ConveyorService.Init()
 local BaseManagerClass = FXLoader:Require(script.Parent, "Service.SBaseManagerClass")

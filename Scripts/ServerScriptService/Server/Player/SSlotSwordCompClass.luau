@@ -1,8 +1,9 @@
 -- 基地武器：放置、卸下、在线积累和升级由服务端裁定，持久化沿用 BaseData。
 local CollectionService = game:GetService("CollectionService")
-local FX = _G.FX
+local FX, FS = _G.FX, _G.FS
 local FXLoader = FX.Loader
 local Fields = _G.PlayerDataConfig
+local IncomeRanking = _G.Provider:GetRankingEnum()[1]
 local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local WorkshopRules = FXLoader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
@@ -403,7 +404,7 @@ function Comp:GetPaidMultiplier()
     return MoneyMultiplier.GetMultiplier(self:GetNumber(Fields.PaidMultiplierTier))
 end
 
---- 保存当前基地总秒收益和服务端时间；背包武器不参与离线计算。
+--- 保存基地秒收益供离线结算，并将同一服务端数值用于当月最高秒收益。
 function Comp:SnapshotIncome()
     local rate = 0
     local data = self:GetTable(Fields.BaseData)
@@ -416,6 +417,11 @@ function Comp:SnapshotIncome()
     local offline = self:GetTable(Fields.OfflineIncome)
     offline.Timestamp, offline.Rate = os.time(), rate
     self:SetTable(Fields.OfflineIncome, offline)
+    local ranking = FS.RankingManager:GetRanking(IncomeRanking)
+    ranking:EnsureCurrentPeriod()
+    if rate > (ranking:GetPlayerScore(self:GetPlayerId()) or IncomeRanking.DefaultValue) then
+        self:UpdateRankingScore(IncomeRanking, rate)
+    end
 end
 
 --- 复用框架每秒更新，积累后自动领取；不用客户端领钱协议或独立保存循环。

@@ -140,7 +140,7 @@ function Comp:SetDeckSpeed(deck, multiplier)
     deck.AssemblyLinearVelocity = direction * self._baseSpeed * multiplier
 end
 
---- 仅主动行走时将本地输送速度翻倍；停步、换道或离开时恢复正常速度。
+--- 顺向行走时加速，逆向行走时暂停脚下推力，停步和横穿时沿用正常输送。
 function Comp:RefreshMovementSpeed()
     local hit, humanoid = self:GetConveyorContact()
     local deck = hit and hit.Instance
@@ -149,8 +149,10 @@ function Comp:RefreshMovementSpeed()
     end
     self._activeDeck = deck
     if deck then
-        local isWalking = humanoid.MoveDirection.Magnitude > 0.01 and humanoid.WalkSpeed > 0
-        self:SetDeckSpeed(deck, isWalking and 2 or 1)
+        local path = deck:GetAttribute("PathEnd") - deck:GetAttribute("PathStart")
+        local along = humanoid.WalkSpeed > 0 and humanoid.MoveDirection:Dot(path.Unit) or 0
+        local multiplier = along < -0.01 and 0 or (along > 0.01 and 2 or 1)
+        self:SetDeckSpeed(deck, multiplier)
     end
 end
 
@@ -165,7 +167,8 @@ function Comp:RefreshArrow()
     local direction = Vector3.new(velocity.X, 0, velocity.Z)
     if direction.Magnitude < 1 then
         local path = hit.Instance:GetAttribute("PathEnd") - hit.Instance:GetAttribute("PathStart")
-        direction = Vector3.new(path.X, 0, path.Z)
+        local move = humanoid.MoveDirection
+        direction = move:Dot(path.Unit) < -0.01 and move or Vector3.new(path.X, 0, path.Z)
     end
     direction = direction.Unit
     local position = hit.Position + direction * 3 + Vector3.new(0, 0.12, 0)

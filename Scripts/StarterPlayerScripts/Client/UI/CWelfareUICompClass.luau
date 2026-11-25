@@ -4,6 +4,7 @@ local Loader = FX.Loader
 local Fields = _G.PlayerDataConfig
 local Welfare = Loader:RequireShared("Scripts.Game.Shared.WelfareRules")
 local Utility = Loader:RequireShared("Scripts.Game.Shared.GameUtility")
+local SwordRules = Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 Loader:RequireFromParent(script, "Generated.CWelfareView")
 local Component = FX.Class("CWelfareUICompClass", "CWelfareView")
 local TranslationTexts = FX.Text.Define("Y2Welfare", {ClaimFailed = "A reward could not be claimed. Please try again."})
@@ -12,9 +13,11 @@ local TranslationTexts = FX.Text.Define("Y2Welfare", {ClaimFailed = "A reward co
 function Component:OnReady()
     Component.Super.OnReady(self)
     self:Hide()
-    self:WatchDataChanged(Fields.WelfareData, function()
-        self:UpdateWelfare()
-    end)
+    for index, field in ipairs({Fields.WelfareData, Fields.WelfareTasks}) do
+        self:WatchDataChanged(field, function()
+            self:UpdateWelfare()
+        end)
+    end
     self:TrackConnection(FC.Localization.Changed:Connect(function()
         self:UpdateWelfare()
     end))
@@ -23,6 +26,7 @@ end
 --- 由同步档案生成 View 需要的分组、资格和剩余领取次数。
 function Component:UpdateWelfare()
     local data = self:GetTable(Fields.WelfareData)
+    local tasks = self:GetTable(Fields.WelfareTasks)
     local passes = {}
     for index, goodsId in ipairs(Welfare.PassIds) do
         local product = _G.GoodsConfig.GoodsData[goodsId]
@@ -41,13 +45,18 @@ function Component:UpdateWelfare()
     for index, group in ipairs(Welfare.Groups) do
         local groupEntries = {}
         entries[group.kind] = groupEntries
-        local isOnline = group.kind == "online"
-        local claims = isOnline and data.OnlineClaims or data.SignInClaims
+        local kind = group.kind
+        local claims = if kind == "online" then data.OnlineClaims elseif kind == "signin" then data.SignInClaims
+            elseif tasks.Day == data.Day then tasks.Claims else {}
         for itemIndex, item in ipairs(group.items) do
-            local ready = (isOnline and onlineMinutes >= item.minutes) or (not isOnline and data.SignInDay >= item.day)
+            local current = kind == "task" and Welfare.GetTaskProgress(tasks, data.Day, item.id) or nil
+            local ready = (kind == "online" and onlineMinutes >= item.minutes)
+                or (kind == "signin" and data.SignInDay >= item.day)
+                or (kind == "task" and current >= item.target)
             groupEntries[item.id] = {
                 status = claims[item.id] and "Claimed" or (ready and "Claimable" or "Locked"),
                 pending = self._claimKind == group.kind and self._claimId == item.id,
+                current = current,
             }
         end
     end
@@ -56,14 +65,21 @@ function Component:UpdateWelfare()
     self:RefreshUI()
 end
 
---- 奖励配置只包含钻石，使用 View 内置钻石图标。
+--- 使用 View 的金币、钻石和道具原型；配置道具共用名称和图标字段。
 --- @param reward table 福利规则中定义的奖励。
---- @return table View 所需的钻石名称和图标类别。
+--- @return table View 所需的名称、图标类别和可选道具图。
 function Component:GetRewardDisplay(reward)
-    return {name = reward.id, icon = "Gem"}
+    if reward.type == "Blank" then
+        local icon = _G.GameConfig.WeaponData[1].BlankIconId or _G.ItemConfig.Display[SwordRules.BlankItemId].IconId
+        return {name = reward.id, icon = "Egg", image = icon}
+    elseif reward.type == "Item" then
+        local item = _G.ItemConfig.Display[reward.id]
+        return {name = item.Name, icon = "Egg", image = item.IconId}
+    end
+    return {name = reward.id, icon = reward.id == "Money" and "Coin" or "Gem"}
 end
 
---- @param amount number 原始钻石数量。
+--- @param amount number 原始奖励数量。
 --- @return string 统一缩写后的展示值。
 function Component:FormatNumber(amount)
     return Utility.NumberToText(amount)

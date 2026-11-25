@@ -2,10 +2,16 @@
 local FX = _G.FX
 local Numerical = FX.Loader:RequireShared("Scripts.Game.Configs.NumericalConfig")
 local Rules = {
-    MaxLevel = Numerical.forgingUpgradeCurves.input.max - 1,
     BasePrices = {smelt = Numerical.smeltingUpgradeCurves, forge = Numerical.forgingUpgradeCurves,
         income = Numerical.incomeUpgradeCurves},
 }
+
+--- 各升级项按自己的曲线确定上限，转成存档使用的零起点等级。
+--- @param upgradeId string 固定升级 ID。
+--- @return number 该项存档等级上限。
+function Rules.GetMaxLevel(upgradeId)
+    return Rules.BasePrices[upgradeId].input.max - 1
+end
 
 --- 以升级前等级采样下一次费用，两端共用模拟器导出的曲线。
 --- @param upgradeId string 固定升级 ID。

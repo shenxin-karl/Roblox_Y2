@@ -60,8 +60,8 @@ function Component:UpdateState()
     local entries = {}
     for upgradeId in pairs(Rules.BasePrices) do
         local level = levels[upgradeId]
-        local maxed = level >= Rules.MaxLevel
-        local price = free and 0 or Rules.GetPrice(upgradeId, level)
+        local maxed = level >= Rules.GetMaxLevel(upgradeId)
+        local price = (maxed or free) and 0 or Rules.GetPrice(upgradeId, level)
         entries[upgradeId] = {
             level = Rules.GetLevel(level),
             currentValue = upgradeId == "income" and "×" .. GameUtility.NumberToText(Rules.GetMultiplier(level))

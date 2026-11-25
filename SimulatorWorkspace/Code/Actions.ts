@@ -424,8 +424,9 @@ export class UpgradePlayerAction extends BaseAction<UpgradePlayerPayload, State,
     }
     const order = ["income", "forging", "smelting"] as const;
     const levels = this.state.playerUpgradeLevels;
-    const roundLevel = Math.min(...order.map((item) => levels[item]));
-    const next = order.find((item) => levels[item] === roundLevel)!;
+    const eligible = order.filter((item) => levels[item] < (getPlayerUpgradeCurves(this.config, item).input.max ?? Infinity));
+    const roundLevel = Math.min(...eligible.map((item) => levels[item]));
+    const next = eligible.find((item) => levels[item] === roundLevel)!;
     if (kind !== next) {
       const titles = { income: "收益倍率", forging: "武器锻造", smelting: "熔炼幸运" };
       return { kind: "playerUpgradeOrder", reason: `请先将${titles[next]}升至 ${roundLevel + 1} 级` };

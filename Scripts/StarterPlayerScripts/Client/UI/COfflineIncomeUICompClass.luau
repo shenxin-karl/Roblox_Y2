@@ -61,6 +61,7 @@ function Component:UpdateState()
     if amount > 0 and not self._autoOpened then
         self._autoOpened = true
         self:Show()
+        FX.Network:SendMsgToServer("C2S_TutorialHint", "OfflineShown")
     end
 end
 

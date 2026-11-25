@@ -51,10 +51,19 @@ function Comp:PlaceEquippedBlank()
     local data = {Active = true, Finished = false, MutationId = traits.MutationId,
         blankLuckLevel = traits.blankLuckLevel, forgeLevel = forgeLevel,
         Quality = math.max(1, forgeLevel - 4), HammerCount = 0}
+    data.RoundId = HttpService:GenerateGUID(false)
+    data.BlankId = item.extraData.BlankId
+    data.MakerUserId = item.extraData.BlankMakerUserId
+    local analytics = self:RequireComponent("SAnalyticsComp")
+    data.AfterTutorial = analytics:IsComplete()
     items[tostring(grid)] = nil
-    return self:GetPlayerObject():RunDataTransaction(function()
+    local success = self:GetPlayerObject():RunDataTransaction(function()
         return self:SetTable(Fields.Inventory, items) and self:SetTable(Fields.ForgeData, data)
     end)
+    if success then
+        analytics:ForgeStarted(data)
+    end
+    return success
 end
 
 --- 只敲台上已有的武器，放剑胚不计作敲击或抽取结果。
@@ -88,7 +97,10 @@ function Comp:ForgeSword()
             data.Outcome, data.Active, data.Finished = "Destroyed", false, true
             data.RecoveryId = HttpService:GenerateGUID(false)
         end
-        self:SetTable(Fields.ForgeData, data)
+        if not self:SetTable(Fields.ForgeData, data) then
+            return
+        end
+        self:RequireComponent("SWelfareComp"):AdvanceTask("hammer")
         if data.Finished and data.Active then
             self:FinishSword()
         end
@@ -142,7 +154,7 @@ function Comp:BreakCurrentSword()
     return true
 end
 
---- 至少敲过一锤才可主动出炉；已结束成品领取失败时保留原结果。
+--- 剑胚放上台后可随时出炉；已结束成品领取失败时保留原结果。
 --- @param showResult boolean? 主动点击时显示结果，自动出炉仍沿用锻造表现。
 --- @return boolean 是否成功领取一把成品。
 function Comp:FinishSword(showResult)
@@ -150,16 +162,21 @@ function Comp:FinishSword(showResult)
         return false
     end
     local data = self:GetTable(Fields.ForgeData)
-    if not data.Active or (data.HammerCount == 0 and not data.Finished) then
+    if not data.Active then
         return false
     end
+    data.FinishMode = data.FinishMode or (data.Outcome == "Broken" and "Broken"
+        or (data.Finished and "MaxQuality" or "Manual"))
+    local firstAttempt = not data.DeliveryAttempted
+    data.DeliveryAttempted = true
     data.Finished = true
     self:SetTable(Fields.ForgeData, data)
     local player = self:GetPlayerObject()
     local success = player:RunDataTransaction(function()
         if not self:RequireComponent("FSRewardComp"):AddRewards({{Type = "Item", ItemId = Rules.ItemId, Count = 1,
             ExtraData = {MutationId = data.MutationId, blankLuckLevel = data.blankLuckLevel,
-                Quality = data.Quality, Level = 1, StoredMoney = 0}}}) then
+                Quality = data.Quality, Level = 1, StoredMoney = 0, MakerUserId = data.MakerUserId,
+                ForgeRoundId = data.RoundId, AfterTutorial = data.AfterTutorial}}}) then
             return false
         end
         data.Active = false
@@ -168,6 +185,12 @@ function Comp:FinishSword(showResult)
     end)
     if showResult then
         player:ShowLocalizedTips(success and TranslationTexts.Success or TranslationTexts.Failed)
+    end
+    local analytics = self:RequireComponent("SAnalyticsComp")
+    if success then
+        analytics:ForgeDelivered(data)
+    elseif firstAttempt then
+        analytics:Record("WeaponPending", nil, data.RoundId)
     end
     return success
 end

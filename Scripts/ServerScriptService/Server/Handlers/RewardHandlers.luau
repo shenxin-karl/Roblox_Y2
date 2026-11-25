@@ -4,6 +4,17 @@ local GameConfig = _G.GameConfig
 local FX = _G.FX
 local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
+local Tutorial = FX.Loader:RequireShared("Scripts.Game.Shared.TutorialGuideConfig")
+
+--- 在奖励计划内累计引导结果，预检失败不会留下进度。
+--- @param rewardComponent table 框架奖励组件。
+--- @param tables table 本次奖励计划的待提交字段。
+--- @return table 本次交易使用的引导进度。
+local function TutorialProgress(rewardComponent, tables)
+    local progress = tables.TutorialProgress or rewardComponent:GetTable(Fields.TutorialProgress)
+    tables.TutorialProgress = progress
+    return progress
+end
 
 return {
     --- 将工坊等级与金币消耗放入同一次兑换，预检失败不修改档案。
@@ -15,7 +26,7 @@ return {
         local levels = tables.UpgradeWorkshop or rewardComponent:GetTable(Fields.UpgradeWorkshop)
         local level = levels[entry.UpgradeId]
         if not WorkshopRules.BasePrices[entry.UpgradeId] or level ~= entry.ExpectedLevel
-            or level < 0 or level >= WorkshopRules.MaxLevel or level % 1 ~= 0 then
+            or level < 0 or level >= WorkshopRules.GetMaxLevel(entry.UpgradeId) or level % 1 ~= 0 then
             return false
         end
         levels[entry.UpgradeId] = level + 1
@@ -52,6 +63,13 @@ return {
             or sword.StoredMoney ~= entry.Amount then
             return false
         end
+        if Tutorial.IsSelfMade(sword, rewardComponent:GetPlayerId()) then
+            local progress = TutorialProgress(rewardComponent, tables)
+            if not progress.Reached["8"] then
+                progress.Reached["8"] = os.time()
+                progress.FirstCollection = {Round = sword.ForgeRoundId, Slot = entry.SlotId, Amount = entry.Amount}
+            end
+        end
         sword.StoredMoney = 0
         tables.BaseData = data
         return true
@@ -70,6 +88,20 @@ return {
             return false
         end
         sword.Level += 1
+        if rewardComponent:GetPlayerNode():GetAttribute("GMFreeUpgrades") ~= true then
+            local progress = TutorialProgress(rewardComponent, tables)
+            progress.WeaponUpgrades = (progress.WeaponUpgrades or 0) + 1
+            progress.LastUpgrade = {Round = sword.ForgeRoundId, From = entry.ExpectedLevel,
+                To = sword.Level, Slot = entry.SlotId, At = os.time(),
+                SelfMade = Tutorial.IsSelfMade(sword, rewardComponent:GetPlayerId())}
+            if progress.LastUpgrade.SelfMade then
+                progress.Upgrades += 1
+                progress.Reached["9"] = progress.Reached["9"] or progress.LastUpgrade.At
+                if progress.Upgrades >= 2 then
+                    progress.Reached["13"] = progress.Reached["13"] or progress.LastUpgrade.At
+                end
+            end
+        end
         tables.BaseData = data
         return true
     end,
@@ -102,8 +134,22 @@ return {
         data.SlotData[key] = {
             ItemId = item.itemId, Level = item.extraData.Level, StoredMoney = item.extraData.StoredMoney,
             MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel,
-            Quality = traits.Quality,
+            Quality = traits.Quality, MakerUserId = traits.MakerUserId, ForgeRoundId = traits.ForgeRoundId,
+            AfterTutorial = traits.AfterTutorial,
         }
+        local selfMade = Tutorial.IsSelfMade(data.SlotData[key], rewardComponent:GetPlayerId())
+        if selfMade or traits.AfterTutorial then
+            local progress = TutorialProgress(rewardComponent, tables)
+            if selfMade then
+                progress.Reached["7"] = progress.Reached["7"] or os.time()
+            end
+            progress.LastPlacement = {Round = traits.ForgeRoundId, Slot = entry.SlotId,
+                AfterTutorial = traits.AfterTutorial, At = os.time(), Count = (progress.Placements or 0) + 1}
+            progress.Placements = progress.LastPlacement.Count
+            if selfMade and progress.Crafted >= 2 and traits.ForgeRoundId ~= progress.FirstRound then
+                progress.SecondPlaced = true
+            end
+        end
         items[tostring(entry.Grid)] = nil
         tables.Inventory, tables.BaseData = items, data
         return true
@@ -143,6 +189,12 @@ return {
         data.UnlockedSlots[tostring(entry.SlotId)] = true
         data.UnlockedSlotCount += 1
         tables.BaseData = data
+        local progress = TutorialProgress(rewardComponent, tables)
+        progress.LastUnlock = {Slot = entry.SlotId, At = os.time(), Count = (progress.Unlocks or 0) + 1}
+        progress.Unlocks = progress.LastUnlock.Count
+        if not progress.FirstSlot and entry.SlotId > GameConfig.CommonConfig.BaseInitialSlots then
+            progress.FirstSlot, progress.FirstUnlockAt = entry.SlotId, os.time()
+        end
         return true
     end,
 }

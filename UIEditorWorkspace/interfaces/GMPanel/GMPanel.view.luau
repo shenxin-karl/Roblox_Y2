@@ -12,7 +12,7 @@ State 是完整快照，以下必填布尔值由接入方提供：
 SetFreeUpgrades、SetGuaranteedForge：{ enabled: boolean }。
 GiveBlank、GiveOre：{ id: number, quantity: number }，留空数量按 1。
 GiveSword：{}，固定发放 1 个普通剑胚；保留原命令名。
-GiveLevelOneSword、PrepareUpgrade、BreakSword：{}。
+GiveLevelOneSword、PrepareUpgrade、BreakSword、RefreshAllOres：{}。
 所有输入数字为正整数；服务端仍须核对 ID、范围和权限。
 
 【接入】
@@ -46,6 +46,7 @@ local Actions = {
     "GiveLevelOneSword",
     "PrepareUpgrade",
     "BreakSword",
+    "RefreshAllOres",
 }
 local FormFields = {
     GiveBlank = "quantity",

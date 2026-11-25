@@ -107,6 +107,105 @@ return {
             HeldHandler = [[Ore]],
             NumberArray = nil,
             KVTable = nil
+        },
+        [1201] = {
+            Id = 1201,
+            Type = [[IncomeCard]],
+            MaxStack = 1,
+            UseHandler = [[WelfareIncomeCard]],
+            HeldHandler = [[None]],
+            NumberArray = {
+                [1] = 600,
+            },
+            KVTable = nil
+        },
+        [1202] = {
+            Id = 1202,
+            Type = [[IncomeCard]],
+            MaxStack = 1,
+            UseHandler = [[WelfareIncomeCard]],
+            HeldHandler = [[None]],
+            NumberArray = {
+                [1] = 1800,
+            },
+            KVTable = nil
+        },
+        [1301] = {
+            Id = 1301,
+            Type = [[MutationStone]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[None]],
+            NumberArray = nil,
+            KVTable = {
+                MutationId = [[Silver]]
+            }
+        },
+        [1302] = {
+            Id = 1302,
+            Type = [[MutationStone]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[None]],
+            NumberArray = nil,
+            KVTable = {
+                MutationId = [[Gold]]
+            }
+        },
+        [1303] = {
+            Id = 1303,
+            Type = [[MutationStone]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[None]],
+            NumberArray = nil,
+            KVTable = {
+                MutationId = [[Frost]]
+            }
+        },
+        [1304] = {
+            Id = 1304,
+            Type = [[MutationStone]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[None]],
+            NumberArray = nil,
+            KVTable = {
+                MutationId = [[Inferno]]
+            }
+        },
+        [1305] = {
+            Id = 1305,
+            Type = [[MutationStone]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[None]],
+            NumberArray = nil,
+            KVTable = {
+                MutationId = [[Astral]]
+            }
+        },
+        [1306] = {
+            Id = 1306,
+            Type = [[MutationStone]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[None]],
+            NumberArray = nil,
+            KVTable = {
+                MutationId = [[Diamond]]
+            }
+        },
+        [1307] = {
+            Id = 1307,
+            Type = [[MutationStone]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[None]],
+            NumberArray = nil,
+            KVTable = {
+                MutationId = [[Rainbow]]
+            }
         }
     },
     Display = {
@@ -205,6 +304,78 @@ return {
             Quality = 1,
             IconId = [[rbxassetid://75540199938714]],
             DisplayModelId = nil
+        },
+        [1201] = {
+            Id = 1201,
+            Name = [[10-Minute Income Card]],
+            Desc = [[Use to collect 10 minutes of your current base income.]],
+            Quality = 1,
+            IconId = [[rbxasset://textures/ui/GuiImagePlaceholder.png]],
+            DisplayModelId = nil
+        },
+        [1202] = {
+            Id = 1202,
+            Name = [[30-Minute Income Card]],
+            Desc = [[Use to collect 30 minutes of your current base income.]],
+            Quality = 1,
+            IconId = [[rbxasset://textures/ui/GuiImagePlaceholder.png]],
+            DisplayModelId = nil
+        },
+        [1301] = {
+            Id = 1301,
+            Name = [[Silver Mutation Stone]],
+            Desc = [[A stone attuned to the Silver mutation. It cannot be used yet.]],
+            Quality = 1,
+            IconId = [[rbxassetid://85648539250241]],
+            DisplayModelId = nil
+        },
+        [1302] = {
+            Id = 1302,
+            Name = [[Gold Mutation Stone]],
+            Desc = [[A stone attuned to the Gold mutation. It cannot be used yet.]],
+            Quality = 1,
+            IconId = [[rbxassetid://131845221291707]],
+            DisplayModelId = nil
+        },
+        [1303] = {
+            Id = 1303,
+            Name = [[Frost Mutation Stone]],
+            Desc = [[A stone attuned to the Frost mutation. It cannot be used yet.]],
+            Quality = 1,
+            IconId = [[rbxassetid://89620960090242]],
+            DisplayModelId = nil
+        },
+        [1304] = {
+            Id = 1304,
+            Name = [[Inferno Mutation Stone]],
+            Desc = [[A stone attuned to the Inferno mutation. It cannot be used yet.]],
+            Quality = 1,
+            IconId = [[rbxassetid://84441068160642]],
+            DisplayModelId = nil
+        },
+        [1305] = {
+            Id = 1305,
+            Name = [[Astral Mutation Stone]],
+            Desc = [[A stone attuned to the Astral mutation. It cannot be used yet.]],
+            Quality = 1,
+            IconId = [[rbxassetid://127662661942024]],
+            DisplayModelId = nil
+        },
+        [1306] = {
+            Id = 1306,
+            Name = [[Diamond Mutation Stone]],
+            Desc = [[A stone attuned to the Diamond mutation. It cannot be used yet.]],
+            Quality = 1,
+            IconId = [[rbxassetid://92607755765167]],
+            DisplayModelId = nil
+        },
+        [1307] = {
+            Id = 1307,
+            Name = [[Rainbow Mutation Stone]],
+            Desc = [[A stone attuned to the Rainbow mutation. It cannot be used yet.]],
+            Quality = 1,
+            IconId = [[rbxassetid://108283185650211]],
+            DisplayModelId = nil
         }
     },
     ExtraDataSchema = {
@@ -219,11 +390,16 @@ return {
             StoredMoney = 0,
             MutationId = [[Normal]],
             blankLuckLevel = 1,
-            Quality = 1
+            Quality = 1,
+            MakerUserId = 0,
+            ForgeRoundId = [[None]],
+            AfterTutorial = false
         },
         SwordBlank = {
             MutationId = [[Normal]],
-            blankLuckLevel = 1
+            blankLuckLevel = 1,
+            BlankMakerUserId = 0,
+            BlankId = [[None]]
         }
     }
 }

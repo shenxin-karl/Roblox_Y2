@@ -261,11 +261,11 @@ function Comp:HandlePreviewInput(actionName, inputState, inputObject)
     return Enum.ContextActionResult.Sink
 end
 
---- 至少敲过一锤才提交主动出炉，挥锤期间等待当前结果。
+--- 台上有剑即可主动出炉，挥锤期间等待当前结果。
 function Comp:FinishSword()
     if self._effects and not self._effects:IsBusy() then
         local data = self:GetTable(Fields.ForgeData)
-        if data.Active and (data.HammerCount > 0 or data.Finished) then
+        if data.Active then
             FX.Network:SendMsgToServer("C2S_FinishSword")
         end
     end

@@ -44,6 +44,11 @@ return {
             OnlineClaims = {}, SignInClaims = {}, Passes = {}},
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
+    WelfareTasks = {
+        Type = "table", Key = "WelfareTasks",
+        DefVal = {Day = -1, Progress = {}, Claims = {}},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
     -- 进度随玩家保存；SlotData 以字符串槽位编号保存各槽的业务数据，不保存场景实例。
     BaseData = {
         Type = "table", Key = "BaseData",
@@ -79,10 +84,15 @@ return {
         Type = "table", Key = "MiningData", DefVal = {NextRefresh = 0, Rocks = {}},
         KVTable = PlayerKVEnum.ePlayerData, Sync = false,
     },
+    TutorialProgress = {
+        Type = "table", Key = "TutorialProgress",
+        DefVal = {Reached = {}, Crafted = 0, Upgrades = 0, Reported = 0, SessionReported = 0},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = false,
+    },
     Guide = {
         Type = "table", Key = "Guide",
         DefVal = {activeGuideId = "", guideMap = {}, target = {type = "None"}},
-        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+        Sync = true,
     },
     GoodsBuyInfo = {
         Type = "table", Key = "GoodsBuyInfo", DefVal = {},

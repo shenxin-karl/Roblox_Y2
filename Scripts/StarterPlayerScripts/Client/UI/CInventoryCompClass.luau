@@ -45,6 +45,7 @@ function Inventory:Ctor(owner)
     local config = _G.Provider:GetInventoryConfig()
     Inventory.Super.Ctor(self, owner, config.ShortcutCapacity, config.BackpackCapacity)
     self._badgeConnections = {}
+    self._useConnections = {}
 end
 
 --- @return string 项目的背包组件协作名称。
@@ -70,6 +71,11 @@ function Inventory:OnSlotsChanged(slots)
         end
         local itemId = tool:GetAttribute("FrameworkItemId")
         local item = itemId and Items.Data[itemId]
+        if item and item.Type == "IncomeCard" and not self._useConnections[tool] then
+            self._useConnections[tool] = tool.Activated:Connect(function()
+                FX.Network:SendMsgToServer("C2S_ActivateTool", tool)
+            end)
+        end
         local mutationId = tool:GetAttribute("MutationId")
         local mutation = if item and item.Type == "Ore" then OreMutations[itemId]
             else mutationId and SwordRules.GetMutation(mutationId)
@@ -90,6 +96,11 @@ function Inventory:OnSlotsChanged(slots)
         if not seenTools[tool] then
             connection:Disconnect()
             self._badgeConnections[tool] = nil
+            local useConnection = self._useConnections[tool]
+            if useConnection then
+                useConnection:Disconnect()
+                self._useConnections[tool] = nil
+            end
         end
     end
     local player = self:GetPlayerNode()
@@ -211,6 +222,9 @@ end
 function Inventory:Dtor()
     self._pendingBackpackDrop = nil
     for tool, connection in pairs(self._badgeConnections) do
+        connection:Disconnect()
+    end
+    for tool, connection in pairs(self._useConnections) do
         connection:Disconnect()
     end
     if self._display then

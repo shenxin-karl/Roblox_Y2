@@ -17,10 +17,26 @@ function Manager:Ctor()
     self:RegUpgradeWorkshopMsg()
     self:RegEconomyMsg()
     self:RegInventoryMsg()
+    FX.Network:RegClientMsgCallback("C2S_TutorialHint", function(userId, action, step)
+        local player = self:GetPlayerObject(userId)
+        if player then
+            player:RequireComponent("SAnalyticsComp"):HandleHint(action, step)
+        end
+    end)
 end
 
 --- 使用网络层认证的玩家身份路由背包操作。
 function Manager:RegInventoryMsg()
+    --- 路由现有 Tool 使用协议，服务端背包确认玩家当前手持物品。
+    --- @param userId number 引擎认证的玩家 ID。
+    --- @param tool any 点击的 Tool 实例。
+    FX.Network:RegClientMsgCallback("C2S_ActivateTool", function(userId, tool)
+        local player = self:GetPlayerObject(userId)
+        local inventory = player and player:GetComponent("FSInventoryComp")
+        if inventory then
+            inventory:ActivateIncomeCard(tool)
+        end
+    end)
     FX.Network:RegClientMsgCallback("C2S_SelectInventoryGrid", function(userId, grid, tool)
         local player = self:GetPlayerObject(userId)
         local inventory = player and player:GetComponent("FSInventoryComp")
@@ -62,6 +78,10 @@ function Manager:RegEconomyMsg()
         local success, insufficientDiamonds = false, false
         if economy then
             success, insufficientDiamonds = economy:ClaimOffline(boosted)
+            if success then
+                local analytics = player:RequireComponent("SAnalyticsComp")
+                analytics:AdvanceOffline("离线收益已到账", 3, boosted and "Boosted" or "Free")
+            end
         end
         FX.Network:SendMsgToClient(userId, "S2C_OfflineIncomeResult", requestId, success, insufficientDiamonds == true)
     end)

@@ -3,6 +3,7 @@ local PlayerDataConfig, ServerDataConfig = _G.PlayerDataConfig, _G.ServerDataCon
 local NetworkProtocol = _G.NetworkProtocol
 local ItemConfig, GoodsConfig = _G.ItemConfig, _G.GoodsConfig
 local ProjectConfig = require(script.Parent:WaitForChild("Game"):WaitForChild("Shared"):WaitForChild("ProjectConfig"))
+local RankingDataConfig = require(script.Parent.Game.Shared:WaitForChild("RankingDataConfig"))
 local Provider = { ItemHandlers = {}, BuyHandlers = {}, RewardHandlers = {} }
 
 --- 项目设置通过 Provider 提供，框架不读取旧业务配置。
@@ -26,10 +27,10 @@ function Provider:GetPlayerKVEnum()
     return _G.PlayerKVEnum
 end
 
---- 模板不预设榜单；启用时由项目返回对应榜单定义。
+--- 客户端和服务端使用同一份有序榜单配置。
 --- @return table 当前启用的排行榜列表。
 function Provider:GetRankingEnum()
-    return {}
+    return RankingDataConfig
 end
 
 --- @return string 排行榜本地分数数据域。

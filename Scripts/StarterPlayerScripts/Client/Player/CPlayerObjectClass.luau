@@ -3,6 +3,7 @@ local FXLoader = FX.Loader
 FXLoader:RequireFromParent(script, "CConveyorCompClass")
 FXLoader:RequireFromParent(script, "CLuckyShopCompClass")
 FXLoader:RequireFromParent(script, "CSoundCompClass")
+FXLoader:RequireFromParent(script, "CTutorialGuideCompClass")
 local Player = FX.Class("CPlayerObjectClass", "FCPlayerObjectClass")
 _G.CPlayerObjectClass = Player
 
@@ -14,6 +15,7 @@ function Player:Ctor(playerId)
     self:AddComponent("CConveyorCompClass")
     self:AddComponent("CLuckyShopCompClass")
     self:AddComponent("CSoundCompClass")
+    self:AddComponent("CTutorialGuideCompClass")
 end
 
 return Player

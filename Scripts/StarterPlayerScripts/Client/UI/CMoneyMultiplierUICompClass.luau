@@ -23,7 +23,8 @@ function Component:OnReady()
 end
 
 --- 用当前存档档位打开购买确认页，已达上限只提示。
-function Component:OpenPurchase()
+--- @param entry string? 商店入口，未传时来自主界面。
+function Component:OpenPurchase(entry)
     local commonUI = self:GetOwner():RequireComponent("CCommonUICompClass")
     if not table.find(_G.NetworkProtocol.ClientMsgID, "C2S_BuyMoneyMultiplier") then
         commonUI:ShowLocalizedTips(TranslationTexts.Unavailable)
@@ -39,6 +40,7 @@ function Component:OpenPurchase()
         return
     end
     self._expectedTier = tier
+    self._purchaseEntry = entry or "HUD"
     self.Config = {
         itemId = tostring(tier),
         name = "",
@@ -51,6 +53,7 @@ function Component:OpenPurchase()
     }
     self.State = {status = "Ready"}
     self:Show()
+    FX.Network:SendMsgToServer("C2S_CommerceAnalytics", "Seen", -tier, self._purchaseEntry)
 end
 
 --- 复用统一数值格式显示价格。
@@ -69,11 +72,6 @@ function Component:OnUIAction(action, payload)
         return
     end
     if action ~= "Buy" or self.State.pending or payload.itemId ~= self.Config.itemId then
-        return
-    end
-    if self:GetNumber(Fields.Diamonds) < self.Config.price then
-        self:Hide()
-        DiamondPurchase.Open()
         return
     end
     self.State.pending = true
@@ -95,7 +93,7 @@ function Component:OnUIAction(action, payload)
             local wasOpen = self:GetRootNode().Enabled
             if wasOpen then
                 self:Hide()
-                self:OpenPurchase()
+                self:OpenPurchase(self._purchaseEntry)
             end
         else
             self.State.error = "PurchaseFailed"

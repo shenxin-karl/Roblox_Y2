@@ -7,6 +7,8 @@ local ForgeSettings = FXLoader:RequireShared("Scripts.Game.Shared.ForgeSettings"
 local WorkshopRules = FXLoader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local Config = _G.GameConfig.CommonConfig
 local Fields = _G.PlayerDataConfig
+local Tutorial = FXLoader:RequireShared("Scripts.Game.Shared.TutorialGuideConfig")
+local HttpService = game:GetService("HttpService")
 local TranslationTexts = FX.Text.Define("FurnaceSmelt", {
     Success = "Smelting successful: you received a sword blank.",
     NeedOre = "You need one ore in your backpack to smelt a sword blank.",
@@ -35,6 +37,7 @@ function Manager:Ctor()
     self._folder.Name = "PublicMiningRocks"
     self._folder.Parent = decorations
     self._rocks = {}
+    self._batchId = 0
     self._carried = {}
     self._rockTemplates = {}
     self._oreTypes = {}
@@ -89,27 +92,36 @@ function Manager:PlaceRock(rock)
 end
 
 --- 替换地上的旧矿；已经扛起的矿仍可搬回基地。
-function Manager:Refresh()
+--- @param includeAllGrades boolean 是否给当前刷新池的每个品类保留一个位置。
+function Manager:ReplaceGroundRocks(includeAllGrades)
     self._folder:ClearAllChildren()
     table.clear(self._rocks)
-    self._nextRefresh = workspace:GetServerTimeNow() + Numerical.miningRefreshInterval
+    self._batchId += 1
     local radius = math.min(self._ground.Size.Y, self._ground.Size.Z) / 2 - 4
     local center = self._ground.Position + Vector3.new(0, self._ground.Size.X / 2, 0)
     local phase = self._random:NextNumber(0, math.pi * 2)
-    local spawnCount = Numerical.miningSpawnCount
+    local curve = Numerical.miningMutationProbabilityCurve
+    local guaranteedCount = includeAllGrades and #curve.weights or 0
+    local spawnCount = math.max(Numerical.miningSpawnCount, guaranteedCount)
     for slot = 1, spawnCount do
         local angle = phase + (slot - 1) * math.pi * 2 / spawnCount
         local distance = self._random:NextNumber(radius * 0.35, radius)
-        local grade = FX.CurveSampler:SampleLotteryPrize(Numerical.miningMutationProbabilityCurve)
+        local grade = if slot <= guaranteedCount then slot else FX.CurveSampler:SampleLotteryPrize(curve)
         local config = _G.GameConfig.MiningRockData[grade]
         local position = center + Vector3.new(math.cos(angle) * distance,
             self._rockTemplates[grade].PrimaryPart.Size.Y * config.ModelScale / 2, math.sin(angle) * distance)
-        local id = tostring(self._nextRefresh) .. "_" .. slot
+        local id = tostring(self._batchId) .. "_" .. slot
         local rock = {Id = id, Grade = grade,
             Origin = CFrame.new(position) * CFrame.Angles(0, self._random:NextNumber(0, math.pi * 2), 0)}
         self._rocks[id] = rock
         self:PlaceRock(rock)
     end
+end
+
+--- 自动换批负责更新时间和安排下一次；GM 强刷只替换矿石。
+function Manager:Refresh()
+    self._nextRefresh = workspace:GetServerTimeNow() + Numerical.miningRefreshInterval
+    self:ReplaceGroundRocks(false)
     workspace:SetAttribute(Settings.RefreshAttribute, self._nextRefresh)
     task.delay(Numerical.miningRefreshInterval, function()
         self:Refresh()
@@ -181,6 +193,7 @@ function Manager:PickUp(player, humanoid, rockId)
     humanoid.WalkSpeed = carry.Speed * Settings.CarrySpeedMultiplier
     model.Parent = character
     character:SetAttribute(Settings.CarryAttribute, true)
+    player:RequireComponent("SAnalyticsComp"):Record("OrePicked", 3, "Carry")
 end
 
 --- 清除背上的水晶和减速；还矿时保留原刷新点，即使搬运跨过了一次换批。
@@ -205,6 +218,9 @@ function Manager:ReleaseOre(player, returnToQuarry)
     if returnToQuarry then
         self._rocks[rock.Id] = rock
         self:PlaceRock(rock)
+        if humanoid.Health > 0 then
+            player:RequireComponent("SAnalyticsComp"):Record("OreDropped")
+        end
     else
         self._rocks[rock.Id] = nil
     end
@@ -316,23 +332,27 @@ function Manager:Smelt(player, humanoid)
         end
     end
     if not ore then
+        player:RequireComponent("SAnalyticsComp"):Record("MissingOre")
         player:ShowLocalizedTips(TranslationTexts.NeedOre)
         return
     end
     local furnaceLevel = WorkshopRules.GetLevel(player:GetTableView(Fields.UpgradeWorkshop).smelt)
-    local costs = {{Type = "Item", ItemId = ore.OreItemId, Count = 1}}
+    local costs = {{Type = "Item", ItemId = ore.OreItemId, Count = Tutorial.RequiredOre}}
+    local blankId = HttpService:GenerateGUID(false)
     local rewards = {{Type = "Item", ItemId = Config.SwordBlankItemId, Count = 1,
-        ExtraData = {MutationId = ore.MutationId,
+        ExtraData = {MutationId = ore.MutationId, BlankMakerUserId = player:GetPlayerId(), BlankId = blankId,
             blankLuckLevel = WorkshopRules.RollBlankLuckLevel(furnaceLevel, self._random)}}}
     local reward = player:RequireComponent("FSRewardComp")
     if not reward:ExchangeRewards(costs, rewards) then
         -- 完整消耗一叠矿石可能腾出剑胚的位置。
-        local removed = {FS.ItemClass.New(ore.OreItemId, 1)}
+        local removed = {FS.ItemClass.New(ore.OreItemId, Tutorial.RequiredOre)}
         local blank = rewards[1]
         local canFit = inventory:CanAddItems({FS.ItemClass.New(blank.ItemId, 1, blank.ExtraData)}, removed)
         player:ShowLocalizedTips(canFit and TranslationTexts.Failed or TranslationTexts.BackpackFull)
         return
     end
+    player:RequireComponent("SWelfareComp"):AdvanceTask("smelt")
+    player:RequireComponent("SAnalyticsComp"):Record("BlankSmelted", 4, blankId)
     player:ShowLocalizedTips(TranslationTexts.Success)
 end
 

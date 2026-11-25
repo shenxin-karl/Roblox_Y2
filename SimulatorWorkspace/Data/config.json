@@ -84,7 +84,7 @@
     "distribution": {
       "kind": "GeometricDecay",
       "prizeCount": 8,
-      "r": 0.45
+      "r": 0.4
     },
     "editor": {
       "displayName": "矿石变异概率曲线",
@@ -426,19 +426,28 @@
     },
     "formula": {
       "kind": "Power",
-      "base": 1,
+      "base": 0,
       "multiplier": {
-        "kind": "constant",
-        "value": 0
+        "kind": "linear",
+        "ranges": [
+          { "fromInput": 1, "toInput": 1, "fromValue": 1, "toValue": 1 },
+          { "fromInput": 2, "toInput": 2, "fromValue": 1.5, "toValue": 1.5 },
+          { "fromInput": 3, "toInput": 3, "fromValue": 2, "toValue": 2 },
+          { "fromInput": 4, "toInput": 4, "fromValue": 3, "toValue": 3 },
+          { "fromInput": 5, "toInput": 5, "fromValue": 5, "toValue": 5 },
+          { "fromInput": 6, "toInput": 6, "fromValue": 8, "toValue": 8 },
+          { "fromInput": 7, "toInput": 7, "fromValue": 15, "toValue": 15 },
+          { "fromInput": 8, "toInput": 8, "fromValue": 20, "toValue": 20 }
+        ]
       },
       "power": {
         "kind": "constant",
-        "value": 1
+        "value": 0
       },
       "rounding": "none"
     },
     "editor": {
-      "displayName": "武器变异收益倍率（暂为1）",
+      "displayName": "武器变异收益倍率",
       "folder": "基地收益",
       "display": {
         "kind": "curve",

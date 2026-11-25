@@ -30,7 +30,8 @@ function Rules.GetTraits(extra)
         or blankLuckLevel >= math.huge or blankLuckLevel % 1 ~= 0 then
         return nil
     end
-    return {MutationId = mutationId, blankLuckLevel = blankLuckLevel, Quality = extra.Quality}
+    return {MutationId = mutationId, blankLuckLevel = blankLuckLevel, Quality = extra.Quality,
+        MakerUserId = extra.MakerUserId, ForgeRoundId = extra.ForgeRoundId, AfterTutorial = extra.AfterTutorial}
 end
 
 --- 校验背包与槽位之间转移的武器成长，拒绝损坏存档参与交易。

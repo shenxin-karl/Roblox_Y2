@@ -1,6 +1,7 @@
 -- 商店与福利协议共用框架认证身份；共享白名单合入后启用对应动作。
 local FX, FS = _G.FX, _G.FS
 local MoneyMultiplier = FX.Loader:Require(script.Parent.Parent, "Player.SMoneyMultiplier")
+local PurchaseReceiptService = FX.Loader:RequireFromParent(script, "SPurchaseReceiptService")
 local Service = {}
 
 --- 只注册项目白名单中已声明的 RPC，避免与并行修改的共享路由重复注册。
@@ -16,7 +17,13 @@ end
 function Service.Init()
     Register("C2S_BuyMoneyMultiplier", function(userId, expectedTier)
         local player = FS.PlayerManager:GetPlayerObject(userId)
-        return player and MoneyMultiplier.Buy(player, expectedTier) or "Failed"
+        if not player or type(expectedTier) ~= "number" or expectedTier % 1 ~= 0 then
+            return "Failed"
+        end
+        local attempt = PurchaseReceiptService.GetMultiplierAttempt(player, expectedTier)
+        local result = MoneyMultiplier.Buy(player, expectedTier)
+        PurchaseReceiptService.ReportMultiplier(player, expectedTier, result, attempt)
+        return result
     end)
     Register("C2S_ClaimWelfare", function(userId, kind, rewardId)
         local player = FS.PlayerManager:GetPlayerObject(userId)

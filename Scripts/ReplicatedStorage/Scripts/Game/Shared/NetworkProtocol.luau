@@ -36,9 +36,14 @@ return {
         "C2S_SelectInventoryGrid",
         -- 需要确认跨分类拖入时以 RPC 调用，返回是否已提交换格。
         "C2S_SwapInventoryGrid",
+        -- 后续指引开关或显示回执，不授予任何引导进度。
+        "C2S_TutorialHint",
+        -- 商店展示与取消的统计回执；支付和交付仍以服务端实际结果为准。
+        "C2S_CommerceAnalytics",
     },
     -- S2C_UpgradeWorkshopResult(upgradeId: string, success: boolean)，真实等级沿用玩家字段同步。
     -- S2C_OfflineIncomeResult(requestId: number, success: boolean, insufficientDiamonds: boolean)。
+    -- S2C_TutorialMilestone(step: string)：服务端首次确认的里程碑，只用于客户端提示。
     ServerMsgID = {"S2C_ForgeSwordResult", "S2C_UpgradeWorkshopResult", "S2C_RawSwordOffer",
-        "S2C_OfflineIncomeResult", "S2C_ForgeRecoveryInsufficientDiamonds"},
+        "S2C_OfflineIncomeResult", "S2C_ForgeRecoveryInsufficientDiamonds", "S2C_TutorialMilestone"},
 }
