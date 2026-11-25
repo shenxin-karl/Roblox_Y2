@@ -314,6 +314,87 @@
         "kind": "project",
         "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97"
       }
+    },
+    {
+      "id": "prefab-node-e0fa324b-15da-4abf-96df-ff49914221e6",
+      "name": "Leaderboard02",
+      "parentId": "studio-block-models-root",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          160,
+          0.5,
+          0
+        ],
+        "rotation": [
+          0,
+          -90,
+          0
+        ],
+        "scale": [
+          1.4,
+          1.4,
+          1.4
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e24287fe-3042-4a6b-8333-80364f4ac65d"
+      }
+    },
+    {
+      "id": "prefab-node-48b00d7d-fafb-4b17-8082-a8dc497c801e",
+      "name": "Leaderboard01",
+      "parentId": "studio-block-models-root",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          160,
+          0.5,
+          -24
+        ],
+        "rotation": [
+          0,
+          -75,
+          0
+        ],
+        "scale": [
+          1.4,
+          1.4,
+          1.4
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e24287fe-3042-4a6b-8333-80364f4ac65d"
+      }
+    },
+    {
+      "id": "prefab-node-1170f87b-1f8e-4d29-9e96-a7eb54516bfc",
+      "name": "Leaderboard03",
+      "parentId": "studio-block-models-root",
+      "type": "PrefabReference",
+      "transform": {
+        "position": [
+          160,
+          0.5,
+          24
+        ],
+        "rotation": [
+          0,
+          -105,
+          0
+        ],
+        "scale": [
+          1.4,
+          1.4,
+          1.4
+        ]
+      },
+      "target": {
+        "kind": "project",
+        "projectGuid": "e24287fe-3042-4a6b-8333-80364f4ac65d"
+      }
     }
   ],
   "prefabFolders": [],
@@ -398,6 +479,10 @@
     {
       "projectGuid": "7b6218f1-115f-423d-bd16-49d8ae976a97",
       "name": "BaseLower"
+    },
+    {
+      "projectGuid": "e24287fe-3042-4a6b-8333-80364f4ac65d",
+      "name": "橙木空白排行榜"
     }
   ]
 }

@@ -7,7 +7,7 @@ local GameUtility = FXLoader:RequireShared("Scripts.Game.Shared.GameUtility")
 local Fields = _G.PlayerDataConfig
 local Comp = FX.Class("CBaseCompClass", "FCPlayerCompClass")
 local TranslationTexts = Text.Define("BaseInteraction", {
-    UnlockSlot = "解锁武器位 {slot:int}",
+    UnlockSlot = "Unlock Sword Slot {slot:int}",
 })
 
 --- 复用原生交互与框架数据订阅，支持晚复制到客户端的基地提示。

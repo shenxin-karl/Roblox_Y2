@@ -8,12 +8,12 @@ local UIRoot = FXLoader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local ModelAnimation = FXLoader:Require(script.Parent.Parent, "CModelAnimation")
 local MoneyRain = FXLoader:Require(script.Parent.Parent, "UI.CMoneyRain")
 local TranslationTexts = Text.Define("SlotSword", {
-    Income = "武器\n每秒 ${value}",
-    Upgrade = "${value}\n升级 {level:int} → {nextLevel:int}",
+    Income = "Sword\n${value} per second",
+    Upgrade = "${value}\nUpgrade {level:int} → {nextLevel:int}",
     Collected = "${value}",
-    Place = "放置手持成品武器",
-    Remove = "取回武器",
-    Slot = "武器位 {slot:int}",
+    Place = "Place Equipped Sword",
+    Remove = "Retrieve Sword",
+    Slot = "Sword Slot {slot:int}",
 })
 local Comp = FX.Class("CSlotSwordCompClass", "FCPlayerCompClass")
 

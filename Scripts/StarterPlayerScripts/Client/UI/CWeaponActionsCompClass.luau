@@ -6,13 +6,13 @@ local Text = FX.Text
 local Fields = _G.PlayerDataConfig
 local Rules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local ActionButton = FX.Loader:RequireFromParent(script, "CActionButton")
-local Texts = Text.Define("WeaponActions", {
-    Gift = "赠送剑胚",
-    GiftTarget = "送给 {name}",
-    ConfirmGift = "确定将当前装备的剑胚赠送给 {name} 吗？",
+local TranslationTexts = Text.Define("WeaponActions", {
+    Gift = "Gift Sword Blank",
+    GiftTarget = "Give to {name}",
+    ConfirmGift = "Give your equipped sword blank to {name}?",
     ReceiveGift = "{name} wants to give you a {mutation} sword blank with luck level {blankLuckLevel:int}. Accept?",
-    Confirm = "确认",
-    Cancel = "取消",
+    Confirm = "Confirm",
+    Cancel = "Cancel",
 })
 local Comp = FX.Class("CWeaponActionsCompClass", "FCUICompClass")
 
@@ -31,13 +31,15 @@ function Comp:OnReady()
         if not target then
             return
         end
-        self._common:ShowConfirm({DescKey = Texts.ConfirmGift, ConfirmKey = Texts.Confirm, CancelKey = Texts.Cancel,
+        self._common:ShowConfirm({DescKey = TranslationTexts.ConfirmGift,
+            ConfirmKey = TranslationTexts.Confirm, CancelKey = TranslationTexts.Cancel,
             Arguments = {name = target.DisplayName}, ConfirmCB = function()
                 FX.Network:SendMsgToServer("C2S_OfferRawSword", target.UserId)
             end})
     end))
     FX.Network:RegServerMsgCallback("S2C_RawSwordOffer", function(token, name, mutation, blankLuckLevel)
-        self._common:ShowConfirm({DescKey = Texts.ReceiveGift, ConfirmKey = Texts.Confirm, CancelKey = Texts.Cancel,
+        self._common:ShowConfirm({DescKey = TranslationTexts.ReceiveGift,
+            ConfirmKey = TranslationTexts.Confirm, CancelKey = TranslationTexts.Cancel,
             Arguments = {name = name, mutation = Text.TrSource(Rules.GetMutation(mutation).MutationName),
                 blankLuckLevel = blankLuckLevel},
             ConfirmCB = function()
@@ -95,8 +97,8 @@ function Comp:Refresh()
     local target = self:GetNearestPlayer()
     local visible = self:GetNumber(Fields.ForgeStation) == 0
     self._gift.Visible = visible and tool ~= nil and tool:GetAttribute("FrameworkItemId") == Rules.BlankItemId and target ~= nil
-    self._giftTitle.Text = Text.Tr(Texts.Gift)
-    self._giftDetail.Text = target and Text.Tr(Texts.GiftTarget, {name = target.DisplayName}) or ""
+    self._giftTitle.Text = Text.Tr(TranslationTexts.Gift)
+    self._giftDetail.Text = target and Text.Tr(TranslationTexts.GiftTarget, {name = target.DisplayName}) or ""
 end
 
 --- 清理自有入口与网络回调；共用确认框和画布由通用组件负责。

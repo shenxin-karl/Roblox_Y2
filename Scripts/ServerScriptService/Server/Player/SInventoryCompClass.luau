@@ -120,7 +120,7 @@ function Comp:CreateTool(itemId, extra)
     return tool
 end
 
---- 数据提交后只更新变动格子；武器品质或变异改变时重建 Tool，避免沿用旧外观和角标。
+--- 武器品质或变异改变时重建 Tool；剑胚按当前幸运等级刷新图标。
 function Comp:SyncTools()
     if not self._active or self:GetTotalCapacity() == 0 then
         return
@@ -155,7 +155,17 @@ function Comp:SyncTools()
             tool:SetAttribute("FrameworkGrid", grid)
             tool:SetAttribute("WeaponLevel", entry.extraData and entry.extraData.Level)
             tool:SetAttribute("StoredMoney", entry.extraData and entry.extraData.StoredMoney)
-            tool:SetAttribute("blankLuckLevel", entry.extraData and entry.extraData.blankLuckLevel)
+            local blankLuckLevel = entry.extraData and entry.extraData.blankLuckLevel
+            tool:SetAttribute("blankLuckLevel", blankLuckLevel)
+            if entry.itemId == SwordRules.BlankItemId then
+                -- 幸运等级可超过图标档数；只限制展示，不改变剑胚属性。
+                local iconLevel = if type(blankLuckLevel) == "number" and blankLuckLevel % 1 == 0
+                    then math.clamp(blankLuckLevel, 1, 40) else 1
+                local blankIcon = _G.GameConfig.WeaponData[iconLevel].BlankIconId
+                if blankIcon then
+                    tool.TextureId = blankIcon
+                end
+            end
             tool:SetAttribute("FrameworkStackCount", entry.stackCount)
             if not tool.Parent then
                 tool.Parent = backpack
