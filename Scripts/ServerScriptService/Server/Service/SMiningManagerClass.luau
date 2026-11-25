@@ -42,8 +42,15 @@ function Manager:Ctor()
     self._rockTemplates = {}
     self._oreTypes = {}
     local rockTypes = _G.GameConfig.MiningRockData
-    local weights = Numerical.miningMutationProbabilityCurve.weights
-    for id in ipairs(weights) do
+    -- 按列名读取变异抽奖权重，曲线组调整列顺序时不会影响刷矿。
+    for index, column in ipairs(Numerical.mutationCurves.columns) do
+        if column.key == "probability" then
+            self._mutationLottery = column.formula
+            break
+        end
+    end
+    assert(self._mutationLottery and self._mutationLottery.weights, "Missing mining mutation lottery weights")
+    for id in ipairs(self._mutationLottery.weights) do
         assert(rockTypes[id], "Missing spawnable mining rock ID: " .. id)
     end
     -- 保留不再刷新的变异，旧矿石仍可熔炼成原变异的剑胚。
@@ -100,7 +107,7 @@ function Manager:ReplaceGroundRocks(includeAllGrades)
     local radius = math.min(self._ground.Size.Y, self._ground.Size.Z) / 2 - 4
     local center = self._ground.Position + Vector3.new(0, self._ground.Size.X / 2, 0)
     local phase = self._random:NextNumber(0, math.pi * 2)
-    local curve = Numerical.miningMutationProbabilityCurve
+    local curve = self._mutationLottery
     local guaranteedCount = includeAllGrades and #curve.weights or 0
     local spawnCount = math.max(Numerical.miningSpawnCount, guaranteedCount)
     for slot = 1, spawnCount do

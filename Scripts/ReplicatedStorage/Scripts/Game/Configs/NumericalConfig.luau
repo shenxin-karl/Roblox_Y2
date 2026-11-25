@@ -23,16 +23,93 @@ return {
   },
   miningRefreshInterval = 300,
   miningSpawnCount = 20,
-  miningMutationProbabilityCurve = {
-    weights = {
-      6004,
-      2401,
-      961,
-      384,
-      154,
-      61,
-      25,
-      10,
+  mutationCurves = {
+    input = {
+      rounding = "none",
+      min = 1,
+      max = 8,
+    },
+    columns = {
+      {
+        key = "probability",
+        formula = {
+          weights = {
+            6004,
+            2401,
+            961,
+            384,
+            154,
+            61,
+            25,
+            10,
+          },
+        },
+      },
+      {
+        key = "incomeMultiplier",
+        formula = {
+          kind = "Power",
+          base = 0,
+          multiplier = {
+            kind = "linear",
+            ranges = {
+              {
+                fromInput = 1,
+                toInput = 1,
+                fromValue = 1,
+                toValue = 1,
+              },
+              {
+                fromInput = 2,
+                toInput = 2,
+                fromValue = 1.5,
+                toValue = 1.5,
+              },
+              {
+                fromInput = 3,
+                toInput = 3,
+                fromValue = 2,
+                toValue = 2,
+              },
+              {
+                fromInput = 4,
+                toInput = 4,
+                fromValue = 3,
+                toValue = 3,
+              },
+              {
+                fromInput = 5,
+                toInput = 5,
+                fromValue = 5,
+                toValue = 5,
+              },
+              {
+                fromInput = 6,
+                toInput = 6,
+                fromValue = 8,
+                toValue = 8,
+              },
+              {
+                fromInput = 7,
+                toInput = 7,
+                fromValue = 15,
+                toValue = 15,
+              },
+              {
+                fromInput = 8,
+                toInput = 8,
+                fromValue = 20,
+                toValue = 20,
+              },
+            },
+          },
+          power = {
+            kind = "constant",
+            value = 0,
+          },
+          rounding = "none",
+        },
+      },
     },
   },
   oreCollectInterval = 30,
@@ -236,76 +313,6 @@ return {
       power = {
         kind = "constant",
         value = 1.2,
-      },
-      rounding = "none",
-    },
-  },
-  swordMutationIncomeCurve = {
-    kind = "curve",
-    input = {
-      rounding = "none",
-      min = 1,
-      max = 8,
-    },
-    formula = {
-      kind = "Power",
-      base = 0,
-      multiplier = {
-        kind = "linear",
-        ranges = {
-          {
-            fromInput = 1,
-            toInput = 1,
-            fromValue = 1,
-            toValue = 1,
-          },
-          {
-            fromInput = 2,
-            toInput = 2,
-            fromValue = 1.5,
-            toValue = 1.5,
-          },
-          {
-            fromInput = 3,
-            toInput = 3,
-            fromValue = 2,
-            toValue = 2,
-          },
-          {
-            fromInput = 4,
-            toInput = 4,
-            fromValue = 3,
-            toValue = 3,
-          },
-          {
-            fromInput = 5,
-            toInput = 5,
-            fromValue = 5,
-            toValue = 5,
-          },
-          {
-            fromInput = 6,
-            toInput = 6,
-            fromValue = 8,
-            toValue = 8,
-          },
-          {
-            fromInput = 7,
-            toInput = 7,
-            fromValue = 15,
-            toValue = 15,
-          },
-          {
-            fromInput = 8,
-            toInput = 8,
-            fromValue = 20,
-            toValue = 20,
-          },
-        },
-      },
-      power = {
-        kind = "constant",
-        value = 0,
       },
       rounding = "none",
     },

@@ -60,7 +60,7 @@ export function calculateBaseIncome(config: ProjectConfig, slots: readonly SlotS
     }
     income += sampleCurve(config.swordQualityIncomeCurve, sword.quality)
       * calculateSwordLevelMultiplier(config.swordUpgradeCurves, sword.level)
-      * sampleCurve(config.swordMutationIncomeCurve, sword.mutationId)
+      * sampleCurveGroupColumn(config.mutationCurves, "incomeMultiplier", sword.mutationId)
       * playerMultiplier;
   }
   return income * calculatePaidMultiplier(config, paidMultiplierTier);

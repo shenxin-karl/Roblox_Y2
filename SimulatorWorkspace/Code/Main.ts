@@ -1,14 +1,14 @@
 import configValues from "../Data/config.json";
-import { Config, type CurveGroupValue, type CurveValue, type LotteryCurveValue, type NumberConfigValue, type RuntimeConfig } from "@game-simulator/framework";
+import { Config, type CurveGroupValue, type CurveValue, type NumberConfigValue, type RuntimeConfig } from "@game-simulator/framework";
 import { Game } from "./Game";
 import { SlotInspector } from "./Inspector";
 import { State } from "./State";
 
-export type ConfigValues = Omit<typeof configValues, "paidMultiplierCurves"> & {
+export type ConfigValues = Omit<typeof configValues, "paidMultiplierCurves" | "mutationCurves"> & {
   initialUnlockedSlotCount: NumberConfigValue;
   miningRefreshInterval: NumberConfigValue;
   miningSpawnCount: NumberConfigValue;
-  miningMutationProbabilityCurve: LotteryCurveValue;
+  mutationCurves: CurveGroupValue;
   oreCollectInterval: NumberConfigValue;
   smeltingLuckWeightCurve: CurveValue;
   swordUpgradeCurves: CurveGroupValue;
@@ -16,7 +16,7 @@ export type ConfigValues = Omit<typeof configValues, "paidMultiplierCurves"> & {
   forgingUpgradeCurves: CurveGroupValue;
   incomeUpgradeCurves: CurveGroupValue;
   swordQualityIncomeCurve: CurveValue;
-  swordMutationIncomeCurve: CurveValue;
+
   initialDiamonds: NumberConfigValue;
   initialPaidMultiplierTier: NumberConfigValue;
   dailyDiamondReward: NumberConfigValue;

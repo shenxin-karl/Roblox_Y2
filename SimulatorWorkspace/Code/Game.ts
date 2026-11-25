@@ -316,8 +316,8 @@ export class Game extends BaseGame<ProjectConfig, State> {
     const recommendedSlotIds = this.getRecommendedReplacementSlotIds();
     this.replaceRecommendedButton.Disabled = !recommendedSlotIds.some((slotId) =>
       this.getActionBlocker(new QueueSwordReplacementAction(slotId, this.state.forgeTargetOffset)) === null);
-    const mutationNames = ["变异0", "变异1", "变异2", "变异3", "变异4", "变异5"];
-    const mutationColors = ["#64748b", "#28834b", "#2872c4", "#8542bd", "#b87908", "#c23c51"];
+    const mutationNames = ["普通", "银质", "黄金", "冰霜", "烈焰", "星界", "钻石", "彩虹"];
+    const mutationColors = ["#64748b", "#28834b", "#2872c4", "#8542bd", "#b87908", "#c23c51", "#c557be", "#e79f24"];
     const oreCounts = new Map<number, number>();
     for (const ore of this.state.miningOres) {
       oreCounts.set(ore.mutationId, (oreCounts.get(ore.mutationId) ?? 0) + 1);
