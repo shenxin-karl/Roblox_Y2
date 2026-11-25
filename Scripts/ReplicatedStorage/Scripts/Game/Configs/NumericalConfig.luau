@@ -25,12 +25,14 @@ return {
   miningSpawnCount = 20,
   miningMutationProbabilityCurve = {
     weights = {
-      5546,
-      2496,
-      1123,
-      505,
-      228,
+      5509,
+      2479,
+      1116,
+      502,
+      226,
       102,
+      46,
+      20,
     },
   },
   oreCollectInterval = 30,
@@ -243,7 +245,7 @@ return {
     input = {
       rounding = "none",
       min = 1,
-      max = 6,
+      max = 8,
     },
     formula = {
       kind = "Power",

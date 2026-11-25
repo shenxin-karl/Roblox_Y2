@@ -2,6 +2,8 @@
 local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
 local FX = _G.FX
+-- 矿石模型自带彩虹标签，加载后由客户端更新材质颜色。
+FX.Loader:RequireShared("Scripts.Game.Shared.MutationVisual")
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local Effects = {}
 Effects.__index = Effects

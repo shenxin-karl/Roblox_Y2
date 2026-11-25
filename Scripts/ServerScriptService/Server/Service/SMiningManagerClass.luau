@@ -38,9 +38,14 @@ function Manager:Ctor()
     self._carried = {}
     self._rockTemplates = {}
     self._oreTypes = {}
+    local rockTypes = _G.GameConfig.MiningRockData
     local weights = Numerical.miningMutationProbabilityCurve.weights
-    for id, rockType in pairs(_G.GameConfig.MiningRockData) do
-        assert(id == rockType.Id and weights[id] ~= nil, "Invalid mining rock ID: " .. id)
+    for id in ipairs(weights) do
+        assert(rockTypes[id], "Missing spawnable mining rock ID: " .. id)
+    end
+    -- 保留不再刷新的变异，旧矿石仍可熔炼成原变异的剑胚。
+    for id, rockType in pairs(rockTypes) do
+        assert(id == rockType.Id, "Invalid mining rock ID: " .. id)
         local template = FXLoader:Shared(rockType.ModelPath)
         assert(template:IsA("Model") and template.PrimaryPart, "Mining rock requires a model with bounds")
         assert(_G.ItemConfig.Data[rockType.OreItemId].Type == "Ore" and not self._oreTypes[rockType.OreItemId],

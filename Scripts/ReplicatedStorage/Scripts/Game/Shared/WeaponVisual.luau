@@ -1,5 +1,6 @@
 -- 三处武器展示共用模型映射；只克隆模板，不修改导入资源。
 local FX = _G.FX
+local MutationVisual = FX.Loader:RequireFromParent(script, "MutationVisual")
 local Templates = {}
 for quality, weapon in pairs(_G.GameConfig.WeaponData) do
     Templates[quality] = FX.Loader:Shared(weapon.ModelPath)
@@ -63,10 +64,11 @@ end
 --- 将任意多零件武器归一到指定高度，返回带真实包围尺寸的透明根部件。
 --- @param quality number 配置中存在的武器品质。
 --- @param height number 展示高度，单位 stud。
---- @param mutationId string? 武器的变异 ID；未配置光环时使用普通外观。
+--- @param mutationId string? 武器的变异 ID，用于应用对应材质或光环。
 --- @return Part 包含外观模型的可定位根部件，调用方负责挂载和销毁。
 function Visual.Create(quality, height, mutationId)
     local model = Templates[quality]:Clone()
+    MutationVisual.ApplyWeapon(model, mutationId)
     for index, node in ipairs(model:GetDescendants()) do
         if node:IsA("BaseScript") or node:IsA("ModuleScript") then
             node:Destroy()

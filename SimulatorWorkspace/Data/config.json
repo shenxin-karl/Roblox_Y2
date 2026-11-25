@@ -83,7 +83,7 @@
     "kind": "lottery",
     "distribution": {
       "kind": "GeometricDecay",
-      "prizeCount": 6,
+      "prizeCount": 8,
       "r": 0.45
     },
     "editor": {
@@ -91,11 +91,11 @@
       "folder": "矿石刷新",
       "display": {
         "kind": "curve",
-        "xLabel": "变异 ID（1 普通 / 2 Toxic / 3 Frost / 4 Inferno / 5 Storm / 6 Astral）",
+        "xLabel": "变异 ID（1 Normal / 2 Silver / 3 Gold / 4 Frost / 5 Inferno / 6 Astral / 7 Diamond / 8 Rainbow）",
         "yLabel": "出现概率",
         "sampleRange": {
           "min": 1,
-          "max": 6,
+          "max": 8,
           "step": 1
         }
       }
@@ -422,7 +422,7 @@
       "valueType": "number",
       "rounding": "none",
       "min": 1,
-      "max": 6
+      "max": 8
     },
     "formula": {
       "kind": "Power",
@@ -446,7 +446,7 @@
         "yLabel": "倍率",
         "sampleRange": {
           "min": 1,
-          "max": 6,
+          "max": 8,
           "step": 1
         }
       }

@@ -71,6 +71,42 @@ return {
             HeldHandler = [[Ore]],
             NumberArray = nil,
             KVTable = nil
+        },
+        [1106] = {
+            Id = 1106,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
+        },
+        [1107] = {
+            Id = 1107,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
+        },
+        [1108] = {
+            Id = 1108,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
+        },
+        [1109] = {
+            Id = 1109,
+            Type = [[Ore]],
+            MaxStack = 999,
+            UseHandler = nil,
+            HeldHandler = [[Ore]],
+            NumberArray = nil,
+            KVTable = nil
         }
     },
     Display = {
@@ -79,7 +115,7 @@ return {
             Name = [[Iron Ore]],
             Desc = [[Smelt ore into a raw sword at the public furnace.]],
             Quality = 1,
-            IconId = [[rbxassetid://94892672143686]],
+            IconId = [[rbxassetid://81125854851367]],
             DisplayModelId = nil
         },
         [1002] = {
@@ -136,6 +172,38 @@ return {
             Desc = [[Smelt this ore into a raw sword with the same mutation.]],
             Quality = 1,
             IconId = [[rbxassetid://106401756309045]],
+            DisplayModelId = nil
+        },
+        [1106] = {
+            Id = 1106,
+            Name = [[Silver Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://137910941329271]],
+            DisplayModelId = nil
+        },
+        [1107] = {
+            Id = 1107,
+            Name = [[Gold Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://97727630190912]],
+            DisplayModelId = nil
+        },
+        [1108] = {
+            Id = 1108,
+            Name = [[Diamond Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://95658855389733]],
+            DisplayModelId = nil
+        },
+        [1109] = {
+            Id = 1109,
+            Name = [[Rainbow Iron Ore]],
+            Desc = [[Smelt this ore into a raw sword with the same mutation.]],
+            Quality = 1,
+            IconId = [[rbxassetid://75540199938714]],
             DisplayModelId = nil
         }
     },
