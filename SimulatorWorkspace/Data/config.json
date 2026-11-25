@@ -79,24 +79,111 @@
       }
     }
   },
-  "miningMutationProbabilityCurve": {
-    "kind": "lottery",
-    "distribution": {
-      "kind": "GeometricDecay",
-      "prizeCount": 8,
-      "r": 0.45
+  "mutationCurves": {
+    "kind": "curveGroup",
+    "input": {
+      "key": "mutationId",
+      "valueType": "number",
+      "rounding": "none",
+      "min": 1,
+      "max": 8
     },
+    "columns": [
+      {
+        "key": "probability",
+        "formula": {
+          "kind": "LotteryProbability",
+          "distribution": {
+            "kind": "GeometricDecay",
+            "prizeCount": 8,
+            "r": 0.4
+          }
+        }
+      },
+      {
+        "key": "incomeMultiplier",
+        "formula": {
+          "kind": "Power",
+          "base": 0,
+          "multiplier": {
+            "kind": "linear",
+            "ranges": [
+              {
+                "fromInput": 1,
+                "toInput": 1,
+                "fromValue": 1,
+                "toValue": 1
+              },
+              {
+                "fromInput": 2,
+                "toInput": 2,
+                "fromValue": 1.5,
+                "toValue": 1.5
+              },
+              {
+                "fromInput": 3,
+                "toInput": 3,
+                "fromValue": 2,
+                "toValue": 2
+              },
+              {
+                "fromInput": 4,
+                "toInput": 4,
+                "fromValue": 3,
+                "toValue": 3
+              },
+              {
+                "fromInput": 5,
+                "toInput": 5,
+                "fromValue": 5,
+                "toValue": 5
+              },
+              {
+                "fromInput": 6,
+                "toInput": 6,
+                "fromValue": 8,
+                "toValue": 8
+              },
+              {
+                "fromInput": 7,
+                "toInput": 7,
+                "fromValue": 15,
+                "toValue": 15
+              },
+              {
+                "fromInput": 8,
+                "toInput": 8,
+                "fromValue": 20,
+                "toValue": 20
+              }
+            ]
+          },
+          "power": {
+            "kind": "constant",
+            "value": 0
+          },
+          "rounding": "none"
+        }
+      }
+    ],
     "editor": {
-      "displayName": "矿石变异概率曲线",
+      "displayName": "矿石变异概率与收益倍率",
       "folder": "矿石刷新",
       "display": {
         "kind": "curve",
         "xLabel": "变异 ID（1 Normal / 2 Silver / 3 Gold / 4 Frost / 5 Inferno / 6 Astral / 7 Diamond / 8 Rainbow）",
-        "yLabel": "出现概率",
         "sampleRange": {
           "min": 1,
           "max": 8,
           "step": 1
+        },
+        "columns": {
+          "probability": {
+            "displayName": "单块出现概率"
+          },
+          "incomeMultiplier": {
+            "displayName": "武器收益倍率（暂定）"
+          }
         }
       }
     }
@@ -130,11 +217,36 @@
       "multiplier": {
         "kind": "linear",
         "ranges": [
-          { "fromInput": 0, "toInput": 0, "fromValue": 10, "toValue": 10 },
-          { "fromInput": 1, "toInput": 1, "fromValue": 20, "toValue": 20 },
-          { "fromInput": 2, "toInput": 2, "fromValue": 40, "toValue": 40 },
-          { "fromInput": 3, "toInput": 3, "fromValue": 20, "toValue": 20 },
-          { "fromInput": 4, "toInput": 4, "fromValue": 10, "toValue": 10 }
+          {
+            "fromInput": 0,
+            "toInput": 0,
+            "fromValue": 10,
+            "toValue": 10
+          },
+          {
+            "fromInput": 1,
+            "toInput": 1,
+            "fromValue": 20,
+            "toValue": 20
+          },
+          {
+            "fromInput": 2,
+            "toInput": 2,
+            "fromValue": 40,
+            "toValue": 40
+          },
+          {
+            "fromInput": 3,
+            "toInput": 3,
+            "fromValue": 20,
+            "toValue": 20
+          },
+          {
+            "fromInput": 4,
+            "toInput": 4,
+            "fromValue": 10,
+            "toValue": 10
+          }
         ]
       },
       "power": {
@@ -415,50 +527,18 @@
       }
     }
   },
-  "swordMutationIncomeCurve": {
-    "kind": "curve",
-    "input": {
-      "key": "mutationId",
-      "valueType": "number",
-      "rounding": "none",
-      "min": 1,
-      "max": 8
-    },
-    "formula": {
-      "kind": "Power",
-      "base": 1,
-      "multiplier": {
-        "kind": "constant",
-        "value": 0
-      },
-      "power": {
-        "kind": "constant",
-        "value": 1
-      },
-      "rounding": "none"
-    },
-    "editor": {
-      "displayName": "武器变异收益倍率（暂为1）",
-      "folder": "基地收益",
-      "display": {
-        "kind": "curve",
-        "xLabel": "变异 ID",
-        "yLabel": "倍率",
-        "sampleRange": {
-          "min": 1,
-          "max": 8,
-          "step": 1
-        }
-      }
-    }
-  },
   "initialDiamonds": {
     "kind": "number",
     "value": 0,
     "editor": {
       "displayName": "初始钻石（新手35钻已用于默认2倍）",
       "folder": "钻石与付费倍率",
-      "display": { "kind": "number", "control": "number", "min": 0, "step": 1 }
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 0,
+        "step": 1
+      }
     }
   },
   "initialPaidMultiplierTier": {
@@ -467,7 +547,13 @@
     "editor": {
       "displayName": "新手默认已购倍率档位",
       "folder": "钻石与付费倍率",
-      "display": { "kind": "number", "control": "number", "min": 1, "max": 11, "step": 1 }
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 1,
+        "max": 11,
+        "step": 1
+      }
     }
   },
   "dailyDiamondReward": {
@@ -476,7 +562,12 @@
     "editor": {
       "displayName": "每日赠送钻石",
       "folder": "钻石与付费倍率",
-      "display": { "kind": "number", "control": "number", "min": 0, "step": 1 }
+      "display": {
+        "kind": "number",
+        "control": "number",
+        "min": 0,
+        "step": 1
+      }
     }
   },
   "paidMultiplierCurves": {
@@ -494,8 +585,14 @@
         "formula": {
           "kind": "BaseExp",
           "base": 0,
-          "multiplier": { "kind": "constant", "value": 1 },
-          "power": { "kind": "constant", "value": 2 },
+          "multiplier": {
+            "kind": "constant",
+            "value": 1
+          },
+          "power": {
+            "kind": "constant",
+            "value": 2
+          },
           "rounding": "none"
         }
       },
@@ -507,20 +604,78 @@
           "multiplier": {
             "kind": "linear",
             "ranges": [
-              { "fromInput": 1, "toInput": 1, "fromValue": 35, "toValue": 35 },
-              { "fromInput": 2, "toInput": 2, "fromValue": 48, "toValue": 48 },
-              { "fromInput": 3, "toInput": 3, "fromValue": 60, "toValue": 60 },
-              { "fromInput": 4, "toInput": 4, "fromValue": 98, "toValue": 98 },
-              { "fromInput": 5, "toInput": 5, "fromValue": 288, "toValue": 288 },
-              { "fromInput": 6, "toInput": 6, "fromValue": 588, "toValue": 588 },
-              { "fromInput": 7, "toInput": 7, "fromValue": 1188, "toValue": 1188 },
-              { "fromInput": 8, "toInput": 8, "fromValue": 2688, "toValue": 2688 },
-              { "fromInput": 9, "toInput": 9, "fromValue": 5688, "toValue": 5688 },
-              { "fromInput": 10, "toInput": 10, "fromValue": 12888, "toValue": 12888 },
-              { "fromInput": 11, "toInput": 11, "fromValue": 28888, "toValue": 28888 }
+              {
+                "fromInput": 1,
+                "toInput": 1,
+                "fromValue": 35,
+                "toValue": 35
+              },
+              {
+                "fromInput": 2,
+                "toInput": 2,
+                "fromValue": 48,
+                "toValue": 48
+              },
+              {
+                "fromInput": 3,
+                "toInput": 3,
+                "fromValue": 60,
+                "toValue": 60
+              },
+              {
+                "fromInput": 4,
+                "toInput": 4,
+                "fromValue": 98,
+                "toValue": 98
+              },
+              {
+                "fromInput": 5,
+                "toInput": 5,
+                "fromValue": 288,
+                "toValue": 288
+              },
+              {
+                "fromInput": 6,
+                "toInput": 6,
+                "fromValue": 588,
+                "toValue": 588
+              },
+              {
+                "fromInput": 7,
+                "toInput": 7,
+                "fromValue": 1188,
+                "toValue": 1188
+              },
+              {
+                "fromInput": 8,
+                "toInput": 8,
+                "fromValue": 2688,
+                "toValue": 2688
+              },
+              {
+                "fromInput": 9,
+                "toInput": 9,
+                "fromValue": 5688,
+                "toValue": 5688
+              },
+              {
+                "fromInput": 10,
+                "toInput": 10,
+                "fromValue": 12888,
+                "toValue": 12888
+              },
+              {
+                "fromInput": 11,
+                "toInput": 11,
+                "fromValue": 28888,
+                "toValue": 28888
+              }
             ]
           },
-          "power": { "kind": "constant", "value": 0 },
+          "power": {
+            "kind": "constant",
+            "value": 0
+          },
           "rounding": "none"
         }
       }
@@ -531,10 +686,18 @@
       "display": {
         "kind": "curve",
         "xLabel": "目标档位",
-        "sampleRange": { "min": 1, "max": 11, "step": 1 },
+        "sampleRange": {
+          "min": 1,
+          "max": 11,
+          "step": 1
+        },
         "columns": {
-          "multiplier": { "displayName": "最终金币倍率" },
-          "diamondCost": { "displayName": "本档钻石价格" }
+          "multiplier": {
+            "displayName": "最终金币倍率"
+          },
+          "diamondCost": {
+            "displayName": "本档钻石价格"
+          }
         }
       }
     }

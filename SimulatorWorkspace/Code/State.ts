@@ -175,9 +175,13 @@ export class State extends BaseState<StateValues> {
 
   refreshMiningOres(): void {
     const config = this.config as ProjectConfig;
+    const formula = config.mutationCurves.columns.find(column => column.key === "probability")?.formula;
+    if (formula?.kind !== "LotteryProbability") {
+      throw new Error("变异概率列需要使用抽奖概率公式");
+    }
     this.miningOres = Array.from({ length: config.miningSpawnCount }, (_, index) => ({
       id: index + 1,
-      mutationId: this.rng.sampleLotteryCurvePrize(config.miningMutationProbabilityCurve),
+      mutationId: this.rng.sampleLotteryCurvePrize(formula.distribution),
     }));
     this.miningRefreshElapsedSeconds = 0;
   }
