@@ -49,6 +49,14 @@ function Manager:RegInventoryMsg()
         local inventory = player and player:GetComponent("FSInventoryComp")
         return inventory ~= nil and inventory:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
     end)
+    FX.Network:RegClientMsgCallback("C2S_MutateWeapon", function(userId, weaponGrid, stoneGrid, weaponTool, stoneTool)
+        local player = self:GetPlayerObject(userId)
+        local inventory = player and player:GetComponent("FSInventoryComp")
+        if inventory then
+            return inventory:MutateWeapon(weaponGrid, stoneGrid, weaponTool, stoneTool)
+        end
+        return nil
+    end)
 end
 
 --- 经济操作只转发引擎认证的请求者，不允许指定扣款方或奖励金额。

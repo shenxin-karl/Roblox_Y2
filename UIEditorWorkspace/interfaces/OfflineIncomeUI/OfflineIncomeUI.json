@@ -225,7 +225,7 @@
                   "scale": 0
                 },
                 "y": {
-                  "offset": 314,
+                  "offset": 382,
                   "scale": 0
                 }
               },
@@ -388,7 +388,7 @@
                   "scale": 0
                 },
                 "y": {
-                  "offset": 274,
+                  "offset": 351,
                   "scale": 0
                 }
               },
@@ -437,7 +437,7 @@
                   "scale": 0
                 },
                 "y": {
-                  "offset": 240,
+                  "offset": 326,
                   "scale": 0
                 }
               },
@@ -765,7 +765,7 @@
                   "scale": 0
                 },
                 "y": {
-                  "offset": 314,
+                  "offset": 382,
                   "scale": 0
                 }
               },
@@ -847,6 +847,332 @@
               "Visible": true,
               "ZIndex": 3
             }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "0bf7efc9-468b-4201-b82f-0e78494abe4c",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "65ec28d9-9ca8-48f3-a8cc-f05b7fe7dd0c",
+                "name": "UIStroke",
+                "properties": {
+                  "Color": "#8addff",
+                  "Enabled": true,
+                  "Thickness": 2,
+                  "Transparency": 0.45
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "cc2f56a6-d4e9-4a5c-8cf1-cfccb13740d2",
+                "name": "TitleTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 8,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 8,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 324,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 23,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "",
+                  "TextColor3": "#ebefed",
+                  "TextScaled": false,
+                  "TextSize": 19,
+                  "TextTransparency": 0,
+                  "TextWrapped": true,
+                  "TextXAlignment": "Center",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "9b5d6484-0231-4f3b-8210-16b0b8dc526e",
+                "name": "ActualTimeTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 8,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 32,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 324,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 40,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "",
+                  "TextColor3": "#8addff",
+                  "TextScaled": false,
+                  "TextSize": 32,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Center",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              }
+            ],
+            "className": "Frame",
+            "id": "f43cc6d8-9b5e-4396-80c2-d73507895b1d",
+            "name": "ActualTimeImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#20313d",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": false,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 40,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 240,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 340,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 79,
+                  "scale": 0
+                }
+              },
+              "Visible": false,
+              "ZIndex": 4
+            }
+          },
+          {
+            "children": [
+              {
+                "children": [],
+                "className": "UICorner",
+                "id": "ab992c76-8371-49ae-9a80-eb19449ea71e",
+                "name": "UICorner",
+                "properties": {
+                  "CornerRadius": {
+                    "offset": 6,
+                    "scale": 0
+                  }
+                }
+              },
+              {
+                "children": [],
+                "className": "UIStroke",
+                "id": "d3e6fc3c-9710-45b3-beb1-09758ad1a381",
+                "name": "UIStroke",
+                "properties": {
+                  "Color": "#b1f572",
+                  "Enabled": true,
+                  "Thickness": 2,
+                  "Transparency": 0.45
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "806b0a3c-7470-4992-a562-8004d906e9f9",
+                "name": "TitleTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 8,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 8,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 324,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 23,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "",
+                  "TextColor3": "#ebefed",
+                  "TextScaled": false,
+                  "TextSize": 19,
+                  "TextTransparency": 0,
+                  "TextWrapped": true,
+                  "TextXAlignment": "Center",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              },
+              {
+                "children": [],
+                "className": "TextLabel",
+                "id": "55459805-81b0-4d80-8bbd-e33128117331",
+                "name": "EarnedTimeTxt",
+                "properties": {
+                  "AnchorPoint": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "AutoLocalize": false,
+                  "BackgroundColor3": "#ffffff",
+                  "BackgroundTransparency": 1,
+                  "ClipsDescendants": false,
+                  "Font": "GothamBold",
+                  "LayoutOrder": 0,
+                  "Position": {
+                    "x": {
+                      "offset": 8,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 32,
+                      "scale": 0
+                    }
+                  },
+                  "Rotation": 0,
+                  "Size": {
+                    "x": {
+                      "offset": 324,
+                      "scale": 0
+                    },
+                    "y": {
+                      "offset": 40,
+                      "scale": 0
+                    }
+                  },
+                  "Text": "",
+                  "TextColor3": "#b1f572",
+                  "TextScaled": false,
+                  "TextSize": 32,
+                  "TextTransparency": 0,
+                  "TextWrapped": false,
+                  "TextXAlignment": "Center",
+                  "TextYAlignment": "Center",
+                  "Visible": true,
+                  "ZIndex": 5
+                }
+              }
+            ],
+            "className": "Frame",
+            "id": "5ef87626-9aeb-4a26-9704-8bd12f96e64e",
+            "name": "EarnedTimeImg",
+            "properties": {
+              "AnchorPoint": {
+                "x": 0,
+                "y": 0
+              },
+              "AutoLocalize": true,
+              "BackgroundColor3": "#243723",
+              "BackgroundTransparency": 0,
+              "ClipsDescendants": false,
+              "LayoutOrder": 0,
+              "Position": {
+                "x": {
+                  "offset": 400,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 240,
+                  "scale": 0
+                }
+              },
+              "Rotation": 0,
+              "Size": {
+                "x": {
+                  "offset": 340,
+                  "scale": 0
+                },
+                "y": {
+                  "offset": 79,
+                  "scale": 0
+                }
+              },
+              "Visible": false,
+              "ZIndex": 4
+            }
           }
         ],
         "className": "Frame",
@@ -879,7 +1205,7 @@
               "scale": 0
             },
             "y": {
-              "offset": 430,
+              "offset": 487,
               "scale": 0
             }
           },

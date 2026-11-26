@@ -113,7 +113,7 @@ return {
             Type = [[IncomeCard]],
             MaxStack = 1,
             UseHandler = [[WelfareIncomeCard]],
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = {
                 [1] = 600,
             },
@@ -124,7 +124,7 @@ return {
             Type = [[IncomeCard]],
             MaxStack = 1,
             UseHandler = [[WelfareIncomeCard]],
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = {
                 [1] = 1800,
             },
@@ -135,7 +135,7 @@ return {
             Type = [[MutationStone]],
             MaxStack = 999,
             UseHandler = nil,
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = nil,
             KVTable = {
                 MutationId = [[Silver]]
@@ -146,7 +146,7 @@ return {
             Type = [[MutationStone]],
             MaxStack = 999,
             UseHandler = nil,
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = nil,
             KVTable = {
                 MutationId = [[Gold]]
@@ -157,7 +157,7 @@ return {
             Type = [[MutationStone]],
             MaxStack = 999,
             UseHandler = nil,
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = nil,
             KVTable = {
                 MutationId = [[Frost]]
@@ -168,7 +168,7 @@ return {
             Type = [[MutationStone]],
             MaxStack = 999,
             UseHandler = nil,
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = nil,
             KVTable = {
                 MutationId = [[Inferno]]
@@ -179,7 +179,7 @@ return {
             Type = [[MutationStone]],
             MaxStack = 999,
             UseHandler = nil,
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = nil,
             KVTable = {
                 MutationId = [[Astral]]
@@ -190,7 +190,7 @@ return {
             Type = [[MutationStone]],
             MaxStack = 999,
             UseHandler = nil,
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = nil,
             KVTable = {
                 MutationId = [[Diamond]]
@@ -201,7 +201,7 @@ return {
             Type = [[MutationStone]],
             MaxStack = 999,
             UseHandler = nil,
-            HeldHandler = [[None]],
+            HeldHandler = [[Image]],
             NumberArray = nil,
             KVTable = {
                 MutationId = [[Rainbow]]
@@ -310,7 +310,7 @@ return {
             Name = [[10-Minute Income Card]],
             Desc = [[Use to collect 10 minutes of your current base income.]],
             Quality = 1,
-            IconId = [[rbxasset://textures/ui/GuiImagePlaceholder.png]],
+            IconId = [[rbxassetid://98355345456698]],
             DisplayModelId = nil
         },
         [1202] = {
@@ -318,13 +318,13 @@ return {
             Name = [[30-Minute Income Card]],
             Desc = [[Use to collect 30 minutes of your current base income.]],
             Quality = 1,
-            IconId = [[rbxasset://textures/ui/GuiImagePlaceholder.png]],
+            IconId = [[rbxassetid://123514860179147]],
             DisplayModelId = nil
         },
         [1301] = {
             Id = 1301,
             Name = [[Silver Mutation Stone]],
-            Desc = [[A stone attuned to the Silver mutation. It cannot be used yet.]],
+            Desc = [[Changes a forged weapon's mutation to Silver.]],
             Quality = 1,
             IconId = [[rbxassetid://85648539250241]],
             DisplayModelId = nil
@@ -332,7 +332,7 @@ return {
         [1302] = {
             Id = 1302,
             Name = [[Gold Mutation Stone]],
-            Desc = [[A stone attuned to the Gold mutation. It cannot be used yet.]],
+            Desc = [[Changes a forged weapon's mutation to Gold.]],
             Quality = 1,
             IconId = [[rbxassetid://131845221291707]],
             DisplayModelId = nil
@@ -340,7 +340,7 @@ return {
         [1303] = {
             Id = 1303,
             Name = [[Frost Mutation Stone]],
-            Desc = [[A stone attuned to the Frost mutation. It cannot be used yet.]],
+            Desc = [[Changes a forged weapon's mutation to Frost.]],
             Quality = 1,
             IconId = [[rbxassetid://89620960090242]],
             DisplayModelId = nil
@@ -348,7 +348,7 @@ return {
         [1304] = {
             Id = 1304,
             Name = [[Inferno Mutation Stone]],
-            Desc = [[A stone attuned to the Inferno mutation. It cannot be used yet.]],
+            Desc = [[Changes a forged weapon's mutation to Inferno.]],
             Quality = 1,
             IconId = [[rbxassetid://84441068160642]],
             DisplayModelId = nil
@@ -356,7 +356,7 @@ return {
         [1305] = {
             Id = 1305,
             Name = [[Astral Mutation Stone]],
-            Desc = [[A stone attuned to the Astral mutation. It cannot be used yet.]],
+            Desc = [[Changes a forged weapon's mutation to Astral.]],
             Quality = 1,
             IconId = [[rbxassetid://127662661942024]],
             DisplayModelId = nil
@@ -364,7 +364,7 @@ return {
         [1306] = {
             Id = 1306,
             Name = [[Diamond Mutation Stone]],
-            Desc = [[A stone attuned to the Diamond mutation. It cannot be used yet.]],
+            Desc = [[Changes a forged weapon's mutation to Diamond.]],
             Quality = 1,
             IconId = [[rbxassetid://92607755765167]],
             DisplayModelId = nil
@@ -372,7 +372,7 @@ return {
         [1307] = {
             Id = 1307,
             Name = [[Rainbow Mutation Stone]],
-            Desc = [[A stone attuned to the Rainbow mutation. It cannot be used yet.]],
+            Desc = [[Changes a forged weapon's mutation to Rainbow.]],
             Quality = 1,
             IconId = [[rbxassetid://108283185650211]],
             DisplayModelId = nil

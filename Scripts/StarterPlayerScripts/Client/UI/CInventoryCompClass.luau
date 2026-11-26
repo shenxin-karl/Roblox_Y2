@@ -17,6 +17,7 @@ local TranslationTexts = FX.Text.Define("Y2InventoryCategories", {
     Ore = "Ore",
     SwordBlank = "Sword Blanks",
     ForgedSword = "Forged Swords",
+    MutationStone = "Mutation Stones",
     MiningStick = "Wooden Stick",
 })
 
@@ -37,6 +38,7 @@ local BackpackTabs = {
     createTypeTab("Ore"),
     createTypeTab("SwordBlank"),
     createTypeTab("ForgedSword"),
+    createTypeTab("MutationStone"),
 }
 
 --- 两端使用相同的快捷栏和背包容量。
@@ -116,6 +118,7 @@ function Inventory:OnSlotsChanged(slots)
         }
     end
     self._display:Render(displaySlots, usedBackpackSlots)
+    self:GetOwner():RequireComponent("CWeaponMutationCompClass"):OnInventoryChanged(slots)
     self:_TryRevealBackpackDrop()
 end
 
@@ -150,12 +153,18 @@ function Inventory:OnReady()
     self:Show()
 end
 
---- 仅选择当前快捷格持有的道具，最终由服务端装备。
+--- 点击或按键选择变异石时打开界面；其他快捷格道具仍由服务端装备。
 --- @param grid number 真实格号。
 --- @param expectedTool Tool 按下时看到的道具。
 function Inventory:_SelectGrid(grid, expectedTool)
     local slot = self:GetSlot(grid)
-    if grid <= self._shortcutCapacity and slot and slot.tool == expectedTool then
+    if not slot or slot.tool ~= expectedTool then
+        return
+    end
+    if SwordRules.GetStoneMutation(slot.tool:GetAttribute("FrameworkItemId")) then
+        self._display:ToggleBackpack(false)
+        self:GetOwner():RequireComponent("CWeaponMutationCompClass"):Open()
+    elseif grid <= self._shortcutCapacity then
         FX.Network:SendMsgToServer("C2S_SelectInventoryGrid", grid, slot.tool)
     end
 end

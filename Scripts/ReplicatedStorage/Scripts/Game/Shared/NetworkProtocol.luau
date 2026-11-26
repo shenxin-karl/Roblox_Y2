@@ -28,6 +28,8 @@ return {
         "C2S_RecoverForgeSword",
         -- RPC(expectedTier: number)：只购买服务端档位的下一档，返回购买结果字符串。
         "C2S_BuyMoneyMultiplier",
+        -- RPC(purchase: boolean)：true 购买并领取，false 仅领取；返回结果和成功时入账金币。
+        "C2S_CollectAllIncome",
         -- RPC(kind: string, rewardId: string)：服务端校验福利资格，返回是否领取成功。
         "C2S_ClaimWelfare",
         -- 无客户端参数；矿区落点由服务端决定。
@@ -36,6 +38,8 @@ return {
         "C2S_SelectInventoryGrid",
         -- 需要确认跨分类拖入时以 RPC 调用，返回是否已提交换格。
         "C2S_SwapInventoryGrid",
+        -- RPC(weaponGrid, stoneGrid, weaponTool, stoneTool)：核验本人背包，返回变异前后的词条和基础秒收益，或 nil 与拒绝原因。
+        "C2S_MutateWeapon",
         -- 后续指引开关或显示回执，不授予任何引导进度。
         "C2S_TutorialHint",
         -- 商店展示与取消的统计回执；支付和交付仍以服务端实际结果为准。

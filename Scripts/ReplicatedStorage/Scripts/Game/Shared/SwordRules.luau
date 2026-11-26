@@ -16,6 +16,17 @@ function Rules.GetMutation(mutationId)
     return nil
 end
 
+--- 从道具配置解析变异石的目标词条，其他道具不参与变异。
+--- @param itemId number 背包道具配置 ID。
+--- @return table? 目标变异配置。
+function Rules.GetStoneMutation(itemId)
+    local item = _G.ItemConfig.Data[itemId]
+    if item and item.Type == "MutationStone" and item.KVTable then
+        return Rules.GetMutation(item.KVTable.MutationId)
+    end
+    return nil
+end
+
 --- 校验剑胚或成品词条；变异与剑胚幸运等级独立保存，缺失时不补默认属性。
 --- @param extra table? 背包或槽位中保存的武器属性。
 --- @return table? 有效的变异和剑胚幸运等级，损坏属性返回 nil。

@@ -1,9 +1,10 @@
--- Roblox 收据事务负责去重和保存；处理器只写当前玩家档案。
+-- 平台商品由 Roblox 收据结算，钻石商品由玩家档案事务结算。
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local Welfare = FX.Loader:RequireShared("Scripts.Game.Shared.WelfareRules")
 local DiamondPack = {}
 local WeeklyDiamondPass = {}
+local CollectAllIncome = {}
 
 --- 校验商品中必填的正整数发货参数。
 --- @param value any 配置中的奖励数量或天数。
@@ -57,4 +58,42 @@ function WeeklyDiamondPass:Buy(context)
     }) and player:SetTable(Fields.WelfareData, data)
 end
 
-return {DiamondPack = DiamondPack, WeeklyDiamondPass = WeeklyDiamondPass}
+--- 首次扣费并永久解锁；后续只领取待领在线收益，由同一个奖励计划入账并清零。
+--- @param player table 服务端按认证身份取得的玩家对象。
+--- @param purchase boolean 是否明确请求购买；领取请求不扣费。
+--- @param price number 钻石商品配置中的价格。
+--- @return string, number? 购买或领取结果，成功时附带实际到账金币。
+function CollectAllIncome:Collect(player, purchase, price)
+    local unlocked = player:GetFlag(Fields.CollectAllIncomeUnlocked)
+    if purchase then
+        if unlocked then
+            return "AlreadyOwned"
+        end
+        if player:GetNumber(Fields.Diamonds) < price then
+            return "InsufficientDiamonds"
+        end
+    elseif not unlocked then
+        return "Locked"
+    end
+
+    local slots = player:RequireComponent("SSlotSwordComp")
+    slots:Accrue()
+    local rewards, total = slots:BuildCollectAllRewards()
+    if not purchase and total == 0 then
+        return "Empty"
+    end
+    local reward = player:RequireComponent("FSRewardComp")
+    local success = player:RunDataTransaction(function()
+        if purchase then
+            return reward:ExchangeRewards({{Type = "Money", Currency = "Diamonds", Count = price}}, rewards)
+                and player:SetFlag(Fields.CollectAllIncomeUnlocked, true)
+        end
+        return reward:AddRewards(rewards)
+    end)
+    if not success then
+        return "Failed"
+    end
+    return purchase and "Purchased" or "Claimed", total
+end
+
+return {DiamondPack = DiamondPack, WeeklyDiamondPass = WeeklyDiamondPass, CollectAllIncome = CollectAllIncome}

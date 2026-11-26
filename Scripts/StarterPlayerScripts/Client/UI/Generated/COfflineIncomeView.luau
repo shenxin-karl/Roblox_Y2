@@ -4,7 +4,7 @@ require(script.Parent.CUIView)
 离线收益窗口接入契约
 
 职责边界：
-  View负责钞票主视觉、金额、按钮、翻译和点击许可。
+  View负责钞票主视觉、金额、时长、按钮、翻译和点击许可。
   游戏接入提供真实待领金币、钻石余额、价格和请求结果；不覆写Render或重绑节点。
 
 Config（完整对象）：
@@ -13,6 +13,7 @@ Config（完整对象）：
 
 State（完整快照，不合并增量）：
   amount: number，必填，无默认值；非负有限待领金币。
+  actualSeconds / earnedSeconds: number?，本笔待领收益的实际离线与计入收益时长；旧存档缺失时两项均不显示。
   diamonds: number，必填，无默认值；非负有限钻石余额。
   pending: boolean，可选，省略为false；请求中，两种领取均禁用。
   failed: boolean，可选，省略为false；请求失败，保留金额并允许重试。
@@ -78,6 +79,10 @@ local COfflineIncomeView = FX.Class("COfflineIncomeView", "CUIView")
 
 local TranslationTexts = Text.Define("OfflineIncome", {
     Amount = "${value}",
+    ActualTime = "Time Offline",
+    EarnedTime = "Counted Toward Earnings",
+    Duration = "{hours:int}h {minutes:int}m {seconds:int}s",
+    DurationWithDays = "{days:int}d {hours:int}h {minutes:int}m {seconds:int}s",
     Claim = "Claim",
     DoubleClaim = "2× Claim",
     Pending = "Claiming...",
@@ -92,6 +97,15 @@ function COfflineIncomeView:OnReady()
     local root = FXLoader:PlayerGui("OfflineIncomeUI")
     self._amountTxt = FXLoader:Here(root, "PopupPanelImg.AmountTxt")
     self._statusTxt = FXLoader:Here(root, "PopupPanelImg.StatusTxt")
+    local panel = FXLoader:Here(root, "PopupPanelImg")
+    self._actualTimeCard = if game then FXLoader:Find(panel, "ActualTimeImg") else FXLoader:Here(panel, "ActualTimeImg")
+    self._earnedTimeCard = if game then FXLoader:Find(panel, "EarnedTimeImg") else FXLoader:Here(panel, "EarnedTimeImg")
+    if self._actualTimeCard and self._earnedTimeCard then
+        self._actualTimeTitle = FXLoader:Here(self._actualTimeCard, "TitleTxt")
+        self._earnedTimeTitle = FXLoader:Here(self._earnedTimeCard, "TitleTxt")
+        self._actualTimeTxt = FXLoader:Here(self._actualTimeCard, "ActualTimeTxt")
+        self._earnedTimeTxt = FXLoader:Here(self._earnedTimeCard, "EarnedTimeTxt")
+    end
     self._claimBtn = FXLoader:Here(root, "PopupPanelImg.ClaimBtn")
     self._claimTxt = FXLoader:Here(self._claimBtn, "ButtonTxt")
     self._claimEdge = FXLoader:Here(self._claimBtn, "BottomEdgeImg")
@@ -132,10 +146,31 @@ function COfflineIncomeView:FormatAmount(amount)
     return string.format("%.2f", amount)
 end
 
+local function FormatDuration(seconds)
+    local days = math.floor(seconds / 86400)
+    local definition = days > 0 and TranslationTexts.DurationWithDays or TranslationTexts.Duration
+    return Text.Tr(definition, {
+        days = days,
+        hours = math.floor(seconds / 3600) % 24,
+        minutes = math.floor(seconds / 60) % 60,
+        seconds = seconds % 60,
+    })
+end
+
 --- 以完整业务状态更新两种领取资格与文案。
---- @param state table? amount、diamonds、pending、failed，见文件头契约。
+--- @param state table? 待领金额、离线时长及领取请求状态，见文件头契约。
 function COfflineIncomeView:Render(state)
     local config = self:GetUIConfig()
+    if self._actualTimeTxt and self._earnedTimeTxt then
+        local showDuration = config ~= nil and state ~= nil and state.amount > 0
+            and state.actualSeconds ~= nil and state.earnedSeconds ~= nil
+        self._actualTimeTitle.Text = showDuration and Text.Tr(TranslationTexts.ActualTime) or ""
+        self._earnedTimeTitle.Text = showDuration and Text.Tr(TranslationTexts.EarnedTime) or ""
+        self._actualTimeTxt.Text = showDuration and FormatDuration(state.actualSeconds) or ""
+        self._earnedTimeTxt.Text = showDuration and FormatDuration(state.earnedSeconds) or ""
+        self._actualTimeCard.Visible = showDuration
+        self._earnedTimeCard.Visible = showDuration
+    end
     if not state or not config then
         self._amountTxt.Text = ""
         self._statusTxt.Text = ""

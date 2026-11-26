@@ -12,10 +12,14 @@ local Effects = FXLoader:RequireFromParent(script, "CForgeEffects")
 local ForgeView = FXLoader:Require(script.Parent.Parent, "UI.CForgeView")
 local ActionButton = FXLoader:Require(script.Parent.Parent, "UI.CActionButton")
 local DiamondPurchase = FXLoader:Require(script.Parent.Parent, "UI.CDiamondPurchase")
+local RecoveryOfferId = "forge_recovery"
 local TranslationTexts = Text.Define("ForgeInteraction", {
     Leave = "Leave Forge",
     PersonalForge = "Forge Sword",
     PersonalSmelt = "Smelt Sword Blank",
+    RecoveryTitle = "Restore Weapon",
+    RecoveryCategory = "FORGE RECOVERY",
+    RecoveryDescription = "Restore this destroyed weapon and continue forging.",
 })
 local PersonalActions = {
     {PartPath = Settings.PersonalForgePart, Text = TranslationTexts.PersonalForge, Message = "C2S_EnterForge"},
@@ -124,7 +128,7 @@ function Comp:ApplyForgeData(data, previous)
     self._effects:ApplyWeapon(displayQuality, data.Active == true and data.Outcome ~= "Destroyed", upgradeFrom, mutationId)
 end
 
---- 只请求恢复当前显示的损毁武器；费用和恢复结果以服务端为准。
+--- 显示当前损毁武器的恢复报价，玩家确认后才提交。
 function Comp:RequestRecovery()
     if not self._effects or self._effects:IsBusy()
         or os.clock() - self._lastRecoveryRequest < Settings.RequestCooldown then
@@ -132,9 +136,35 @@ function Comp:RequestRecovery()
     end
     local data = self:GetTable(Fields.ForgeData)
     if data.Outcome == "Destroyed" and data.RecoveryId then
-        self._lastRecoveryRequest = os.clock()
-        FX.Network:SendMsgToServer("C2S_RecoverForgeSword", data.RecoveryId)
+        local failureId = data.RecoveryId
+        DiamondPurchase.Confirm({
+            itemId = RecoveryOfferId,
+            name = TranslationTexts.RecoveryTitle.Source,
+            category = TranslationTexts.RecoveryCategory.Source,
+            description = TranslationTexts.RecoveryDescription.Source,
+            price = Settings.RecoveryDiamondCost,
+            icon = "rbxassetid://115692379614617",
+        }, function()
+            return self:SubmitRecovery(failureId)
+        end)
     end
+end
+
+--- 确认时重新核对当前台位和损毁进度，不能对已经切换的武器发起恢复。
+--- @param failureId string 打开确认页时的损毁标识。
+--- @return string 请求已提交或当前不能恢复的原因。
+function Comp:SubmitRecovery(failureId)
+    local data = self:GetTable(Fields.ForgeData)
+    if not self._effects or self._effects:IsBusy() or data.Outcome ~= "Destroyed"
+        or data.RecoveryId ~= failureId or os.clock() - self._lastRecoveryRequest < Settings.RequestCooldown then
+        return "Stale"
+    end
+    if self:GetNumber(Fields.Diamonds) < Settings.RecoveryDiamondCost then
+        return "InsufficientDiamonds"
+    end
+    self._lastRecoveryRequest = os.clock()
+    FX.Network:SendMsgToServer("C2S_RecoverForgeSword", failureId)
+    return "Submitted"
 end
 
 --- 仅为本人基地创建本地提示，节点流送回来后重新挂到对应桌面或炉台。
@@ -350,7 +380,7 @@ function Comp:UpdateView(deltaTime)
     self._mainHUD.Visible = false
 end
 
---- 退出、死亡与组件销毁统一还原镜头、角色显示和主 HUD。
+--- 退出、死亡与组件销毁统一关闭恢复报价，并还原镜头、角色显示和主 HUD。
 function Comp:CloseView()
     if not self._effects then
         return
@@ -358,6 +388,7 @@ function Comp:CloseView()
     ContextActionService:UnbindAction(self._actionName)
     self._effects:Destroy()
     self._effects, self._stationId, self._station = nil, nil, nil
+    DiamondPurchase.CloseConfirmation(RecoveryOfferId)
     self._view:Close()
     for part, transparency in pairs(self._hiddenCharacter) do
         if part.Parent then

@@ -4,6 +4,12 @@ local Fields = _G.PlayerDataConfig
 local Items = _G.ItemConfig
 local WeaponVisual = FX.Loader:RequireShared("Scripts.Game.Shared.WeaponVisual")
 local SwordRules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
+local GameUtility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
+local SItemToolVisual = FX.Loader:RequireFromParent(script, "SItemToolVisual")
+local TranslationTexts = FX.Text.Define("IncomeCard", {
+    Received = "Received {value} coins.",
+    NoIncome = "Your base has no income. The card was not consumed.",
+})
 local Comp = FX.Class("SInventoryCompClass", "FSInventoryCompClass")
 -- 握点按模型高度归一；弯柄和短柄使用源模型中量出的偏移。
 local DefaultSwordGripPoint = Vector3.new(0, -0.33, 0)
@@ -61,14 +67,15 @@ function Comp:OnPlayerLogin()
     self:SyncTools()
 end
 
---- 创建手持外观；无手持模型的道具仍可装备查看说明，收益卡可点击使用。
+--- 创建手持外观；卡片和变异石复用道具图标，只有收益卡可点击使用。
 --- @param itemId number 已配置的道具 ID。
 --- @param extra table? 武器变异用于光环；成品品质用于选择模型和图标。
 --- @return Tool 不包含业务脚本的手持道具。
 function Comp:CreateTool(itemId, extra)
     local tool = Instance.new("Tool")
     tool.CanBeDropped = false
-    tool.Enabled = false
+    local item = Items.Data[itemId]
+    tool.Enabled = item.Type == "IncomeCard"
     tool:SetAttribute("FrameworkItemId", itemId)
     local mutationId = extra and extra.MutationId
     tool:SetAttribute("MutationId", mutationId)
@@ -76,10 +83,12 @@ function Comp:CreateTool(itemId, extra)
     if icon ~= "rbxassetid://0" then
         tool.TextureId = icon
     end
-    local item = Items.Data[itemId]
+    if item.HeldHandler == "Image" then
+        SItemToolVisual.AddImageHandle(tool, icon)
+        return tool
+    end
     if item.HeldHandler == "None" then
         tool.RequiresHandle = false
-        tool.Enabled = item.Type == "IncomeCard"
         return tool
     end
     local handle
@@ -194,7 +203,7 @@ function Comp:GetEquippedGrid()
     return nil
 end
 
---- 仅使用服务器当前装备的收益卡；扣卡和发奖走同一个存档事务。
+--- 仅使用服务器当前装备的收益卡；提交后按金币余额变化提示实际到账数。
 --- @param tool any 客户端点击时手持的 Tool 实例。
 function Comp:ActivateIncomeCard(tool)
     local grid = self._active and self:GetEquippedGrid()
@@ -205,9 +214,20 @@ function Comp:ActivateIncomeCard(tool)
     if not item or Items.Data[item.itemId].Type ~= "IncomeCard" then
         return
     end
-    self:GetPlayerObject():RunDataTransaction(function()
+    local player = self:GetPlayerObject()
+    if self:RequireComponent("SWelfareComp"):GetBaseIncome() == 0 then
+        player:ShowLocalizedTips(TranslationTexts.NoIncome)
+        return
+    end
+
+    local before = self:GetNumber(Fields.Money)
+    local success = player:RunDataTransaction(function()
         return self:UseItem(grid, 1)
     end)
+    if success then
+        local received = self:GetNumber(Fields.Money) - before
+        player:ShowLocalizedTips(TranslationTexts.Received, {value = GameUtility.NumberToText(received)})
+    end
 end
 
 --- 只装备当前快捷格里的本人道具；再次选择同一格则卸下。
@@ -259,6 +279,61 @@ function Comp:RequestSwapGrid(sourceGrid, targetGrid, sourceTool, targetTool)
     end
     self:SyncTools()
     return true
+end
+
+--- 在同一份背包快照中更新武器词条和扣除一颗石头，避免只提交其中一项。
+--- @param weaponGrid any 玩家选中的武器格号。
+--- @param stoneGrid any 玩家选中的变异石格号。
+--- @param weaponTool any 客户端选材时看到的武器 Tool。
+--- @param stoneTool any 客户端选材时看到的变异石 Tool。
+--- @return table? 服务端确认的变异和基础秒收益对比。
+--- @return string? 同种变异时返回 SameMutation。
+function Comp:MutateWeapon(weaponGrid, stoneGrid, weaponTool, stoneTool)
+    if not self._active or not self:_CheckGridIndexValid(weaponGrid) or not self:_CheckGridIndexValid(stoneGrid)
+        or weaponGrid == stoneGrid or not weaponTool or not stoneTool
+        or self._tools[weaponGrid] ~= weaponTool or self._tools[stoneGrid] ~= stoneTool then
+        return nil
+    end
+
+    local items = self:GetTable(Fields.Inventory)
+    local weapon, stone = items[tostring(weaponGrid)], items[tostring(stoneGrid)]
+    local target = stone and SwordRules.GetStoneMutation(stone.itemId)
+    if not target or stone.stackCount < 1 or not weapon or weapon.itemId ~= SwordRules.ItemId
+        or weapon.stackCount ~= 1 or not SwordRules.IsValid(weapon.extraData) then
+        return nil
+    end
+    local traits = weapon.extraData
+    if weaponTool:GetAttribute("MutationId") ~= traits.MutationId
+        or weaponTool:GetAttribute("Quality") ~= traits.Quality
+        or weaponTool:GetAttribute("WeaponLevel") ~= traits.Level then
+        return nil
+    end
+    if traits.MutationId == target.MutationId then
+        return nil, "SameMutation"
+    end
+
+    local beforeName = SwordRules.GetMutation(traits.MutationId).MutationName
+    local beforeIncome = SwordRules.GetIncome(traits)
+    traits.MutationId = target.MutationId
+    if not SwordRules.IsValid(traits) then
+        return nil
+    end
+    local afterIncome = SwordRules.GetIncome(traits)
+    if stone.stackCount == 1 then
+        items[tostring(stoneGrid)] = nil
+    else
+        stone.stackCount -= 1
+    end
+    if not self:SetTable(Fields.Inventory, items) then
+        return nil
+    end
+    return {
+        quality = traits.Quality,
+        beforeMutationName = beforeName,
+        afterMutationName = target.MutationName,
+        beforeIncome = beforeIncome,
+        afterIncome = afterIncome,
+    }
 end
 
 --- 框架整理等全量变更仍走同一展示更新。

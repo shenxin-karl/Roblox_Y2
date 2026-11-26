@@ -3,12 +3,14 @@ local HttpService = game:GetService("HttpService")
 local FX = _G.FX
 local Fields = _G.PlayerDataConfig
 local Rules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
+local Welfare = FX.Loader:RequireShared("Scripts.Game.Shared.WelfareRules")
 local Utility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
 local Config = _G.GameConfig.CommonConfig
 local TranslationTexts = FX.Text.Define("WeaponEconomy", {
     Sold = "Weapon sold for ${value}.",
     Offline = "Claimed ${value} offline income.",
     GiftSent = "Sword blank sent to {name}.",
+    PaidGiftSent = "Sword blank sent to {name} for {value} diamonds.",
     GiftReceived = "Received a sword blank from {name}.",
     GiftRequested = "Gift request sent to {name}. Waiting for their reply.",
     GiftBusy = "A gift request is already pending. Please wait for it to finish.",
@@ -18,6 +20,8 @@ local TranslationTexts = FX.Text.Define("WeaponEconomy", {
     GiftTooFar = "You are too far apart to complete the gift.",
     GiftItemChanged = "The sword blank offered for this gift is no longer available.",
     GiftBackpackFull = "The recipient's backpack is full. The sword blank was not transferred.",
+    GiftCostChanged = "The gift cost changed. Please confirm the new cost.",
+    GiftInsufficientDiamonds = "You need {value} diamonds to send this gift.",
     GiftFailed = "Couldn't complete the gift. Please try again.",
     Failed = "Action failed. Check your equipped item, distance and backpack space.",
 })
@@ -101,6 +105,7 @@ function Comp:ClaimOffline(boosted)
     end
     local success = self:GetPlayerObject():RunDataTransaction(function()
         data.Pending = 0
+        data.PendingActualSeconds, data.PendingEarnedSeconds = nil, nil
         return self:SetTable(Fields.OfflineIncome, data)
             and self:RequireComponent("FSRewardComp"):ExchangeRewards(costs,
                 {{Type = "Money", Currency = "Money", Count = amount}})
@@ -124,9 +129,10 @@ function Comp:IsNear(other)
         and (humanoid.RootPart.Position - targetHumanoid.RootPart.Position).Magnitude <= Config.GiftDistance
 end
 
---- 保存当前手持剑胚快照并告知发送方等待确认；30 秒无回复则通知双方。
+--- 核对赠送方确认过的价格，保存剑胚快照并等待接收方确认。
 --- @param targetId any 客户端选择的接收者 UserId。
-function Comp:OfferGift(targetId)
+--- @param expectedCost any 赠送方确认框显示的价格，仅用于检测变化。
+function Comp:OfferGift(targetId, expectedCost)
     if not self:CanRequest() or type(targetId) ~= "number" or targetId % 1 ~= 0 or targetId == self:GetPlayerId() then
         return
     end
@@ -146,8 +152,17 @@ function Comp:OfferGift(targetId)
         senderPlayer:ShowLocalizedTips(TranslationTexts.GiftBusy)
         return
     end
+    local cost = Welfare.GetGiftCost(self:GetTableView(Fields.WelfareTasks), Welfare.GetDay(os.time()))
+    if expectedCost ~= cost then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftCostChanged)
+        return
+    end
+    if self:GetNumber(Fields.Diamonds) < cost then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftInsufficientDiamonds, {value = Utility.NumberToText(cost)})
+        return
+    end
     local offer = {Token = HttpService:GenerateGUID(false), Sender = self, Receiver = other, Grid = grid,
-        MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel, Expires = os.clock() + 30}
+        MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel, Cost = cost, Expires = os.clock() + 30}
     self._outgoing, other._offer = offer, offer
     offer.Timeout = FX.Task:Delay(30, function()
         if self._outgoing == offer and other._offer == offer then
@@ -161,7 +176,7 @@ function Comp:OfferGift(targetId)
     senderPlayer:ShowLocalizedTips(TranslationTexts.GiftRequested, {name = other:GetPlayerNode().DisplayName})
 end
 
---- 确认时重新检查距离、物品和容量；拒绝、超时和提交失败均反馈实际结果。
+--- 确认时重新检查价格、余额、距离、物品和容量，只对成功交付的赠送收费并推进任务。
 --- @param token any 服务端生成并发给本接收者的赠送令牌。
 --- @param accepted any 接收者的明确确认或拒绝。
 function Comp:ReplyGift(token, accepted)
@@ -212,6 +227,16 @@ function Comp:ReplyGift(token, accepted)
         receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftItemChanged)
         return
     end
+    local day = Welfare.GetDay(os.time())
+    local tasks = sender:GetTable(Fields.WelfareTasks)
+    local cost = Welfare.GetGiftCost(tasks, day)
+    local diamonds = sender:GetNumber(Fields.Diamonds)
+    if cost ~= offer.Cost or diamonds < cost then
+        senderPlayer:ShowLocalizedTips(cost ~= offer.Cost and TranslationTexts.GiftCostChanged
+            or TranslationTexts.GiftInsufficientDiamonds, {value = Utility.NumberToText(cost)})
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftUnavailable)
+        return
+    end
     local rewards = {{Type = "Item", ItemId = Rules.BlankItemId, Count = 1,
         ExtraData = {MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel}}}
     local reward = self:RequireComponent("FSRewardComp")
@@ -222,8 +247,13 @@ function Comp:ReplyGift(token, accepted)
     end
     local remaining = sender:GetTable(Fields.Inventory)
     remaining[tostring(offer.Grid)] = nil
+    local progress = Welfare.AdvanceTask(sender:GetTable(Fields.WelfareTasks), day, "gift")
     local removed = senderPlayer:RunDataTransaction(function()
         return sender:SetTable(Fields.Inventory, remaining)
+            and (not progress or sender:SetTable(Fields.WelfareTasks, progress))
+            and (cost == 0 or sender:RequireComponent("FSRewardComp"):ConsumeRewards({
+                {Type = "Money", Currency = "Diamonds", Count = cost},
+            }))
     end)
     if not removed then
         senderPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
@@ -234,12 +264,17 @@ function Comp:ReplyGift(token, accepted)
         return reward:AddRewards(rewards)
     end)
     if not success then
-        sender:SetTable(Fields.Inventory, items)
+        -- 两方事务不让出执行权；接收失败时恢复赠送者本次修改的原值。
+        senderPlayer:RunDataTransaction(function()
+            return sender:SetTable(Fields.Inventory, items)
+                and (not progress or sender:SetTable(Fields.WelfareTasks, tasks))
+                and (cost == 0 or sender:SetNumber(Fields.Diamonds, diamonds))
+        end)
         senderPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
         receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
     else
-        sender:RequireComponent("SWelfareComp"):AdvanceTask("gift")
-        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftSent, {name = self:GetPlayerNode().DisplayName})
+        senderPlayer:ShowLocalizedTips(cost == 0 and TranslationTexts.GiftSent or TranslationTexts.PaidGiftSent,
+            {name = self:GetPlayerNode().DisplayName, value = Utility.NumberToText(cost)})
         receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftReceived, {name = sender:GetPlayerNode().DisplayName})
     end
 end

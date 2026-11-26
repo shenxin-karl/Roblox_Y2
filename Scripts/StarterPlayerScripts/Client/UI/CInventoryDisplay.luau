@@ -454,7 +454,7 @@ end
 --- @param config table 槽位容量、背包分类及独立木棍格的选择回调。
 --- 页签按数组顺序创建，每项包含唯一 id、Text.Define 文案 label 和筛选函数 matches(slot)。
 --- All 由展示层创建；不提供分类时保留原背包布局。
---- @param onSelect function 快捷格点击或按键回调。
+--- @param onSelect function 库存格点击或快捷格按键回调。
 --- @param onSwap function 拖拽交换回调。
 --- @return table 背包展示对象。
 function Display.new(root, config, onSelect, onSwap)
@@ -777,11 +777,12 @@ function Display.new(root, config, onSelect, onSwap)
 end
 
 --- 打开时刷新视口；关闭时回收当前输入状态。
-function Display:ToggleBackpack()
-    if self._backpackCapacity == 0 then
+--- @param visible boolean? 显式指定显隐；省略时切换。
+function Display:ToggleBackpack(visible)
+    if self._backpackCapacity == 0 or visible == self._panel.Visible then
         return
     end
-    self._panel.Visible = not self._panel.Visible
+    self._panel.Visible = if visible == nil then not self._panel.Visible else visible
     self._backpackViewRevision += 1
     self:_RefreshShortcutVisibility()
     self._topbarButton.BackgroundColor3 = if self._panel.Visible then TopbarLight else TopbarDark

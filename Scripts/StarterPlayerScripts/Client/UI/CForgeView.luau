@@ -61,7 +61,7 @@ local function CreateRecoveryButton(root, template)
     icon.BackgroundTransparency = 1
     icon.Position = UDim2.fromOffset(10, 0)
     icon.Size = UDim2.new(0, 30, 1, 0)
-    icon.Image = "rbxassetid://126644722107975"
+    icon.Image = "rbxassetid://115692379614617"
     icon.ScaleType = Enum.ScaleType.Fit
     icon.Parent = button
 

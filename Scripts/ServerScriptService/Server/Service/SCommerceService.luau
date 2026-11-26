@@ -2,6 +2,7 @@
 local FX, FS = _G.FX, _G.FS
 local MoneyMultiplier = FX.Loader:Require(script.Parent.Parent, "Player.SMoneyMultiplier")
 local PurchaseReceiptService = FX.Loader:RequireFromParent(script, "SPurchaseReceiptService")
+local CollectAllGoodsId = 201
 local Service = {}
 
 --- 只注册项目白名单中已声明的 RPC，避免与并行修改的共享路由重复注册。
@@ -13,8 +14,17 @@ local function Register(name, handler)
     end
 end
 
---- 服务端管理器创建后注册倍率购买、福利领取和矿区导航。
+--- 服务端管理器创建后注册钻石购买、福利领取和矿区导航。
 function Service.Init()
+    Register("C2S_CollectAllIncome", function(userId, purchase)
+        local player = FS.PlayerManager:GetPlayerObject(userId)
+        if not player or type(purchase) ~= "boolean" then
+            return "Failed"
+        end
+        local config = _G.GoodsConfig.GemGoodsData[CollectAllGoodsId]
+        local handler = _G.Provider:GetBuyHandler(config.BuyHandler)
+        return handler:Collect(player, purchase, config.Price)
+    end)
     Register("C2S_BuyMoneyMultiplier", function(userId, expectedTier)
         local player = FS.PlayerManager:GetPlayerObject(userId)
         if not player or type(expectedTier) ~= "number" or expectedTier % 1 ~= 0 then

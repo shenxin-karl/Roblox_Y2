@@ -20,6 +20,10 @@ return {
         Type = "number", Key = "Diamonds", DefVal = 0,
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
+    CollectAllIncomeUnlocked = {
+        Type = "boolean", Key = "CollectAllIncomeUnlocked", DefVal = false,
+        KVTable = PlayerKVEnum.ePlayerData, Sync = true,
+    },
     UpgradeWorkshop = {
         Type = "table", Key = "UpgradeWorkshop", DefVal = {smelt = 0, forge = 0, income = 0},
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
@@ -29,7 +33,7 @@ return {
         Type = "table", Key = "ForgeData", DefVal = {Active = false},
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
-    -- 收益快照每次在线更新，Pending保留至领取；不补矿石与锻造。
+    -- 收益快照在线更新。PendingActualSeconds / PendingEarnedSeconds 仅在待领额的时长可完整追溯时存在。
     OfflineIncome = {
         Type = "table", Key = "OfflineIncome", DefVal = {Timestamp = 0, Rate = 0, Pending = 0},
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,

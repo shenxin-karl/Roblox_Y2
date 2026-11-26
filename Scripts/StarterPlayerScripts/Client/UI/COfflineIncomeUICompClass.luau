@@ -7,6 +7,11 @@ local DiamondPurchase = FXLoader:RequireFromParent(script, "CDiamondPurchase")
 local MoneyRain = FXLoader:RequireFromParent(script, "CMoneyRain")
 FXLoader:RequireFromParent(script, "Generated.COfflineIncomeView")
 local Component = FX.Class("COfflineIncomeUICompClass", "COfflineIncomeView")
+local TranslationTexts = FX.Text.Define("OfflineIncomePurchase", {
+    Title = "Double Offline Earnings",
+    Category = "OFFLINE EARNINGS",
+    Description = "Spend diamonds to claim twice the pending offline cash.",
+})
 
 --- 父构造后准备静态价格与本次登录的请求状态，不伪造待领取金额。
 --- @param owner table 当前客户端玩家对象。
@@ -50,9 +55,12 @@ end
 
 --- 提供完整快照，不把在线刷新时间变化当成再次弹窗的原因。
 function Component:UpdateState()
-    local amount = self:GetTable(Fields.OfflineIncome).Pending
+    local offline = self:GetTable(Fields.OfflineIncome)
+    local amount = offline.Pending
     self.State = {
         amount = amount,
+        actualSeconds = offline.PendingActualSeconds,
+        earnedSeconds = offline.PendingEarnedSeconds,
         diamonds = self:GetNumber(Fields.Diamonds),
         pending = self._pending,
         failed = self._failed,
@@ -72,7 +80,7 @@ function Component:FormatAmount(amount)
     return Utility.NumberToText(amount)
 end
 
---- 领取只发送请求编号与单双倍选项；关闭保留未领取奖励。
+--- 免费领取直接提交，双倍领取需先确认钻石价格。
 --- @param action string 生成View发出的Claim或Close。
 --- @param payload table Claim含boosted:boolean，Close为空。
 function Component:OnUIAction(action, payload)
@@ -83,14 +91,37 @@ function Component:OnUIAction(action, payload)
     if action ~= "Claim" or self._pending or not self.State or self.State.amount <= 0 then
         return
     end
-    if payload.boosted and self.State.diamonds < self.Config.diamondCost then
-        DiamondPurchase.Open()
+    if payload.boosted then
+        DiamondPurchase.Confirm({
+            itemId = "offline_income_double",
+            name = TranslationTexts.Title.Source,
+            category = TranslationTexts.Category.Source,
+            description = TranslationTexts.Description.Source,
+            price = self.Config.diamondCost,
+            icon = "rbxassetid://120242712923291",
+        }, function()
+            return self:SubmitClaim(true)
+        end)
         return
+    end
+    self:SubmitClaim(false)
+end
+
+--- 确认后重查待领金额和余额，回执由现有领取窗口处理。
+--- @param boosted boolean 是否以钻石双倍领取。
+--- @return string 请求已提交或当前不可领取的原因。
+function Component:SubmitClaim(boosted)
+    if self._pending or self:GetTable(Fields.OfflineIncome).Pending <= 0 then
+        return "Stale"
+    end
+    if boosted and self:GetNumber(Fields.Diamonds) < self.Config.diamondCost then
+        return "InsufficientDiamonds"
     end
     self._requestId += 1
     self._pending, self._failed = true, false
     self:UpdateState()
-    FX.Network:SendMsgToServer("C2S_ClaimOfflineIncome", self._requestId, payload.boosted)
+    FX.Network:SendMsgToServer("C2S_ClaimOfflineIncome", self._requestId, boosted)
+    return "Submitted"
 end
 
 --- 解除结果回调，订阅与展示资源由父类清理。

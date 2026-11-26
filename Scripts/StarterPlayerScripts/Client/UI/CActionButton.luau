@@ -92,6 +92,8 @@ end
 --- @return TextLabel 主动作标题。
 --- @return TextLabel 次要状态说明。
 function ActionButton.New(name)
+    local isGift = name == "GiftRawWeapon"
+    local textWidth = isGift and 0.69 or 0.76
     local button = Instance.new("TextButton")
     button.Name = name
     button.Position = UDim2.fromOffset(-1000, -1000)
@@ -126,7 +128,7 @@ function ActionButton.New(name)
     local title = Instance.new("TextLabel")
     title.Name = "Title"
     title.Position = UDim2.fromScale(0.08, 0.1)
-    title.Size = UDim2.fromScale(0.76, 0.46)
+    title.Size = UDim2.fromScale(textWidth, 0.46)
     title.BackgroundTransparency = 1
     title.Font = Enum.Font.FredokaOne
     title.TextColor3 = Color3.new(1, 1, 1)
@@ -150,19 +152,31 @@ function ActionButton.New(name)
     local detail = title:Clone()
     detail.Name = "Detail"
     detail.Position = UDim2.fromScale(0.08, 0.59)
-    detail.Size = UDim2.fromScale(0.76, 0.23)
+    detail.Size = UDim2.fromScale(textWidth, 0.23)
     detail.Font = Enum.Font.GothamBold
     detail.TextColor3 = Color3.fromRGB(225, 255, 250)
     detail.TextStrokeTransparency = 1
     detail.TextOutline.Thickness = 1.2
     detail.UITextSizeConstraint.MaxTextSize = 16
     detail.Parent = button
-    local arrow = title:Clone()
-    arrow.Name = "Arrow"
-    arrow.Position = UDim2.fromScale(0.86, 0.22)
-    arrow.Size = UDim2.fromScale(0.09, 0.46)
-    arrow.Text = "›"
-    arrow.Parent = button
+    if isGift then
+        local icon = Instance.new("ImageLabel")
+        icon.Name = "GiftIcon"
+        icon.AnchorPoint = Vector2.new(0.5, 0.5)
+        icon.Position = UDim2.fromScale(0.875, 0.46)
+        icon.Size = UDim2.fromOffset(28, 28)
+        icon.BackgroundTransparency = 1
+        icon.Image = "rbxassetid://107535063127657"
+        icon.ZIndex = 2
+        icon.Parent = button
+    else
+        local arrow = title:Clone()
+        arrow.Name = "Arrow"
+        arrow.Position = UDim2.fromScale(0.86, 0.22)
+        arrow.Size = UDim2.fromScale(0.09, 0.46)
+        arrow.Text = "›"
+        arrow.Parent = button
+    end
 
     --- 松开、移出或隐藏时复位，避免按钮留下按下状态。
     local function Release()

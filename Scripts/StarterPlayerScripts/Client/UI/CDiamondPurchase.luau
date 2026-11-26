@@ -13,4 +13,23 @@ function DiamondPurchase.Open()
     return shop:OpenTab("Robux")
 end
 
+--- 花费钻石前打开共用确认页；这里只展示报价，不扣钻。
+--- @param config table 商品信息与钻石价格。
+--- @param submit function 确认后的提交动作。
+--- @return boolean 是否已打开确认页。
+function DiamondPurchase.Confirm(config, submit)
+    local confirmation = FC.PlayerObject:GetComponent("CMoneyMultiplierUICompClass")
+    return confirmation ~= nil and confirmation:OpenDiamondPurchase(config, submit)
+end
+
+--- 来源界面失效时，仅关闭仍在展示的对应商品报价。
+--- @param itemId string 要关闭的商品标识。
+function DiamondPurchase.CloseConfirmation(itemId)
+    local player = FC.PlayerObject
+    local confirmation = player and player:GetComponent("CMoneyMultiplierUICompClass")
+    if confirmation then
+        confirmation:CloseDiamondPurchase(itemId)
+    end
+end
+
 return DiamondPurchase

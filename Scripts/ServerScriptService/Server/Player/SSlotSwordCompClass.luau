@@ -42,7 +42,19 @@ function Comp:OnPlayerLogin()
     local offline = self:GetTable(Fields.OfflineIncome)
     local now = os.time()
     if offline.Timestamp > 0 then
-        offline.Pending += offline.Rate * math.clamp(now - offline.Timestamp, 0, _G.GameConfig.CommonConfig.OfflineMaxSeconds)
+        local actualSeconds = math.max(now - offline.Timestamp, 0)
+        local earnedSeconds = math.min(actualSeconds, _G.GameConfig.CommonConfig.OfflineMaxSeconds)
+        local amount = offline.Rate * earnedSeconds
+        if amount > 0 then
+            if offline.Pending <= 0 then
+                offline.PendingActualSeconds = actualSeconds
+                offline.PendingEarnedSeconds = earnedSeconds
+            elseif offline.PendingActualSeconds ~= nil and offline.PendingEarnedSeconds ~= nil then
+                offline.PendingActualSeconds += actualSeconds
+                offline.PendingEarnedSeconds += earnedSeconds
+            end
+            offline.Pending += amount
+        end
     end
     offline.Timestamp = now
     self:SetTable(Fields.OfflineIncome, offline)
@@ -285,12 +297,9 @@ function Comp:Collect(slotId)
     end
 end
 
---- 本人走到基地前的绿块后，将所有楼层的累计收益作为同一奖励计划领取。
-function Comp:CollectAll()
-    local base = self:RequireComponent("SBaseComp"):GetBase()
-    if not base or not self:IsNear(base.CollectAll, 0) then
-        return
-    end
+--- 汇总本人所有楼层的待领在线收益，供基地领取区和特权领取共用。
+--- @return table, number 清零各槽位并发放金币的奖励计划，以及金币总额。
+function Comp:BuildCollectAllRewards()
     local rewards, total = {}, 0
     local data = self:GetTable(Fields.BaseData)
     for slotId, sword in pairs(data.SlotData) do
@@ -301,6 +310,18 @@ function Comp:CollectAll()
     end
     if total > 0 then
         table.insert(rewards, {Type = "Money", Currency = "Money", Count = total})
+    end
+    return rewards, total
+end
+
+--- 本人走到基地前的绿块即可免费领取所有楼层的累计收益。
+function Comp:CollectAll()
+    local base = self:RequireComponent("SBaseComp"):GetBase()
+    if not base or not self:IsNear(base.CollectAll, 0) then
+        return
+    end
+    local rewards, total = self:BuildCollectAllRewards()
+    if total > 0 then
         local success = self:RequireComponent("FSRewardComp"):AddRewards(rewards)
         if success then
             local display = self._collectAllDisplay

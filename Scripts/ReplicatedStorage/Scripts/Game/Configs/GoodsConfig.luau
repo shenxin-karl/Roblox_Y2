@@ -70,6 +70,16 @@ return {
             KVTable = nil
         }
     },
-    GemGoodsData = {},
+    GemGoodsData = {
+        [201] = {
+            GemGoodsId = 201,
+            BuyHandler = [[CollectAllIncome]],
+            BuyLimit = 1,
+            Desc = [[Permanently unlock remote collection of all online earnings in your base.]],
+            Price = 980,
+            NumberArray = nil,
+            KVTable = nil
+        }
+    },
     GoodsItemData = {}
 }

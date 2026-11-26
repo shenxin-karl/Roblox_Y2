@@ -1,6 +1,7 @@
 -- Y2 福利档位及每日任务；需变异矿石或邀请回执的条目暂不开放。
 local FX = _G.FX
 local Numerical = FX.Loader:RequireShared("Scripts.Game.Configs.NumericalConfig")
+local FreeGiftCount = 2
 local Rules = {
     DailyAmount = Numerical.dailyDiamondReward,
     PassIds = {111, 112},
@@ -19,7 +20,7 @@ local Rules = {
             {id = "gold_stone_30", minutes = 30, reward = {type = "Item", id = 1302, amount = 1}},
         }},
         {kind = "task", page = "TasksBox", columns = 1, gapX = 0, gapY = 9, items = {
-            {id = "gift", title = "Gift Sword Blanks", target = 2,
+            {id = "gift", title = "Gift Sword Blanks", target = FreeGiftCount,
                 reward = {type = "Item", id = 1201, amount = 1}},
             {id = "smelt", title = "Smelt Sword Blanks", target = 10,
                 reward = {type = "Item", id = 1202, amount = 1}},
@@ -56,6 +57,14 @@ end
 --- @return number 当前进度。
 function Rules.GetTaskProgress(data, day, id)
     return data.Day == day and (data.Progress[id] or 0) or 0
+end
+
+--- 每日赠送任务记录前两次成功赠送；用同一进度判断免费次数是否用完。
+--- @param data table 玩家每日任务存档。
+--- @param day number 当前 UTC 日。
+--- @return number 本次赠送应扣的钻石数，免费时为零。
+function Rules.GetGiftCost(data, day)
+    return if Rules.GetTaskProgress(data, day, "gift") >= FreeGiftCount then 5 else 0
 end
 
 --- 按已配置的目标封顶，避免完成后继续反复写档。

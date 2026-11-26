@@ -5,11 +5,14 @@ local FX, FC = _G.FX, _G.FC
 local Text = FX.Text
 local Fields = _G.PlayerDataConfig
 local Rules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
+local Welfare = FX.Loader:RequireShared("Scripts.Game.Shared.WelfareRules")
+local Utility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
 local ActionButton = FX.Loader:RequireFromParent(script, "CActionButton")
 local TranslationTexts = Text.Define("WeaponActions", {
     Gift = "Gift Sword Blank",
     GiftTarget = "Give to {name}",
-    ConfirmGift = "Give your equipped sword blank to {name}?",
+    ConfirmGift = "Give your equipped sword blank to {name} for free?",
+    ConfirmPaidGift = "Give your equipped sword blank to {name} for {value} diamonds?",
     ReceiveGift = "{name} wants to give you a {mutation} sword blank with luck level {blankLuckLevel:int}. Accept?",
     Confirm = "Confirm",
     Cancel = "Cancel",
@@ -31,10 +34,11 @@ function Comp:OnReady()
         if not target then
             return
         end
-        self._common:ShowConfirm({DescKey = TranslationTexts.ConfirmGift,
+        local cost = Welfare.GetGiftCost(self:GetTable(Fields.WelfareTasks), Welfare.GetDay(workspace:GetServerTimeNow()))
+        self._common:ShowConfirm({DescKey = cost == 0 and TranslationTexts.ConfirmGift or TranslationTexts.ConfirmPaidGift,
             ConfirmKey = TranslationTexts.Confirm, CancelKey = TranslationTexts.Cancel,
-            Arguments = {name = target.DisplayName}, ConfirmCB = function()
-                FX.Network:SendMsgToServer("C2S_OfferRawSword", target.UserId)
+            Arguments = {name = target.DisplayName, value = Utility.NumberToText(cost)}, ConfirmCB = function()
+                FX.Network:SendMsgToServer("C2S_OfferRawSword", target.UserId, cost)
             end})
     end))
     FX.Network:RegServerMsgCallback("S2C_RawSwordOffer", function(token, name, mutation, blankLuckLevel)

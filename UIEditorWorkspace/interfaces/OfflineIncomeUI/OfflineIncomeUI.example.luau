@@ -10,6 +10,8 @@ function COfflineIncomePreview:Ctor(owner)
     }
     self.State = {
         amount = 12500,
+        actualSeconds = 11742,
+        earnedSeconds = 7200,
         diamonds = 28,
         pending = false,
         failed = false,
@@ -41,6 +43,7 @@ function COfflineIncomePreview:OnUIAction(action, payload)
         self.State.diamonds -= self.Config.diamondCost
     end
     self.State.amount = 0
+    self.State.actualSeconds, self.State.earnedSeconds = nil, nil
     self:RefreshUI()
 end
 
