@@ -1,4 +1,4 @@
--- 服务端公共矿场：同服共用一批矿石，拾取、受击与熔炼由服务端决定。
+-- 服务端公共矿场：输送同服矿石、结算钩爪抓取和熔炼。
 local FX, FS = _G.FX, _G.FS
 local FXLoader = FX.Loader
 local Numerical = FXLoader:RequireShared("Scripts.Game.Configs.NumericalConfig")
@@ -9,14 +9,21 @@ local Config = _G.GameConfig.CommonConfig
 local Fields = _G.PlayerDataConfig
 local Tutorial = FXLoader:RequireShared("Scripts.Game.Shared.TutorialGuideConfig")
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local BELT_LAP_TIME = Settings.BeltLapTime
+local BELT_SPAWN_INTERVAL = 3.5
+local PORTAL_EXIT_TIME = 1.6
+local BELT_UPDATE_INTERVAL = 1 / 20
 local TranslationTexts = FX.Text.Define("FurnaceSmelt", {
     Success = "Smelting successful: you received a sword blank.",
     NeedOre = "You need one ore in your backpack to smelt a sword blank.",
     BackpackFull = "Your backpack is full. Make room for the sword blank and try again.",
-    OreBackpackFull = "Make room in your backpack to put away the ore you are carrying.",
-    OreDeposited = "Ore added to your backpack.",
     TooFar = "Move closer to your furnace to smelt the ore.",
     Failed = "Smelting failed. Please try again.",
+    OreDeposited = "Ore added to your backpack.",
+    OreBackpackFull = "Make room in your backpack to collect the ore.",
+    ClawDepositFailed = "The ore could not be collected. Please try again.",
 })
 local Manager = FX.Class("SMiningManagerClass", "FXObjectBaseClass")
 
@@ -33,12 +40,42 @@ function Manager:Ctor()
     assert(Numerical.miningSpawnCount > 0 and Numerical.miningSpawnCount % 1 == 0, "Invalid miningSpawnCount")
     local decorations = FXLoader:Workspace("Decorations")
     self._ground = FXLoader:Workspace(Settings.GroundPath)
+    self._belt = FXLoader:FindFromWorkspace(Settings.BeltPath)
+    self._miningSeats = {}
+    self._claws = {}
+    if self._belt then
+        self._beltEntry = FXLoader:Here(self._belt, "BeltEntry").Position
+        self._portalExit = FXLoader:Here(self._belt, "PortalExit").Position
+        -- 相邻底板保留搭接以免出现碰撞缝，但错开相同高度的可见表面。
+        local decks = FXLoader:Here(self._belt, "Decks")
+        for index, deck in ipairs(decks:GetChildren()) do
+            local number = tonumber(deck.Name:match("^Deck(%d+)$"))
+            if deck:IsA("Model") and number and number % 2 == 0 then
+                deck:PivotTo(deck:GetPivot() - Vector3.new(0, 0.05, 0))
+            end
+        end
+        local ramp = FXLoader:Here(self._belt, "FeedRamp")
+        ramp.CFrame += Vector3.new(0, 0.06, 0)
+        local center = self._ground.Position
+        self._beltRadius = (self._beltEntry - Vector3.new(center.X, self._beltEntry.Y, center.Z)).Magnitude
+        self._clawCenter = Vector3.new(center.X, self._beltEntry.Y + Settings.ClawHeight, center.Z)
+        local elapsed = 0
+        RunService.Heartbeat:Connect(function(deltaTime)
+            elapsed += deltaTime
+            if elapsed >= BELT_UPDATE_INTERVAL then
+                elapsed %= BELT_UPDATE_INTERVAL
+                local now = workspace:GetServerTimeNow()
+                self:UpdateBeltRocks(now)
+                self:UpdateClaws(now)
+            end
+        end)
+    end
     self._folder = Instance.new("Folder")
     self._folder.Name = "PublicMiningRocks"
     self._folder.Parent = decorations
     self._rocks = {}
+    self._beltReserve = {}
     self._batchId = 0
-    self._carried = {}
     self._rockTemplates = {}
     self._oreTypes = {}
     local rockTypes = _G.GameConfig.MiningRockData
@@ -64,17 +101,277 @@ function Manager:Ctor()
         self._oreTypes[rockType.OreItemId] = rockType
     end
     self._random = Random.new()
+    local seats = FXLoader:FindFromWorkspace(Settings.SeatsPath)
+    if seats then
+        self:BindSeatPrompts(seats)
+    end
     self:Refresh()
 end
 
---- 按实际圆柱矿面判断安全边界，离开矿面后不再承受木棍命中。
---- @param position Vector3 服务端角色位置。
---- @return boolean 角色是否处于矿区。
-function Manager:IsInQuarry(position)
-    return Settings.IsInQuarry(self._ground, position)
+--- 登记可操作的座椅并绑定原生入座提示。
+--- @param seats Model 矿区中摆好的操作椅集合。
+function Manager:BindSeatPrompts(seats)
+    for index, chair in ipairs(seats:GetChildren()) do
+        local seat = FXLoader:Find(chair, "Seat")
+        if not seat or not seat:IsA("Seat") then
+            continue
+        end
+        local anchor = FXLoader:Find(seat, "SitPromptAnchor")
+        local prompt = anchor and FXLoader:Find(anchor, "SitPrompt")
+        if self._belt then
+            self._miningSeats[seat] = true
+            seat:SetAttribute(Settings.SeatAttribute, true)
+        end
+        --- Occupant 不复制，给客户端箭头单独同步座椅空闲状态。
+        local function refreshSeat()
+            local vacant = seat.Occupant == nil
+            if self._belt then
+                seat:SetAttribute(Settings.SeatVacantAttribute, vacant)
+            end
+            if prompt then
+                prompt.Enabled = vacant
+            end
+        end
+        seat:GetPropertyChangedSignal("Occupant"):Connect(refreshSeat)
+        refreshSeat()
+        if not prompt then
+            continue
+        end
+        prompt.Triggered:Connect(function(player)
+            local character = player.Character
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            local root = humanoid and humanoid.RootPart
+            if not prompt.Enabled or seat.Occupant or not root or humanoid.Health <= 0
+                or humanoid.Sit or humanoid.PlatformStand
+                or (root.Position - anchor.WorldPosition).Magnitude > prompt.MaxActivationDistance then
+                return
+            end
+            seat:Sit(humanoid)
+        end)
+    end
 end
 
---- 同批次只在原坐标生成地面矿石；搬运模型另挂在角色上。
+--- 为入座玩家创建钩爪，用粗缆和金属接头让俯视时也能看清牵引动作。
+--- @param seat Seat 当前玩家占用的操作椅。
+--- @param humanoid Humanoid 当前坐在该椅上的角色。
+--- @return table 操作椅的钩爪状态。
+function Manager:CreateClaw(seat, humanoid)
+    local position = Vector3.new(seat.Position.X, self._clawCenter.Y, seat.Position.Z)
+    local forward = (self._clawCenter - position).Unit
+    local home = position + forward * 3.2
+    local pivot = CFrame.lookAt(home, home + forward)
+    local model = Instance.new("Model")
+    model.Name = "MiningClaw"
+    model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+    model:SetAttribute("RestPose", pivot)
+
+    --- 生成无碰撞的机械零件。
+    --- @param name string 零件名。
+    --- @param size Vector3 零件尺寸。
+    --- @param cf CFrame 零件世界坐标。
+    --- @param color Color3 零件颜色。
+    --- @param parent Instance 零件父节点。
+    --- @return Part 创建的零件。
+    local function addPart(name, size, cf, color, parent)
+        local part = Instance.new("Part")
+        part.Name, part.Size, part.CFrame, part.Color = name, size, cf, color
+        part.Material = Enum.Material.Metal
+        part.Anchored, part.CanCollide, part.CanTouch, part.CanQuery = true, false, false, false
+        part.CastShadow = false
+        part.Parent = parent
+        return part
+    end
+
+    local steel = Color3.fromRGB(53, 63, 78)
+    local gold = Color3.fromRGB(255, 182, 51)
+    model.PrimaryPart = addPart("Hub", Vector3.new(1.7, 0.7, 1), pivot, steel, model)
+    addPart("CableCoupler", Vector3.new(0.86, 0.6, 0.64),
+        pivot * CFrame.new(0, 0, 0.62), Color3.fromRGB(160, 172, 188), model)
+    for side = -1, 1, 2 do
+        local jaw = Instance.new("Model")
+        jaw.Name = if side == -1 then "LeftJaw" else "RightJaw"
+        local hinge = pivot * CFrame.new(side * Settings.ClawJawHinge, 0, 0)
+        jaw.WorldPivot = hinge
+        addPart("Arm", Vector3.new(0.6, 0.72, 1.9),
+            hinge * CFrame.new(side * 0.39, 0, -0.82) * CFrame.Angles(0, -side * 0.42, 0), gold, jaw)
+        addPart("Tip", Vector3.new(0.95, 0.72, 0.55),
+            hinge * CFrame.new(side * 0.67, 0, -1.73) * CFrame.Angles(0, side * 0.48, 0), gold, jaw)
+        jaw.Parent = model
+    end
+    local cableStart = Instance.new("Attachment")
+    cableStart.Position = seat.CFrame:PointToObjectSpace(home)
+    cableStart.Parent = seat
+    local cableEnd = Instance.new("Attachment")
+    cableEnd.Position = Vector3.new(0, 0, 0.82)
+    cableEnd.Parent = model.PrimaryPart
+    local cable = Instance.new("Beam")
+    cable.Name = "Cable"
+    cable.Attachment0, cable.Attachment1 = cableStart, cableEnd
+    cable.Width0, cable.Width1 = 0.64, 0.56
+    cable.Color = ColorSequence.new(Color3.fromRGB(34, 42, 55))
+    cable.Segments, cable.FaceCamera, cable.Enabled = 1, true, false
+    cable.Parent = model
+    local carried = Instance.new("ObjectValue")
+    carried.Name = "CarriedRock"
+    carried.Parent = model
+    model:AddTag(Settings.ClawTag)
+    model.Parent = seat
+    return {Humanoid = humanoid, Home = home, Model = model, CableStart = cableStart, Carried = carried}
+end
+
+--- 发射只接受占用操作椅的当前角色和盘面内的有限坐标。
+--- @param mining table 当前玩家的矿场组件。
+--- @param humanoid Humanoid 服务端当前活着的角色。
+--- @param target any 客户端提交的 Vector2(X, Z)。
+function Manager:CastClaw(mining, humanoid, target)
+    local seat = humanoid.SeatPart
+    local claw = seat and self._claws[seat]
+    if not claw or claw.Humanoid ~= humanoid or seat.Occupant ~= humanoid or claw.Shot
+        or typeof(target) ~= "Vector2" then
+        return
+    end
+    local position = Vector3.new(target.X, self._clawCenter.Y, target.Y)
+    if not ((position - self._clawCenter).Magnitude <= self._beltRadius + Settings.ClawEdgeMargin) then
+        return
+    end
+    local offset = position - claw.Home
+    local distance = offset.Magnitude
+    if distance < 0.05 then
+        return
+    end
+    local started = workspace:GetServerTimeNow()
+    claw.Shot = {
+        Mining = mining, Target = position, Distance = distance,
+        HitAt = started + distance / Settings.ClawOutSpeed,
+    }
+    claw.Model:SetAttribute("ShotReturnSpeed", nil)
+    claw.Model:SetAttribute("ShotReturnAt", nil)
+    claw.Model:SetAttribute("ShotTarget", position)
+    claw.Model:SetAttribute("ShotStarted", started)
+end
+
+--- 到达点击点才检测矿石；同帧的另一把钩爪不能重复锁定它。
+--- @param target Vector3 钩爪出击终点。
+--- @return table? 锁定的矿石。
+function Manager:CaptureRock(target)
+    local nearest, best = nil, math.huge
+    for id, rock in pairs(self._rocks) do
+        if rock.Model and not rock.Captured then
+            local part = rock.Model.PrimaryPart
+            local offset = part.Position - target
+            local distance = Vector2.new(offset.X, offset.Z).Magnitude
+            local reach = math.max(part.Size.X, part.Size.Z) / 2 + 1.3
+            if distance <= reach and distance < best then
+                nearest, best = rock, distance
+            end
+        end
+    end
+    if nearest then
+        nearest.Captured = true
+    end
+    return nearest
+end
+
+--- 收回座位后才发矿；中途离座或发奖失败时把矿还给当前批次。
+--- @param shot table 当前发射及它锁定的矿石。
+--- @param completed boolean 是否完整收回。
+function Manager:FinishClaw(shot, completed)
+    local rock = shot.Rock
+    if not rock then
+        return
+    end
+    if completed then
+        local player = shot.Mining:GetPlayerObject()
+        local ore = _G.GameConfig.MiningRockData[rock.Grade]
+        local rewards = {{Type = "Item", ItemId = ore.OreItemId, Count = 1}}
+        local reward = player:RequireComponent("FSRewardComp")
+        if reward:AddRewards(rewards) then
+            if self._rocks[rock.Id] == rock then
+                self._rocks[rock.Id] = nil
+                local nextRock = table.remove(self._beltReserve, 1)
+                if nextRock then
+                    -- 补矿沿用被抓走的时隙，下一次经过传送门时才出矿。
+                    local now = workspace:GetServerTimeNow()
+                    local laps = math.floor((now - rock.SpawnAt) / BELT_LAP_TIME) + 1
+                    nextRock.SpawnAt = rock.SpawnAt + laps * BELT_LAP_TIME
+                    self._rocks[nextRock.Id] = nextRock
+                end
+            end
+            rock.Model:Destroy()
+            player:RequireComponent("SAnalyticsComp"):Record("OrePicked", 3, "Claw")
+            player:ShowLocalizedTips(TranslationTexts.OreDeposited)
+            return
+        end
+        player:ShowLocalizedTips(reward:CanAddRewards(rewards)
+            and TranslationTexts.ClawDepositFailed or TranslationTexts.OreBackpackFull)
+    end
+    if self._rocks[rock.Id] == rock then
+        rock.Captured = nil
+    else
+        rock.Model:Destroy()
+    end
+end
+
+--- 命中后按矿石品级决定回程速度；离座、换角色和离服均清理未完成的抓取。
+--- @param now number 当前服务器时间。
+function Manager:UpdateClaws(now)
+    for seat in pairs(self._miningSeats) do
+        local humanoid = seat.Occupant
+        local character = humanoid and humanoid.Parent
+        local player = character and Players:GetPlayerFromCharacter(character)
+        if not player or player.Character ~= character or humanoid.Health <= 0 or humanoid.PlatformStand then
+            humanoid = nil
+        end
+        local claw = self._claws[seat]
+        if claw and claw.Humanoid ~= humanoid then
+            if claw.Shot then
+                self:FinishClaw(claw.Shot, false)
+            end
+            claw.Model:Destroy()
+            claw.CableStart:Destroy()
+            self._claws[seat], claw = nil, nil
+        end
+        if not claw and humanoid then
+            self._claws[seat] = self:CreateClaw(seat, humanoid)
+            continue
+        end
+        local shot = claw and claw.Shot
+        if not shot then
+            continue
+        end
+        if not shot.Mining:IsMiningActive() then
+            self:FinishClaw(shot, false)
+            claw.Shot = nil
+            claw.Carried.Value = nil
+            claw.Model:SetAttribute("ShotStarted", nil)
+            continue
+        end
+        if not shot.FinishAt then
+            if now < shot.HitAt then
+                continue
+            end
+            shot.Rock = self:CaptureRock(shot.Target)
+            local returnSpeed = Settings.ClawReturnSpeed
+            if shot.Rock then
+                local rarity = (shot.Rock.Grade - 1) / math.max(1, #self._mutationLottery.weights - 1)
+                returnSpeed *= 1 - 0.55 * rarity
+            end
+            local returnAt = if shot.Rock then now + Settings.ClawGripTime else shot.HitAt
+            shot.FinishAt = returnAt + shot.Distance / returnSpeed
+            claw.Carried.Value = shot.Rock and shot.Rock.Model
+            claw.Model:SetAttribute("ShotReturnSpeed", returnSpeed)
+            claw.Model:SetAttribute("ShotReturnAt", returnAt)
+        end
+        if now >= shot.FinishAt then
+            claw.Shot = nil
+            self:FinishClaw(shot, true)
+            claw.Carried.Value = nil
+            claw.Model:SetAttribute("ShotStarted", nil)
+        end
+    end
+end
+
+--- 生成仅用于展示的场景矿石，不阻挡玩家或其他矿石。
 --- @param rock table 当前批次的一块矿石。
 function Manager:PlaceRock(rock)
     local model = self._rockTemplates[rock.Grade]:Clone()
@@ -85,10 +382,9 @@ function Manager:PlaceRock(rock)
     for index, part in ipairs(model:GetDescendants()) do
         if part:IsA("BasePart") then
             part.Anchored = true
-            part.CanTouch = false
+            part.CanCollide, part.CanTouch, part.CanQuery = false, false, false
         end
     end
-    model:SetAttribute("MiningRockId", rock.Id)
     model:SetAttribute("RockGrade", rock.Grade)
     model:SetAttribute("MutationId", config.MutationId)
     model:SetAttribute("MaxHits", 1)
@@ -98,11 +394,43 @@ function Manager:PlaceRock(rock)
     model.Parent = self._folder
 end
 
---- 替换地上的旧矿；已经扛起的矿仍可搬回基地。
+--- 传送门逐块出矿，矿石从门口进入带面，再沿固定半径循环。
+--- @param now number 当前服务器时间。
+function Manager:UpdateBeltRocks(now)
+    local center = self._ground.Position
+    local entry = self._beltEntry
+    local entryAngle = math.atan2(entry.Z - center.Z, entry.X - center.X)
+    for id, rock in pairs(self._rocks) do
+        if not rock.Captured and rock.SpawnAt and now >= rock.SpawnAt then
+            local age = now - rock.SpawnAt
+            local position
+            if age < PORTAL_EXIT_TIME then
+                position = self._portalExit:Lerp(entry, age / PORTAL_EXIT_TIME)
+            else
+                local angle = entryAngle + (age - PORTAL_EXIT_TIME) % BELT_LAP_TIME * math.pi * 2 / BELT_LAP_TIME
+                position = Vector3.new(center.X + math.cos(angle) * self._beltRadius, entry.Y,
+                    center.Z + math.sin(angle) * self._beltRadius)
+            end
+            rock.Origin = CFrame.new(position + Vector3.new(0, rock.Height, 0)) * rock.Rotation
+            if rock.Model then
+                rock.Model:PivotTo(rock.Origin)
+            else
+                self:PlaceRock(rock)
+            end
+        end
+    end
+end
+
+--- 替换上一批展示矿石。
 --- @param includeAllGrades boolean 是否给当前刷新池的每个品类保留一个位置。
 function Manager:ReplaceGroundRocks(includeAllGrades)
-    self._folder:ClearAllChildren()
+    for id, rock in pairs(self._rocks) do
+        if rock.Model and not rock.Captured then
+            rock.Model:Destroy()
+        end
+    end
     table.clear(self._rocks)
+    table.clear(self._beltReserve)
     self._batchId += 1
     local radius = math.min(self._ground.Size.Y, self._ground.Size.Z) / 2 - 4
     local center = self._ground.Position + Vector3.new(0, self._ground.Size.X / 2, 0)
@@ -110,18 +438,36 @@ function Manager:ReplaceGroundRocks(includeAllGrades)
     local curve = self._mutationLottery
     local guaranteedCount = includeAllGrades and #curve.weights or 0
     local spawnCount = math.max(Numerical.miningSpawnCount, guaranteedCount)
+    -- 每圈只用一组独立时隙，余下矿石留到有空位时再补上。
+    local beltSlots = math.floor(BELT_LAP_TIME / BELT_SPAWN_INTERVAL)
+    local now = workspace:GetServerTimeNow()
     for slot = 1, spawnCount do
         local angle = phase + (slot - 1) * math.pi * 2 / spawnCount
         local distance = self._random:NextNumber(radius * 0.35, radius)
         local grade = if slot <= guaranteedCount then slot else FX.CurveSampler:SampleLotteryPrize(curve)
         local config = _G.GameConfig.MiningRockData[grade]
-        local position = center + Vector3.new(math.cos(angle) * distance,
-            self._rockTemplates[grade].PrimaryPart.Size.Y * config.ModelScale / 2, math.sin(angle) * distance)
         local id = tostring(self._batchId) .. "_" .. slot
-        local rock = {Id = id, Grade = grade,
-            Origin = CFrame.new(position) * CFrame.Angles(0, self._random:NextNumber(0, math.pi * 2), 0)}
-        self._rocks[id] = rock
-        self:PlaceRock(rock)
+        local height = self._rockTemplates[grade].PrimaryPart.Size.Y * config.ModelScale / 2
+        local rotation = CFrame.Angles(0, self._random:NextNumber(0, math.pi * 2), 0)
+        local rock = {Id = id, Grade = grade}
+        if self._belt then
+            rock.Height = height
+            rock.Rotation = rotation
+            if slot <= beltSlots then
+                rock.SpawnAt = now + (slot - 1) * BELT_SPAWN_INTERVAL
+                self._rocks[id] = rock
+            else
+                table.insert(self._beltReserve, rock)
+            end
+        else
+            local position = center + Vector3.new(math.cos(angle) * distance, height, math.sin(angle) * distance)
+            rock.Origin = CFrame.new(position) * rotation
+            self._rocks[id] = rock
+            self:PlaceRock(rock)
+        end
+    end
+    if self._belt then
+        self:UpdateBeltRocks(now)
     end
 end
 
@@ -133,186 +479,6 @@ function Manager:Refresh()
     task.delay(Numerical.miningRefreshInterval, function()
         self:Refresh()
     end)
-end
-
---- 阻止通过地图快捷传送跳过搬运。
---- @param player table 当前服务端玩家对象。
---- @return boolean 当前是否扛着一块矿。
-function Manager:IsCarrying(player)
-    return self._carried[player] ~= nil
-end
-
---- 同一个公共矿石只接受最先到达的有效拾取请求，搬运时只在角色背上显示水晶。
---- @param player table 当前服务端玩家对象。
---- @param humanoid Humanoid 已校验存活的当前角色。
---- @param rockId any 客户端提交的公共矿石编号。
-function Manager:PickUp(player, humanoid, rockId)
-    if type(rockId) ~= "string" or self._carried[player] or humanoid.PlatformStand
-        or workspace:GetServerTimeNow() >= self._nextRefresh then
-        return
-    end
-    local rock = self._rocks[rockId]
-    local character = humanoid.Parent
-    local torso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
-    local position = humanoid.RootPart.Position
-    if not torso or not torso:IsA("BasePart") or not rock or not rock.Model or not self:IsInQuarry(position)
-        or (position - rock.Origin.Position).Magnitude > Settings.InteractDistance then
-        return
-    end
-    local model = Instance.new("Model")
-    model.Name = "CarriedMiningOre"
-    model.WorldPivot = rock.Model:GetPivot()
-    for index, group in ipairs(rock.Model:GetDescendants()) do
-        if group:IsA("Model") and group.Name == "Crystals" then
-            group:Clone().Parent = model
-        end
-    end
-    if #model:GetChildren() == 0 then
-        model:Destroy()
-        warn("Mining rock has no Crystals model: " .. rock.Grade)
-        return
-    end
-    for name, value in pairs(rock.Model:GetAttributes()) do
-        model:SetAttribute(name, value)
-    end
-    local bounds, size = model:GetBoundingBox()
-    local carryScale = math.min(1, torso.Size.Y * 1.5 / math.max(size.X, size.Y, size.Z))
-    model.WorldPivot = bounds
-    model:ScaleTo(carryScale)
-    -- 以水晶包围盒为中心，沿躯干局部 +Z 留出贴背空间。
-    model:PivotTo(torso.CFrame * CFrame.new(0, 0, (torso.Size.Z + size.Z * carryScale) / 2 + 0.1))
-    for index, part in ipairs(model:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.Anchored, part.CanCollide, part.CanTouch, part.CanQuery = false, false, false, false
-            part.Massless = true
-            local weld = Instance.new("WeldConstraint")
-            weld.Part0, weld.Part1 = torso, part
-            weld.Parent = part
-        end
-    end
-    local carry = {Rock = rock, Model = model, Humanoid = humanoid, Speed = humanoid.WalkSpeed, Hits = 0}
-    self._carried[player] = carry
-    rock.Model:Destroy()
-    rock.Model = nil
-    carry.Death = humanoid.Died:Connect(function()
-        self:ReleaseOre(player, true)
-    end)
-    humanoid.WalkSpeed = carry.Speed * Settings.CarrySpeedMultiplier
-    model.Parent = character
-    character:SetAttribute(Settings.CarryAttribute, true)
-    player:RequireComponent("SAnalyticsComp"):Record("OrePicked", 3, "Carry")
-end
-
---- 清除背上的水晶和减速；还矿时保留原刷新点，即使搬运跨过了一次换批。
---- @param player table 当前服务端玩家对象。
---- @param returnToQuarry boolean 是否还矿，入包成功时为 false。
-function Manager:ReleaseOre(player, returnToQuarry)
-    local carry = self._carried[player]
-    if not carry then
-        return
-    end
-    self._carried[player] = nil
-    carry.Death:Disconnect()
-    carry.Model:Destroy()
-    local humanoid = carry.Humanoid
-    if humanoid.Parent then
-        humanoid.Parent:SetAttribute(Settings.CarryAttribute, nil)
-        if humanoid.WalkSpeed == carry.Speed * Settings.CarrySpeedMultiplier then
-            humanoid.WalkSpeed = carry.Speed
-        end
-    end
-    local rock = carry.Rock
-    if returnToQuarry then
-        self._rocks[rock.Id] = rock
-        self:PlaceRock(rock)
-        if humanoid.Health > 0 then
-            player:RequireComponent("SAnalyticsComp"):Record("OreDropped")
-        end
-    else
-        self._rocks[rock.Id] = nil
-    end
-end
-
---- 木棍只命中矿区里正前方最近的搬运者；两次命中击倒并归还矿石，不扣血。
---- @param attacker table 来自已认证会话的攻击者。
---- @param humanoid Humanoid 已校验存活且装备木棍的攻击者角色。
-function Manager:Strike(attacker, humanoid)
-    local source = humanoid.RootPart
-    if humanoid.PlatformStand or not self:IsInQuarry(source.Position) then
-        return
-    end
-    local victim, targetRoot
-    local nearest = Settings.StickRange
-    for player, carry in pairs(self._carried) do
-        local target = carry.Humanoid
-        local root = target.RootPart
-        if player ~= attacker and target.Health > 0 and root and self:IsInQuarry(root.Position) then
-            local offset = root.Position - source.Position
-            local distance = offset.Magnitude
-            if distance <= nearest and (distance < 0.01 or source.CFrame.LookVector:Dot(offset.Unit) >= 0.35) then
-                victim, targetRoot, nearest = player, root, distance
-            end
-        end
-    end
-    if not victim then
-        return
-    end
-    local carry = self._carried[victim]
-    carry.Hits += 1
-    if carry.Hits == 2 then
-        local target = carry.Humanoid
-        self:ReleaseOre(victim, true)
-        target.PlatformStand = true
-        targetRoot:ApplyAngularImpulse(source.CFrame.RightVector * targetRoot.AssemblyMass * 5)
-        task.delay(Settings.KnockdownDuration, function()
-            if target.Parent and target.Health > 0 then
-                target.PlatformStand = false
-            end
-        end)
-    end
-end
-
---- 角色在本人基地的任一楼层都能交付矿石；没放下前保留减速。
---- @param player table 当前服务端玩家对象。
-function Manager:TryDeposit(player)
-    local carry = self._carried[player]
-    if not carry then
-        return
-    end
-    local humanoid = carry.Humanoid
-    local root = humanoid.RootPart
-    local base = player:RequireComponent("SBaseComp"):GetBase()
-    if not root or humanoid.Health <= 0 or not base or base.OwnerUserId ~= player:GetPlayerId() then
-        return
-    end
-    local inBase = false
-    for floorIndex = 1, base.FloorCount do
-        local floor = base.Floors[floorIndex].Part
-        local offset = floor.CFrame:PointToObjectSpace(root.Position)
-        local half = floor.Size / 2
-        if math.abs(offset.X) <= half.X and math.abs(offset.Z) <= half.Z
-            and offset.Y >= -half.Y and offset.Y <= half.Y + Settings.BaseDepositHeight then
-            inBase = true
-            break
-        end
-    end
-    if not inBase then
-        carry.DepositWarned = nil
-        return
-    end
-    local rockType = _G.GameConfig.MiningRockData[carry.Rock.Grade]
-    local rewards = {{Type = "Item", ItemId = rockType.OreItemId, Count = 1}}
-    local reward = player:RequireComponent("FSRewardComp")
-    if not reward:AddRewards(rewards) then
-        if not carry.DepositWarned then
-            carry.DepositWarned = true
-            player:ShowLocalizedTips(reward:CanAddRewards(rewards)
-                and TranslationTexts.Failed or TranslationTexts.OreBackpackFull)
-        end
-        return
-    end
-    self:ReleaseOre(player, false)
-    player:ShowLocalizedTips(TranslationTexts.OreDeposited)
 end
 
 --- 本人到自家炉台时，用背包里一块矿石换剑胚，优先选手持矿石。
@@ -358,6 +524,7 @@ function Manager:Smelt(player, humanoid)
         player:ShowLocalizedTips(canFit and TranslationTexts.Failed or TranslationTexts.BackpackFull)
         return
     end
+    player:RequireComponent("SBaseComp"):PlaySmeltEffect()
     player:RequireComponent("SWelfareComp"):AdvanceTask("smelt")
     player:RequireComponent("SAnalyticsComp"):Record("BlankSmelted", 4, blankId)
     player:ShowLocalizedTips(TranslationTexts.Success)

@@ -5,7 +5,6 @@ local FXLoader = FX.Loader
 FXLoader:RequireShared("Scripts.Framework.Client.Player.FCInventoryCompClass")
 local Display = FXLoader:RequireFromParent(script, "CInventoryDisplay")
 local Items = FXLoader:RequireShared("Scripts.Game.Configs.ItemConfig")
-local MiningSettings = FXLoader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local SwordRules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Inventory = FX.Class("CInventoryCompClass", "FCInventoryCompClass")
 local OreMutations = {}
@@ -18,7 +17,6 @@ local TranslationTexts = FX.Text.Define("Y2InventoryCategories", {
     SwordBlank = "Sword Blanks",
     ForgedSword = "Forged Swords",
     MutationStone = "Mutation Stones",
-    MiningStick = "Wooden Stick",
 })
 
 --- 将本项目的道具类型适配为通用页签规则。
@@ -105,24 +103,12 @@ function Inventory:OnSlotsChanged(slots)
             end
         end
     end
-    local player = self:GetPlayerNode()
-    local character = player.Character
-    local backpack = player:FindFirstChildOfClass("Backpack")
-    local stick = character and character:FindFirstChild(MiningSettings.StickName)
-        or backpack and backpack:FindFirstChild(MiningSettings.StickName)
-    if stick and stick:IsA("Tool") then
-        displaySlots.miningStick = {
-            icon = stick.TextureId,
-            label = TranslationTexts.MiningStick,
-            equipped = stick.Parent == character,
-        }
-    end
     self._display:Render(displaySlots, usedBackpackSlots)
     self:GetOwner():RequireComponent("CWeaponMutationCompClass"):OnInventoryChanged(slots)
     self:_TryRevealBackpackDrop()
 end
 
---- 初始化视图并接管原生界面；独立工具的装备由矿场组件处理。
+--- 初始化背包和快捷栏，接管原生背包界面。
 function Inventory:OnReady()
     if self._totalCapacity == 0 then
         return
@@ -138,9 +124,6 @@ function Inventory:OnReady()
         shortcutCapacity = self._shortcutCapacity,
         backpackCapacity = self._backpackCapacity,
         backpackTabs = BackpackTabs,
-        onSelectMiningStick = function()
-            FX.Network:SendMsgToServer("C2S_SwingMiningStick", true)
-        end,
     }, function(grid, expectedSlot)
         self:_SelectGrid(grid, expectedSlot.token)
     end, function(sourceGrid, targetGrid, expectedSlot, reveal)

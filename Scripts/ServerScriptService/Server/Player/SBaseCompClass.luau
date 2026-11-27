@@ -8,6 +8,7 @@ local Rules = GameConfig.CommonConfig
 local GameUtility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
 local ForgeSettings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
 local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
+local WorkshopVisuals = FX.Loader:RequireShared("Scripts.Game.Shared.WorkshopVisuals")
 local TranslationTexts = FX.Text.Define("BaseInteraction", {
     HomeUnavailable = "Your base is not ready yet. Please try again shortly.",
     SlotUnlocked = "Weapon slot {slot:int} unlocked!",
@@ -15,6 +16,26 @@ local TranslationTexts = FX.Text.Define("BaseInteraction", {
     SlotUnlockFailed = "Couldn't unlock the weapon slot. Please try again.",
 })
 local Comp = FX.Class("SBaseCompClass", "FSPlayerCompClass")
+
+--- 复制工坊设施原件的碰撞形状，碰撞体随档位外观一起清理。
+--- @param source Instance 正在换下的设施零件或模型。
+--- @param originals Folder 保存原件的离场容器。
+--- @param collisions Folder 当前档位外观内的碰撞容器。
+local function StashWorkshopOriginal(source, originals, collisions)
+    local parts = source:GetDescendants()
+    table.insert(parts, source)
+    for index, part in ipairs(parts) do
+        if part:IsA("BasePart") and part.CanCollide then
+            local collision = part:Clone()
+            collision:ClearAllChildren()
+            collision.Transparency = 1
+            collision.CastShadow = false
+            collision.CanTouch = false
+            collision.Parent = collisions
+        end
+    end
+    source.Parent = originals
+end
 
 --- 持有本次玩家会话的基地与冷却，离服后不把它们写入存档。
 --- @param owner table 当前服务端玩家对象。
@@ -49,9 +70,9 @@ function Comp:OnPlayerLogin()
     self:WatchDataChanged(Fields.BaseData, function()
         self:Refresh()
     end)
-    --- 只按熔炉等级更新私人炉体，锻造和收益升级不会切换外观。
+    --- 锻造和熔炉各自按等级更新，收益升级不会切换外观。
     self:WatchDataChanged(Fields.UpgradeWorkshop, function()
-        self:RefreshFurnaceAppearance()
+        self:RefreshWorkshopAppearance()
     end)
     self:TryAllocate()
 end
@@ -73,7 +94,7 @@ function Comp:TryAllocate()
     if not self._base then
         return
     end
-    self:RefreshFurnaceAppearance()
+    self:RefreshWorkshopAppearance()
     self:SetNumber(Fields.BaseId, self._base.Id)
     self:BindRing(self._base.Floors[1], 1)
     self:Refresh()
@@ -83,45 +104,175 @@ function Comp:TryAllocate()
     end
 end
 
---- 登录和升级时套用当前档位。保留原石台作为位置、碰撞和熔炼交互的固定锚点。
-function Comp:RefreshFurnaceAppearance()
+--- 登录和升级时分别更新锻造台与熔炉的外观，地台跟随各自档位。
+function Comp:RefreshWorkshopAppearance()
     if not self._active or not self._base then
         return
     end
-    local level = WorkshopRules.GetLevel(self:GetTableView(Fields.UpgradeWorkshop).smelt)
-    if level < 8 then
-        self:ClearFurnaceAppearance()
-        return
-    end
-    local name = level < 16 and "CobaltGate" or "EmeraldDragon"
-    if self._furnaceAppearance and self._furnaceAppearance.Name == name then
-        return
-    end
     local workshop = ForgeSettings.FindPersonalWorkshop(self._base.Id)
-    local hearth = workshop and FX.Loader:Find(workshop, ForgeSettings.PersonalFurnacePart)
-    local template = FX.Loader:Find(ReplicatedStorage, "Assets.Decorations.FurnaceVisuals." .. name)
-    if not hearth or not template or not template:IsA("Model") then
+    if not workshop then
         return
     end
+    local upgrades = self:GetTableView(Fields.UpgradeWorkshop)
+    local forgeTier = WorkshopVisuals.GetTier(WorkshopRules.GetLevel(upgrades.forge))
+    local desktop = FX.Loader:Find(workshop, ForgeSettings.PersonalForgePart)
+    if desktop and self._forgeTier ~= forgeTier then
+        local station = desktop.Parent
+        self:ClearForgeAppearance()
+        self._forgeColors = WorkshopVisuals.ApplyColors(station, forgeTier, "Forge")
+        local template = FX.Loader:Find(ReplicatedStorage, "Assets.Decorations.WorkshopTierVisuals.Forge." .. forgeTier)
+        if template then
+            local visual = template:Clone()
+            visual:PivotTo(desktop.CFrame)
+            local collisions = Instance.new("Folder")
+            collisions.Name = "OriginalCollisions"
+            collisions.Parent = visual
+            self._forgeOriginal = Instance.new("Folder")
+            for index, child in ipairs(station:GetChildren()) do
+                if child ~= desktop and child.Name ~= "BlackHammer" and child.Name ~= "BlankDisplayBoard"
+                    and child.Name ~= "ForgeTableCollision" then
+                    StashWorkshopOriginal(child, self._forgeOriginal, collisions)
+                end
+            end
+            self._forgeDesktopTransparency = desktop.Transparency
+            desktop.Transparency = 1
+            visual.Parent = station
+            self._forgeDecoration = visual
+        elseif forgeTier >= 5 then
+            local template = FX.Loader:Find(ReplicatedStorage, "Assets.Decorations.ForgeDragonVisuals." .. forgeTier)
+            if template then
+                local decoration = template:Clone()
+                decoration:PivotTo(desktop.CFrame)
+                decoration.Parent = station
+                self._forgeDecoration = decoration
+            end
+        end
+        self._forgeStation, self._forgeTier = station, forgeTier
+        station:SetAttribute("WorkshopVisualTier", forgeTier)
+        local ground = desktop.CFrame.Rotation + station:GetPivot().Position
+        local size = Vector2.new(desktop.Size.X + 1.6, desktop.Size.Z + 1.6)
+        self._forgeFloor = WorkshopVisuals.CreateFloor(workshop, "ForgeVisualFloor", ground, size, forgeTier)
+    end
+    local furnaceTier = WorkshopVisuals.GetTier(WorkshopRules.GetLevel(upgrades.smelt))
+    if self._furnaceTier ~= furnaceTier then
+        self:RefreshFurnaceAppearance(workshop, furnaceTier)
+    end
+end
+
+--- 归还互动桌面和原台架；升级、离线和基地转交复用同一套清理。
+function Comp:ClearForgeAppearance()
+    if self._forgeFloor then
+        self._forgeFloor:Destroy()
+        self._forgeFloor = nil
+    end
+    if self._forgeDecoration then
+        self._forgeDecoration:Destroy()
+        self._forgeDecoration = nil
+    end
+    local station = self._forgeStation
+    if self._forgeOriginal then
+        station.ThickSteelDesktop.Transparency = self._forgeDesktopTransparency
+        for _, child in self._forgeOriginal:GetChildren() do
+            child.Parent = station
+        end
+        self._forgeOriginal:Destroy()
+        self._forgeOriginal, self._forgeDesktopTransparency = nil, nil
+    end
+    if self._forgeColors then
+        WorkshopVisuals.RestoreColors(self._forgeColors)
+        station:SetAttribute("WorkshopVisualTier", nil)
+        self._forgeColors, self._forgeStation, self._forgeTier = nil, nil, nil
+    end
+end
+
+--- 切换当前档位的炉体和地台，各档用相同的交互锚点。
+--- @param workshop Model 基地的私人小工坊。
+--- @param tier number 熔炉外观档位。
+function Comp:RefreshFurnaceAppearance(workshop, tier)
+    local hearth = FX.Loader:Find(workshop, ForgeSettings.PersonalFurnacePart)
+    if not hearth then
+        return
+    end
+    local tierTemplate = FX.Loader:Find(ReplicatedStorage, "Assets.Decorations.WorkshopTierVisuals.Furnace." .. tier)
+    local template = tierTemplate
+    local name = not template and WorkshopVisuals.GetFurnaceTemplateName(tier)
+    if name then
+        template = FX.Loader:Find(ReplicatedStorage, "Assets.Decorations.FurnaceVisuals." .. name)
+        if not template or not template:IsA("Model") then
+            return
+        end
+    end
+    self:ClearFurnaceAppearance()
     local furnace = hearth.Parent
-    local visual = template:Clone()
-    visual:PivotTo(hearth.CFrame)
-    if self._furnaceAppearance then
-        self._furnaceAppearance:Destroy()
-    else
+    local foundation = FX.Loader:Find(furnace, "SingleHearthFoundation")
+    local groundY = hearth.Position.Y - hearth.Size.Y / 2
+    if foundation then
+        local ground = foundation.CFrame * CFrame.new(0, -foundation.Size.Y / 2, 0)
+        groundY = ground.Position.Y
+        local size = Vector2.new(foundation.Size.X + 2.1, foundation.Size.Z + 2.1)
+        self._furnaceFloor = WorkshopVisuals.CreateFloor(workshop, "FurnaceVisualFloor", ground, size, tier)
+    end
+    local visual = furnace
+    if template then
+        visual = template:Clone()
+        local pivot = hearth.CFrame
+        if tierTemplate then
+            pivot += Vector3.new(0, groundY - hearth.Position.Y, 0)
+            self._furnaceHearth = hearth
+            self._furnaceHearthTransparency = hearth.Transparency
+            hearth.Transparency = 1
+        end
+        visual:PivotTo(pivot)
+        local collisions = Instance.new("Folder")
+        collisions.Name = "OriginalCollisions"
+        collisions.Parent = visual
         self._furnaceOriginal = Instance.new("Folder")
         for _, child in furnace:GetChildren() do
             if child ~= hearth then
-                child.Parent = self._furnaceOriginal
+                StashWorkshopOriginal(child, self._furnaceOriginal, collisions)
             end
         end
+        visual.Parent = furnace
+        self._furnaceAppearance = visual
     end
-    visual.Parent = furnace
-    self._furnaceAppearance = visual
+    if not tierTemplate then
+        self._furnaceColors = WorkshopVisuals.ApplyColors(visual, tier, "Furnace")
+    end
+    local source = FX.Loader:Find(visual, template and "FlameSource2" or "FlameSource_2") or hearth
+    local origin = Instance.new("Attachment")
+    origin.Name = "SmeltBurstOrigin"
+    origin.Parent = source
+    self._smeltBurst = WorkshopVisuals.CreateBurst(origin)
+    self._smeltBurstCount = WorkshopVisuals.SetBurstStyle(self._smeltBurst, tier)
+    self._furnaceTier = tier
 end
 
---- 降回初始档或释放地块时归还原炉体，避免下一位玩家继承外观。
+--- 只有矿石交易成功后才在当前炉口播放出胚反馈。
+function Comp:PlaySmeltEffect()
+    if self._smeltBurst then
+        self._smeltBurst:Emit(self._smeltBurstCount)
+    end
+end
+
+--- 切换档位或释放地块时移除地台、归还原炉体，避免外观残留。
 function Comp:ClearFurnaceAppearance()
+    if self._furnaceFloor then
+        self._furnaceFloor:Destroy()
+        self._furnaceFloor = nil
+    end
+    if self._smeltBurst then
+        self._smeltBurst.Parent:Destroy()
+        self._smeltBurst = nil
+    end
+    if self._furnaceColors then
+        WorkshopVisuals.RestoreColors(self._furnaceColors)
+        self._furnaceColors = nil
+    end
+    self._furnaceTier = nil
+    if self._furnaceHearth then
+        self._furnaceHearth.Transparency = self._furnaceHearthTransparency
+        self._furnaceHearth, self._furnaceHearthTransparency = nil, nil
+    end
     if not self._furnaceAppearance then
         return
     end
@@ -156,16 +307,13 @@ function Comp:PositionCharacter(character)
     end)
 end
 
---- 扛矿时必须步行回家；未搬运时沿用回家传送与楼层圆环的节流。
+--- 回家传送与楼层圆环共用节流，离开时释放占用的锻造台。
 function Comp:ReturnHome()
     local player = self:GetPlayerNode()
     local character = player and player.Character
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     if not self._active or not humanoid or humanoid.Health <= 0
         or not humanoid.RootPart or os.clock() - self._lastTeleport < 1.5 then
-        return
-    end
-    if _G.SMiningManager:IsCarrying(self:GetPlayerObject()) then
         return
     end
     self._lastTeleport = os.clock()
@@ -349,11 +497,12 @@ function Comp:Refresh()
     self._manager:Publish()
 end
 
---- 取消出生等待任务并释放场景占用，玩家解锁进度仍由框架保存。
+--- 清理工坊外观与出生等待任务后释放场景，解锁进度由框架保存。
 function Comp:OnPlayerLogout()
     self._active = false
     FX.Task:Cancel(self._spawnTask)
     self:ClearFurnaceAppearance()
+    self:ClearForgeAppearance()
     self._manager:Release(self:GetPlayerId())
     self._slotPrompts = {}
     self._base = nil

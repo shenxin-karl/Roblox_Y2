@@ -7,6 +7,8 @@ FX.Loader:RequireShared("Scripts.Game.Shared.MutationVisual")
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local Effects = {}
 Effects.__index = Effects
+local BeltTreadCount = 48
+local BeltTreadAngle = math.pi * 2 / BeltTreadCount
 -- 原光环按 R6 身体分组；以身体包围盒为基准映射到矿石表面。
 local AuraReferenceSize = Vector3.new(4, 5, 2)
 local AuraOffsets = {
@@ -38,6 +40,16 @@ function Effects.New(owner)
         end
     end
     self._rocks = {}
+    self._claws = {}
+    self._clawAdded = CollectionService:GetInstanceAddedSignal(Settings.ClawTag):Connect(function(claw)
+        self._claws[claw] = false
+    end)
+    self._clawRemoved = CollectionService:GetInstanceRemovedSignal(Settings.ClawTag):Connect(function(claw)
+        self._claws[claw] = nil
+    end)
+    for index, claw in ipairs(CollectionService:GetTagged(Settings.ClawTag)) do
+        self._claws[claw] = false
+    end
     self._pending = {}
     self._fragments = {}
     self._fragmentPool = {}
@@ -56,7 +68,7 @@ function Effects.New(owner)
     return self
 end
 
---- 克隆对应矿石模型，固定碰撞体不跟随受击抖动，避免影响玩家行走。
+--- 克隆对应矿石模型，让受击抖动只作用于本地外观，避免影响玩家行走。
 --- @param rock Instance 流式加载到客户端的公共矿石。
 function Effects:AddRock(rock)
     if self._rocks[rock] or not rock:IsA("Model") then
@@ -104,7 +116,7 @@ function Effects:AddRock(rock)
     model.Parent = self._folder
     local entry = {
         Model = model, ModelScale = model:GetScale(),
-        Visual = visual, Size = visual.Size, Pose = visual.CFrame,
+        Visual = visual, Size = visual.Size,
         Hits = hits, MaxHits = maxHits,
         Crystal = self._crystals[grade],
         Transparencies = {}, Lights = {},
@@ -392,26 +404,154 @@ function Effects:SpawnFragments(origin, rockSize, source, broken)
     end
 end
 
---- 每帧执行受击弹缩与残血缩小，原始尺寸和落地位置始终作为基准，不累计变形。
+--- 深色履带板和矿石同向同速移动，带板底部与固定底板留出间隙。
+function Effects:UpdateBelt()
+    local belt = self._beltTreads
+    if not belt then
+        local entry = FX.Loader:FindFromWorkspace(Settings.BeltPath .. ".BeltEntry")
+        local ground = FX.Loader:FindFromWorkspace(Settings.GroundPath)
+        if not entry or not ground then
+            return
+        end
+        local center = Vector3.new(ground.Position.X, entry.Position.Y + 0.10, ground.Position.Z)
+        local radius = Vector2.new(entry.Position.X - center.X, entry.Position.Z - center.Z).Magnitude
+        belt = {Center = center, Radius = radius, Parts = {}, Frames = {}}
+        self._beltTreads = belt
+    end
+    local character = self._owner:GetPlayerCharacter()
+    local root = character and character.PrimaryPart
+    if not root or (root.Position - belt.Center).Magnitude > 170 then
+        return
+    end
+    local phase = workspace:GetServerTimeNow() % Settings.BeltLapTime * math.pi * 2 / Settings.BeltLapTime
+    for index = 1, BeltTreadCount do
+        local angle = phase + (index - 1) * BeltTreadAngle
+        local outward = Vector3.new(math.cos(angle), 0, math.sin(angle))
+        local position = belt.Center + outward * belt.Radius
+        belt.Frames[index] = CFrame.lookAt(position, position + outward)
+        if not belt.Parts[index] then
+            local tread = Instance.new("Part")
+            tread.Name = "OreBeltTread"
+            tread.Size = Vector3.new(2 * (belt.Radius - 3.2) * math.tan(BeltTreadAngle / 2) - 0.36, 0.10, 6.2)
+            tread.CFrame = belt.Frames[index]
+            tread.Material = Enum.Material.Metal
+            tread.Color = if index % 2 == 0 then Color3.fromRGB(105, 119, 142) else Color3.fromRGB(71, 86, 109)
+            tread.Anchored, tread.CanCollide, tread.CanTouch, tread.CanQuery = true, false, false, false
+            tread.CastShadow = false
+            tread.Parent = self._folder
+            belt.Parts[index] = tread
+        end
+    end
+    workspace:BulkMoveTo(belt.Parts, belt.Frames, Enum.BulkMoveMode.FireCFrameChanged)
+end
+
+--- 让左右爪齿围绕各自的转轴转动，保留钩头机身的位置。
+--- @param claw Model 钩头模型。
+--- @param pose CFrame 钩头当前姿态。
+--- @param grip number 爪齿闭合比例，零代表张开。
+local function SetClawGrip(claw, pose, grip)
+    local left = claw:FindFirstChild("LeftJaw")
+    local right = claw:FindFirstChild("RightJaw")
+    if left and right then
+        local angle = 0.48 * grip
+        left:PivotTo(pose * CFrame.new(-Settings.ClawJawHinge, 0, 0) * CFrame.Angles(0, -angle, 0))
+        right:PivotTo(pose * CFrame.new(Settings.ClawJawHinge, 0, 0) * CFrame.Angles(0, angle, 0))
+    end
+end
+
+--- 按服务端时间播放钩爪；抓到矿时先合爪，再保持夹紧回收。
+function Effects:UpdateClaws()
+    local now = workspace:GetServerTimeNow()
+    for claw, moving in pairs(self._claws) do
+        local started = claw:GetAttribute("ShotStarted")
+        if not started and not moving then
+            continue
+        end
+        local rest = claw:GetAttribute("RestPose")
+        local cable = claw:FindFirstChild("Cable")
+        local carried = claw:FindFirstChild("CarriedRock")
+        if not rest or not claw.PrimaryPart or not cable or not carried then
+            continue
+        end
+        if not started then
+            claw:PivotTo(rest)
+            SetClawGrip(claw, rest, 0)
+            cable.Enabled = false
+            self._claws[claw] = false
+            continue
+        end
+        local target = claw:GetAttribute("ShotTarget")
+        if not target then
+            continue
+        end
+        local offset = target - rest.Position
+        local distance = offset.Magnitude
+        if distance < 0.05 then
+            continue
+        end
+        local elapsed = math.max(0, now - started)
+        local outTime = distance / Settings.ClawOutSpeed
+        local returnSpeed = claw:GetAttribute("ShotReturnSpeed")
+        local returnAt = claw:GetAttribute("ShotReturnAt")
+        local fraction = math.min(1, elapsed / outTime)
+        if returnAt and returnSpeed and now >= returnAt then
+            fraction = math.max(0, 1 - (now - returnAt) * returnSpeed / distance)
+        end
+        local position = rest.Position:Lerp(target, fraction)
+        local direction = offset.Unit
+        local pose = CFrame.lookAt(position, position + direction)
+        local rock = carried.Value
+        local grip = if rock and returnAt then math.clamp(1 - (returnAt - now) / Settings.ClawGripTime, 0, 1) else 0
+        claw:PivotTo(pose)
+        SetClawGrip(claw, pose, grip)
+        local cableEnd = cable.Attachment1
+        local visible = cableEnd ~= nil and fraction * distance > cableEnd.Position.Z + 0.05
+        if cable.Enabled ~= visible then
+            cable.Enabled = visible
+        end
+        self._claws[claw] = true
+        local entry = rock and self._rocks[rock]
+        if entry and entry.Hits > 0 then
+            local rockPose = rock:GetPivot()
+            local heldPosition = position + direction * 1.45
+            entry.Model:PivotTo(CFrame.new(rockPose.Position:Lerp(heldPosition, grip)) * rockPose.Rotation)
+            entry.LastPose = rockPose
+        end
+    end
+end
+
+--- 跟随矿石移动，只在位置或受击缩放变化时更新本地模型和粒子。
 function Effects:Update()
     local now = os.clock()
     for rock, entry in pairs(self._rocks) do
-        if entry.Hits > 0 then
+        if entry.Hits > 0 and rock.PrimaryPart then
+            local pose = rock:GetPivot()
+            if not entry.Started then
+                if pose ~= entry.LastPose then
+                    entry.Model:PivotTo(pose)
+                    entry.LastPose = pose
+                end
+                continue
+            end
             local ratio = entry.Hits / entry.MaxHits
             local scale = ratio > 0.66 and 1 or (ratio > 0.33 and 0.92 or 0.84)
-            local progress = entry.Started and math.clamp((now - entry.Started) / 0.35, 0, 1) or 1
+            local progress = math.clamp((now - entry.Started) / 0.35, 0, 1)
             scale *= 1 + math.sin(progress * math.pi * 2) * (1 - progress) * 0.18
-            local position = entry.Pose.Position + Vector3.new(0, entry.Size.Y * (scale - 1) / 2, 0)
-            local kickProgress = entry.Started and math.clamp((now - entry.Started) / 0.16, 0, 1) or 1
+            local position = pose.Position + Vector3.new(0, entry.Size.Y * (scale - 1) / 2, 0)
+            local kickProgress = math.clamp((now - entry.Started) / 0.16, 0, 1)
             local kick = math.sin(kickProgress * math.pi * 2) * (1 - kickProgress)
             local direction = entry.Direction or Vector3.zAxis
-            local tiltAxis = entry.Pose:VectorToObjectSpace(Vector3.yAxis:Cross(direction))
+            local tiltAxis = pose:VectorToObjectSpace(Vector3.yAxis:Cross(direction))
             entry.Model:ScaleTo(entry.ModelScale * scale)
             self:UpdateMutationEffect(entry, scale)
-            entry.Model:PivotTo(CFrame.new(position + direction * (0.18 * kick)) * entry.Pose.Rotation
+            entry.Model:PivotTo(CFrame.new(position + direction * (0.18 * kick)) * pose.Rotation
                 * CFrame.fromAxisAngle(tiltAxis, math.rad(4) * kick))
             if entry.HealthBar then
                 entry.HealthBar.StudsOffsetWorldSpace = Vector3.new(0, entry.Visual.Size.Y / 2 + 1.2, 0)
+            end
+            if progress == 1 then
+                entry.Started = nil
+                entry.LastPose = pose
             end
         end
     end
@@ -435,6 +575,17 @@ end
 
 --- 断开标签和次数监听，恢复服务器石头显示并销毁本地特效与碎片池。
 function Effects:Destroy()
+    self._clawAdded:Disconnect()
+    self._clawRemoved:Disconnect()
+    for claw, moving in pairs(self._claws) do
+        local cable = claw:FindFirstChild("Cable")
+        local rest = claw:GetAttribute("RestPose")
+        if moving and cable and rest then
+            claw:PivotTo(rest)
+            SetClawGrip(claw, rest, 0)
+            cable.Enabled = false
+        end
+    end
     self._added:Disconnect()
     self._removed:Disconnect()
     for rock in pairs(self._pending) do

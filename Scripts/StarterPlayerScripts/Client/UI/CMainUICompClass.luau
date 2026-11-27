@@ -1,5 +1,6 @@
 -- 项目主界面：绑定 Studio 原生 HUD，并保留通用道具说明。
 local GuiService = game:GetService("GuiService")
+local SocialService = game:GetService("SocialService")
 local TextService = game:GetService("TextService")
 local FX, FC = _G.FX, _G.FC
 local FXLoader = FX.Loader
@@ -17,7 +18,6 @@ local TranslationTexts = Text.Define("MainItemDescription", {
     GM = "GM",
     Multiplier = "×{rate} Cash",
     MultiplierMaxed = "Max level",
-    FriendBonus = "Friend Boost: +{percent:int}%",
 })
 local Component = FX.Class("CMainUICompClass", "FCUICompClass")
 
@@ -92,30 +92,30 @@ function Component:OnReady()
     self:Show()
 end
 
---- 主 HUD 显示同服好友加成，并在好友状态或语言变化时刷新。
+--- 绑定 Studio 的好友加成条，右侧加号打开好友邀请。
 function Component:BindEarningsHUD()
-    local wallet = FXLoader:Here(self._rootNode, "Wallet")
-    local friendLabel = Instance.new("TextLabel")
-    friendLabel.Name = "FriendBoost"
-    friendLabel.Position = UDim2.fromOffset(0, -26)
-    friendLabel.Size = UDim2.new(1, 0, 0, 24)
-    friendLabel.BackgroundTransparency = 1
-    friendLabel.Font = Enum.Font.FredokaOne
-    friendLabel.TextSize = 18
-    friendLabel.TextColor3 = Color3.fromRGB(181, 255, 241)
-    friendLabel.TextStrokeTransparency = 0.3
-    friendLabel.TextXAlignment = Enum.TextXAlignment.Left
-    friendLabel.AutoLocalize = false
-    self._friendBoostLabel = friendLabel
-    friendLabel.Parent = wallet
+    local friendRow = FXLoader:Here(self._rootNode, "Wallet.FriendBoost")
+    local friendLabel = FXLoader:Here(friendRow, "Bonus")
+    local inviteButton = FXLoader:Here(friendRow, "InviteFriend")
+    self:TrackConnection(inviteButton.Activated:Connect(function()
+        local player = self:GetPlayerNode()
+        local success, message = pcall(function()
+            if SocialService:CanSendGameInviteAsync(player) and inviteButton.Parent then
+                SocialService:PromptGameInvite(player)
+            end
+        end)
+        if not success then
+            warn("Unable to open friend invite:", message)
+        end
+    end))
 
     local friend = self:RequireComponent("FCFriendComp")
+    --- 好友人数变化后，更新图标旁的加成百分比。
     local function RefreshFriendBoost()
         local bonus = MoneyMultiplier.GetFriendBonus(friend:GetFriendCountInRoom())
-        friendLabel.Text = Text.Tr(TranslationTexts.FriendBonus, {percent = bonus * 100})
+        friendLabel.Text = string.format("+%d%%", bonus * 100)
     end
     self:SubscribeEvent("FriendStateChanged", RefreshFriendBoost)
-    self:TrackConnection(FC.Localization.Changed:Connect(RefreshFriendBoost))
     RefreshFriendBoost()
 end
 
@@ -404,9 +404,6 @@ end
 
 --- 清理自建界面节点和装备监听，仅隐藏 Studio 提供的 HUD 模板副本。
 function Component:Dtor()
-    if self._friendBoostLabel then
-        self._friendBoostLabel:Destroy()
-    end
     if self._gmButton then
         self._gmButton:Destroy()
     end

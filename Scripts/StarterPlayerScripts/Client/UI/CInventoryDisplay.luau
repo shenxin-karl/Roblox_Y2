@@ -262,7 +262,7 @@ local function createTopbarButton(root, bagButton)
     return topbar, button, icon
 end
 
---- 将独立工具计入快捷栏的显示和触屏宽度，空库存格只在打开背包时显示。
+--- 按实际可见格数计算快捷栏宽度；空格只在打开背包时显示。
 function Display:_RefreshShortcutVisibility()
     local hasShortcutItem = false
     local visibleCount = 0
@@ -271,14 +271,6 @@ function Display:_RefreshShortcutVisibility()
         hasShortcutItem = hasShortcutItem or occupied
         cell.button.Visible = occupied or self._panel.Visible
         if cell.button.Visible then
-            visibleCount += 1
-        end
-    end
-    if self._miningStickCell then
-        local visible = self._slots.miningStick ~= nil
-        self._miningStickCell.button.Visible = visible
-        if visible then
-            hasShortcutItem = true
             visibleCount += 1
         end
     end
@@ -531,8 +523,6 @@ function Display.new(root, config, onSelect, onSwap)
             button.Visible = grid <= config.shortcutCapacity
         end
     end
-    -- 球棍占用第一个数字键；普通道具仍使用原库存格号。
-    local keyOffset = if config.onSelectMiningStick then 1 else 0
     for grid = 1, config.shortcutCapacity do
         local button = bar:FindFirstChild("Slot" .. grid)
         if not button then
@@ -544,37 +534,15 @@ function Display.new(root, config, onSelect, onSwap)
         end
         button.Size = UDim2.fromOffset(SlotSize, SlotSize)
         local key = FXLoader:Here(button, "Key")
-        key.Visible = keyCodes[grid + keyOffset] ~= nil
+        key.Visible = keyCodes[grid] ~= nil
         if key.Visible then
-            key.Text = tostring((grid + keyOffset) % 10)
+            key.Text = tostring(grid % 10)
         end
         local cell = bindSlot(button)
         cell.isShortcut = true
         self._shortcutCells[grid] = cell
         self._drag:RegisterSlot(button, function()
             return grid
-        end)
-    end
-
-    local miningStickConnection
-    if config.onSelectMiningStick then
-        local button = templateButton:Clone()
-        button.Name = "MiningStickSlot"
-        button.LayoutOrder = 0
-        button.Size = UDim2.fromOffset(SlotSize, SlotSize)
-        local key = FXLoader:Here(button, "Key")
-        key.Visible = true
-        key.Text = "1"
-        local cell = bindSlot(button)
-        cell.isShortcut = true
-        self._miningStickCell = cell
-        button.Visible = false
-        button.Parent = bar
-        table.insert(self._createdShortcuts, button)
-        miningStickConnection = button.Activated:Connect(function()
-            if self._slots.miningStick then
-                config.onSelectMiningStick()
-            end
         end)
     end
 
@@ -596,7 +564,7 @@ function Display.new(root, config, onSelect, onSwap)
     end
 
     local barScale = FXLoader:Here(bar, "Scale")
-    local barCount = config.shortcutCapacity + (self._miningStickCell and 1 or 0)
+    local barCount = config.shortcutCapacity
     local barWidth = SlotSize * barCount + SlotGap * math.max(0, barCount - 1)
     local contentWidth = math.max(barWidth, panel.Size.X.Offset)
     local originalInsets = root.ScreenInsets
@@ -651,14 +619,7 @@ function Display.new(root, config, onSelect, onSwap)
                 self:ToggleBackpack()
                 return
             end
-            local keyIndex = table.find(keyCodes, input.KeyCode)
-            if keyIndex == 1 and config.onSelectMiningStick then
-                if self._slots.miningStick then
-                    config.onSelectMiningStick()
-                end
-                return
-            end
-            local grid = keyIndex and keyIndex - keyOffset
+            local grid = table.find(keyCodes, input.KeyCode)
             local slot = grid and self._shortcutCells[grid] and self._slots[grid]
             if slot then
                 onSelect(grid, slot)
@@ -668,9 +629,6 @@ function Display.new(root, config, onSelect, onSwap)
             self:Render(self._slots, self._usedBackpackSlots)
         end),
     }
-    if miningStickConnection then
-        table.insert(self._connections, miningStickConnection)
-    end
     if self._backpackCapacity > 0 then
         local function refreshGrid()
             self:_RefreshBackpackGrid()
@@ -795,16 +753,13 @@ function Display:ToggleBackpack(visible)
 end
 
 --- 每次只绘制快捷栏和当前虚拟格子。
---- @param slots table 真实格号的显示快照；miningStick 为独立工具。
+--- @param slots table 按真实格号索引的道具显示快照。
 --- @param usedBackpackSlots number 背包区域的已用格数。
 function Display:Render(slots, usedBackpackSlots)
     self._slots = slots
     self._usedBackpackSlots = usedBackpackSlots
     for grid, cell in ipairs(self._shortcutCells) do
         renderSlot(cell, slots[grid])
-    end
-    if self._miningStickCell then
-        renderSlot(self._miningStickCell, slots.miningStick)
     end
     self:_RefreshShortcutVisibility()
     self._countLabel.Text = string.format("%d / %d", usedBackpackSlots, self._backpackCapacity)

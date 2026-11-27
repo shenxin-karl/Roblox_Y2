@@ -1,4 +1,5 @@
 -- 锻造交互与本地表现：台位与材料兑换由服务端裁定，命中动画只发起一次请求。
+local ContentProvider = game:GetService("ContentProvider")
 local ContextActionService = game:GetService("ContextActionService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -26,6 +27,22 @@ local PersonalActions = {
     {PartPath = Settings.PersonalFurnacePart, Text = TranslationTexts.PersonalSmelt, Message = "C2S_SmeltSword"},
 }
 local Comp = FX.Class("CForgeCompClass", "FCUICompClass")
+local RequestedWeaponPreloads = {}
+
+--- 提前请求武器的网格和贴图；每个模型只请求一次，锻造不等下载完成。
+--- @param quality number 要预加载的武器品质；没有对应模型时跳过。
+local function PreloadWeapon(quality)
+    local weapon = _G.GameConfig.WeaponData[quality]
+    if not weapon or RequestedWeaponPreloads[weapon.ModelPath] then
+        return
+    end
+    local path = weapon.ModelPath
+    RequestedWeaponPreloads[path] = true
+    task.defer(function()
+        local template = FXLoader:Shared(path)
+        ContentProvider:PreloadAsync(template:GetDescendants())
+    end)
+end
 
 --- 返回锻造按钮的稳定组件名。
 --- @return string 组件名称。
@@ -105,7 +122,7 @@ function Comp:OnReady()
     end)
 end
 
---- 刚上台时展示剑胚，升品质时换成新武器，全程沿用本次锻造的变异。
+--- 刚上台时展示剑胚并预加载下一把武器，升品质时沿用本次锻造的变异。
 --- @param data table 服务端同步的最新锻造状态。
 --- @param previous table? 上一次同步状态；进台时不传。
 function Comp:ApplyForgeData(data, previous)
@@ -124,8 +141,15 @@ function Comp:ApplyForgeData(data, previous)
     end
     local displayQuality = data.HammerCount == 0 and 1 or data.Quality
     local upgradeFrom = upgraded and (previous.HammerCount == 0 and 1 or data.Quality - 1) or nil
-    self._effects:ApplyWeapon(displayQuality, data.Active == true and data.Outcome ~= "Destroyed", upgradeFrom,
-        data.MutationId)
+    local visible = data.Active == true and data.Outcome ~= "Destroyed"
+    if visible or upgraded then
+        PreloadWeapon(displayQuality)
+    end
+    if visible and not data.Finished then
+        -- 剑胚固定显示为品质 1，但首锤升级从服务端的起始品质计算。
+        PreloadWeapon(data.Quality + 1)
+    end
+    self._effects:ApplyWeapon(displayQuality, visible, upgradeFrom, data.MutationId)
 end
 
 --- 显示当前损毁武器的恢复报价，玩家确认后才提交。

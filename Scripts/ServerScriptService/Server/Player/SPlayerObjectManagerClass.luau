@@ -112,38 +112,25 @@ function Manager:RegUpgradeWorkshopMsg()
     end)
 end
 
---- 矿场协议只作用于认证请求者；客户端不能传入数量、奖励或兑换价格。
+--- 矿场请求只作用于认证玩家，抓取和熔炼结果由服务端决定。
 function Manager:RegMiningMsg()
-    --- 由矿场管理器确认公共矿石仍能拾取。
-    --- @param userId number 引擎认证的请求者 ID。
-    --- @param rock any 客户端提交的本轮矿石编号。
-    FX.Network:RegClientMsgCallback("C2S_PickUpOre", function(userId, rock)
-        local player = self:GetPlayerObject(userId)
-        local mining = player and player:GetComponent("SMiningComp")
-        if mining then
-            mining:Request("PickUp", rock)
-        end
-    end)
-    --- 快捷栏仅提交切换装备的意图，服务端自行取得木棍和命中目标。
-    --- @param userId number 引擎认证的请求者 ID。
-    --- @param toggleEquip boolean? true 表示只切换装备；无参数表示矿区操作。
-    FX.Network:RegClientMsgCallback("C2S_SwingMiningStick", function(userId, toggleEquip)
-        if toggleEquip ~= nil and toggleEquip ~= true then
-            return
-        end
-        local player = self:GetPlayerObject(userId)
-        local mining = player and player:GetComponent("SMiningComp")
-        if mining then
-            mining:SwingStick(toggleEquip)
-        end
-    end)
     --- 自家熔炉从玩家背包消耗矿石。
     --- @param userId number 引擎认证的请求者 ID。
     FX.Network:RegClientMsgCallback("C2S_SmeltSword", function(userId)
         local player = self:GetPlayerObject(userId)
         local mining = player and player:GetComponent("SMiningComp")
         if mining then
-            mining:Request("Smelt")
+            mining:RequestSmelt()
+        end
+    end)
+    --- 只转发目标坐标，矿石和座椅由服务端判定。
+    --- @param userId number 引擎认证的请求者 ID。
+    --- @param target any 客户端点击的世界 XZ 坐标。
+    FX.Network:RegClientMsgCallback("C2S_CastMiningClaw", function(userId, target)
+        local player = self:GetPlayerObject(userId)
+        local mining = player and player:GetComponent("SMiningComp")
+        if mining then
+            mining:RequestClaw(target)
         end
     end)
 end

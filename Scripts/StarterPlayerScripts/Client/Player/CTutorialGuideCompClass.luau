@@ -12,8 +12,9 @@ local Utility = Loader:RequireShared("Scripts.Game.Shared.GameUtility")
 local TextPrompt = Loader:RequireShared("Scripts.Framework.Client.FCTextPrompt")
 local UIRoot = Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local TranslationTexts = Text.Define("Y2Tutorial", {
-    Mine = "Go to the central quarry and pick up ore for a sword blank.",
-    NeedOre = "You need {oreNeeded:int} ore. Pick one up at the central quarry.",
+    Mine = "Take an open claw seat around the central quarry.",
+    NeedOre = "You need {oreNeeded:int} ore. Take an open claw seat around the central quarry.",
+    CastClaw = "Click or tap the turntable to grab ore with the claw.",
     Carry = "Carry the ore out of the quarry and back to your base.",
     Smelt = "Use your furnace to make a sword blank ({ore:int}/{oreNeeded:int} ore).",
     Forge = "Equip your sword blank and put it on your workbench.",
@@ -198,23 +199,29 @@ end
 --- 使用已发布的动态矿石，以及当前基地分配对应的工位和槽位。
 --- @param target table 服务端允许展示的目标。
 --- @param root BasePart 存活角色根部。
+--- @param seatedAtMine boolean 当前是否坐在矿区操作椅上。
 --- @return Instance? 世界目标。
 --- @return number? 触发高亮的距离。
 --- @return Instance? 可见的高亮模型（交互锚点透明时使用）。
-function Guide:FindWorldTarget(target, root)
+function Guide:FindWorldTarget(target, root, seatedAtMine)
     local kind, slot = target.type, target.slot
     local baseId = self:GetNumber(Fields.BaseId)
     if kind == "Mine" or kind == "NeedOre" then
+        local seats = not seatedAtMine and Loader:FindFromWorkspace(Mining.SeatsPath)
+        if not seats then
+            return nil
+        end
         local distance, result = math.huge, nil
-        for index, rock in ipairs(CollectionService:GetTagged(Mining.RockTag)) do
-            if rock:IsA("Model") and rock:IsDescendantOf(workspace) then
-                local magnitude = (rock:GetPivot().Position - root.Position).Magnitude
+        for index, chair in ipairs(seats:GetChildren()) do
+            local seat = Loader:Find(chair, "Seat")
+            if seat and seat:GetAttribute(Mining.SeatVacantAttribute) then
+                local magnitude = (seat.Position - root.Position).Magnitude
                 if magnitude < distance then
-                    distance, result = magnitude, rock
+                    distance, result = magnitude, seat
                 end
             end
         end
-        return result or Loader:FindFromWorkspace(Mining.GroundPath), Mining.InteractDistance
+        return result, 5, result and result.Parent
     elseif kind == "Carry" then
         return Loader:FindFromWorkspace("BlockMeshs.bases.base" .. baseId .. ".BaseLower.Architecture.LowerFloor"), 9
     elseif kind == "Smelt" or kind == "Forge" or kind == "Pending" then
@@ -259,11 +266,14 @@ end
 
 --- 生成一条当前任务，使用实际金币费用、待领收益与当前摆放数量。
 --- @param target table 服务端同步的当前目标。
+--- @param seatedAtMine boolean 当前是否坐在矿区操作椅上。
 --- @return string 已翻译的提示。
-function Guide:Format(target)
+function Guide:Format(target, seatedAtMine)
     local kind, step = target.type, target.step
     local key = kind
-    if kind == "Collect" and target.waiting then
+    if seatedAtMine and (kind == "Mine" or kind == "NeedOre") then
+        key = "CastClaw"
+    elseif kind == "Collect" and target.waiting then
         key = "Waiting"
     elseif (kind == "Upgrade" or kind == "Unlock") and target.short and target.short > 0 then
         key = kind .. "Short"
@@ -306,7 +316,9 @@ function Guide:Refresh()
         self:HideGuideArrow()
         return
     end
-    self._instruction.Text = self:Format(target)
+    local seat = humanoid.SeatPart
+    local seatedAtMine = seat ~= nil and seat:GetAttribute(Mining.SeatAttribute) == true
+    self._instruction.Text = self:Format(target, seatedAtMine)
     if target.type ~= "Complete" and self._shownStep ~= target.step then
         self._shownStep = target.step
         FX.Network:SendMsgToServer("C2S_TutorialHint", "Shown", target.step)
@@ -318,7 +330,7 @@ function Guide:Refresh()
         self._outline.Size = UDim2.fromOffset(size.X, size.Y)
         self._outline.Visible = true
     end
-    local worldTarget, distance, visibleModel = self:FindWorldTarget(target, root)
+    local worldTarget, distance, visibleModel = self:FindWorldTarget(target, root, seatedAtMine)
     if worldTarget and worldTarget:IsA("PVInstance") then
         local position = worldTarget:GetPivot().Position
         if (position - root.Position).Magnitude > distance then

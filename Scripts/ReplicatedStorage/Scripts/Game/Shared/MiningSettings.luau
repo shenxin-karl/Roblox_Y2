@@ -1,19 +1,23 @@
--- 公共矿场的交互距离、搬运状态和木棍规则。
+-- 公共矿场的场景路径、矿石标记和刷新规则。
 local Settings = {
     GroundPath = "Decorations.MiningAreaDecorations.QuarryGround.InnerMiningSurface",
+    BeltPath = "Decorations.MiningAreaDecorations.OreRingConveyor",
+    BeltLapTime = 42,
+    SeatsPath = "Decorations.MiningAreaDecorations.OreRingSeats",
+    SeatAttribute = "IsMiningClawSeat",
+    SeatVacantAttribute = "MiningClawSeatVacant",
+    ClawHeight = 2,
+    ClawEdgeMargin = 5,
+    ClawTag = "MiningClawVisual",
+    ClawOutSpeed = 82,
+    ClawReturnSpeed = 72,
+    ClawGripTime = 0.18,
+    ClawJawHinge = 0.75,
     RockTag = "PublicMiningRock",
-    InteractDistance = 9,
     RequestCooldown = 0.4,
     RefreshAttribute = "PublicOreRefreshAt",
     CarryAttribute = "CarryingMiningOre",
-    CarrySpeedMultiplier = 0.75,
-    BaseDepositHeight = 9,
     QuarryVerticalRange = 12,
-    StickName = "Wooden Stick",
-    StickSwingAttribute = "MiningStickSwingAt",
-    StickRange = 7,
-    StickCooldown = 0.75,
-    KnockdownDuration = 1.5,
 }
 
 --- 按横放的椭圆矿面判断刷新区，距地太远也不算在矿区内。

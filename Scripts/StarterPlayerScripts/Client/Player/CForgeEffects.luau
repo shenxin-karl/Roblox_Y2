@@ -2,6 +2,7 @@
 local FX = _G.FX
 local FXLoader = FX.Loader
 local WeaponVisual = FXLoader:RequireShared("Scripts.Game.Shared.WeaponVisual")
+local WorkshopVisuals = FXLoader:RequireShared("Scripts.Game.Shared.WorkshopVisuals")
 local Effects = {}
 Effects.__index = Effects
 
@@ -10,7 +11,6 @@ local SwingDuration = 0.68
 local WhitenDuration = 0.48
 local WhiteHoldDuration = 0.08
 local RevealDuration = 0.55
-local WarmColor = Color3.fromRGB(255, 173, 66)
 local SparkGravity = Vector3.new(0, -22, 0)
 
 --- 建立本地锻造近景和升品质用的白色填充，原模型只对本人隐藏。
@@ -24,6 +24,7 @@ function Effects.New(station)
     local head = FXLoader:Here(original, "BlackForgedHammerHead")
     local swordTemplate = FXLoader:Shared("Assets.Decorations.Sword.ClassicSword.Handle")
     local self = setmetatable({}, Effects)
+    self._station = station
     self._base = desktop.CFrame
     -- 镜头从桌面负 Z 看向正 Z；握柄朝负 X 才位于画面右侧。
     self._hammerBase = self._base * CFrame.new(0, 0, 0.8) * CFrame.Angles(0, math.pi, 0)
@@ -97,7 +98,7 @@ function Effects.New(station)
     anchor.CFrame = self._base * CFrame.new(0, self._contactHeight + 0.03, 0.8)
     self._impactAnchor = anchor
     anchor.Parent = self._root
-    -- 火星由白热尖端与橙色细尾构成，沿飞行方向拉长，而不是星形贴图向上冒。
+    -- 火星由亮色尖端与档位色细尾构成，沿飞行方向拉长。
     for index = 1, 40 do
         local tail, tip = Instance.new("Attachment"), Instance.new("Attachment")
         tail.Name, tip.Name = "SparkTail" .. index, "SparkTip" .. index
@@ -109,14 +110,12 @@ function Effects.New(station)
         core.LightEmission, core.LightInfluence, core.Brightness = 0.65, 0, 1.4
         core.Segments = 3
         core.Width0, core.Width1 = 0.025, 0
-        core.Color = ColorSequence.new(Color3.fromRGB(255, 85, 12), Color3.fromRGB(255, 218, 145))
         core.Parent = anchor
         local glow = core:Clone()
         glow.Name = "SparkGlow" .. index
         glow.Width0 = 0.07
         glow.LightEmission = 1
         glow.Brightness = 0.8
-        glow.Color = ColorSequence.new(WarmColor)
         glow.Transparency = NumberSequence.new(0.8)
         glow.Parent = anchor
         self._streaks[index] = {Tail = tail, Tip = tip, Core = core, Glow = glow}
@@ -126,6 +125,8 @@ function Effects.New(station)
     self._light.Brightness = 0
     self._light.Range = 5
     self._light.Parent = anchor
+    self._impactBurst = WorkshopVisuals.CreateBurst(anchor)
+    self:RefreshImpactStyle()
     self._bloom = Instance.new("BloomEffect")
     self._bloom.Name = "ForgeContactBloom"
     self._bloom.Intensity, self._bloom.Size, self._bloom.Threshold = 0, 12, 1.5
@@ -285,12 +286,33 @@ function Effects:IsBusy()
     return not self._destroyed and (self._swingAge ~= nil or self._weaponUpgrade ~= nil)
 end
 
---- 接触瞬间炸开橙金色火星；整剑变白留给确认升品质后的换剑。
+--- 同步台位档色到本地锤子、发光和火星；原地升级后下次落锤会刷新。
+function Effects:RefreshImpactStyle()
+    local tier = self._station:GetAttribute("WorkshopVisualTier") or 1
+    if self._visualTier == tier then
+        return
+    end
+    self._visualTier = tier
+    local style = WorkshopVisuals.GetStyle(tier)
+    WorkshopVisuals.ApplyColors(self._hammer, tier, "Forge")
+    self._light.Color = style.Color
+    self._impactBurstCount = WorkshopVisuals.SetBurstStyle(self._impactBurst, tier)
+    local core = ColorSequence.new(style.Color, style.Accent)
+    local glow = ColorSequence.new(style.Color)
+    for index, streak in ipairs(self._streaks) do
+        streak.Core.Color, streak.Glow.Color = core, glow
+    end
+end
+
+--- 落锤沿用现有火星池，叠加当前档位的短粒子反馈。
 function Effects:EmitImpact()
+    self:RefreshImpactStyle()
     self._pulseAge = 0
     self._sparkAge = 0
     self._activeSparks = self._powerful and 40 or 22
-    self._light.Color = WarmColor
+    if self._visualTier >= 4 then
+        self._impactBurst:Emit(self._impactBurstCount)
+    end
     for index, streak in ipairs(self._streaks) do
         local active = index <= self._activeSparks
         streak.Core.Enabled, streak.Glow.Enabled = active, active

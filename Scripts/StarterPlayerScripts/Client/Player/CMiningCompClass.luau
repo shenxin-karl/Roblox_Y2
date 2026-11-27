@@ -1,80 +1,18 @@
--- 公共矿场界面：显示同服倒计时、自动拾取和木棍操作。
+-- 公共矿场：显示矿石与倒计时，入座后切换到钩爪俯视操作。
 local RunService = game:GetService("RunService")
-local CollectionService = game:GetService("CollectionService")
-local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local FX, FC = _G.FX, _G.FC
+local FXLoader = FX.Loader
 local Text = FX.Text
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local MiningEffects = FX.Loader:RequireFromParent(script, "CMiningEffects")
 local UIRoot = FX.Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
-local ActionButton = FX.Loader:Require(script.Parent.Parent, "UI.CActionButton")
 local TextPrompt = FX.Loader:RequireShared("Scripts.Framework.Client.FCTextPrompt")
 local TranslationTexts = Text.Define("MiningInteraction", {
     Preparing = "Preparing ore…",
     Refreshed = "Ore has refreshed!",
-    EquipStick = "Equip wooden stick",
-    SwingStick = "Swing wooden stick",
-    StickDetail = "Knock ore loose in the quarry",
 })
 local Comp = FX.Class("CMiningCompClass", "FCUICompClass")
-
--- 依次是抬到右肩、扫过身前、随势收棍、回到竖持。左臂留给原角色动画。
-local SwingJoints = {"RightShoulder", "RightElbow", "RightWrist", "Waist"}
-local SwingPoses = {
-    {Time = 0, Weight = 0, {78, 0, 0}, {12, 0, 0}, {0, 0, 0}, {0, 0, 0}},
-    {Time = 0.22, Weight = 1, {99, -12, 34}, {66, 0, 0}, {5, 0, 0}, {0, -20, 4}},
-    {Time = 0.32, Weight = 1, {73, 28, 8}, {25, 0, 0}, {-88, 0, 0}, {6, 15, -3}},
-    {Time = 0.42, Weight = 1, {57, 55, -12}, {38, 0, 0}, {-77, 0, 0}, {4, 30, -4}},
-    {Time = 0.66, Weight = 0, {78, 0, 0}, {12, 0, 0}, {0, 0, 0}, {0, 0, 0}},
-}
-for poseIndex, pose in ipairs(SwingPoses) do
-    for jointIndex, angles in ipairs(pose) do
-        pose[jointIndex] = CFrame.fromOrientation(math.rad(angles[1]), math.rad(angles[2]), math.rad(angles[3]))
-    end
-end
-
---- 恢复上一帧覆盖前的关节姿势，避免动画降频时重复叠加。
-function Comp:ResetSwingPose()
-    for joint, transform in pairs(self._swingTransforms) do
-        if joint.Parent then
-            joint.Transform = transform
-        end
-    end
-    table.clear(self._swingTransforms)
-end
-
---- 按服务器广播的时刻播放挥击；扛起矿石时结束正在播放的挥击。
-function Comp:UpdateSwingPoses()
-    local now = workspace:GetServerTimeNow()
-    for playerIndex, player in ipairs(Players:GetPlayers()) do
-        local character = player.Character
-        local tool = character and character:FindFirstChild(Settings.StickName)
-        local started = tool and not character:GetAttribute(Settings.CarryAttribute)
-            and tool:GetAttribute(Settings.StickSwingAttribute)
-        local elapsed = started and math.max(0, now - started)
-        if not elapsed or elapsed >= SwingPoses[#SwingPoses].Time then
-            continue
-        end
-        for index = 2, #SwingPoses do
-            local target = SwingPoses[index]
-            if elapsed <= target.Time then
-                local from = SwingPoses[index - 1]
-                local alpha = (elapsed - from.Time) / (target.Time - from.Time)
-                alpha = alpha * alpha * (3 - 2 * alpha)
-                local weight = from.Weight + (target.Weight - from.Weight) * alpha
-                for jointIndex, name in ipairs(SwingJoints) do
-                    local joint = character:FindFirstChild(name, true)
-                    if joint and (joint:IsA("Motor6D") or joint:IsA("AnimationConstraint")) then
-                        local base = joint.Transform
-                        self._swingTransforms[joint] = base
-                        joint.Transform = base:Lerp(CFrame.new(base.Position) * from[jointIndex]:Lerp(target[jointIndex], alpha), weight)
-                    end
-                end
-                break
-            end
-        end
-    end
-end
 
 --- 返回矿场界面的组件名。
 --- @return string 组件协作名。
@@ -107,23 +45,111 @@ function Comp:CreateRefreshNotice()
     self._refreshTextEffect = TextPrompt.AttachGradient(label)
 end
 
---- 沿用矿场 HUD，并在角色动画之后叠加已确认的挥击动作。
+--- 离座、重生或组件清理时还原进入矿场前的镜头设置。
+function Comp:RestoreMiningCamera()
+    local view = self._miningView
+    if not view then
+        return
+    end
+    self._miningView = nil
+    local camera = view.Camera
+    if camera == workspace.CurrentCamera and camera.CameraType == Enum.CameraType.Scriptable then
+        camera.CFrame, camera.Focus, camera.FieldOfView = view.CFrame, view.Focus, view.FieldOfView
+        camera.CameraType = view.CameraType
+    end
+end
+
+--- 从座椅后方略微斜看转盘，保留出爪位置，并按屏幕比例取景。
+function Comp:UpdateMiningCamera()
+    local camera = workspace.CurrentCamera
+    local character = self:GetPlayerCharacter()
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local seat = humanoid and humanoid.Health > 0 and humanoid.SeatPart
+    if not camera or not seat or not seat:GetAttribute(Settings.SeatAttribute) then
+        self:RestoreMiningCamera()
+        return
+    end
+    local view = self._miningView
+    if view and (view.Seat ~= seat or view.Camera ~= camera) then
+        self:RestoreMiningCamera()
+        view = nil
+    end
+    if not view then
+        if camera.CameraType == Enum.CameraType.Scriptable then
+            return
+        end
+        local ground = FXLoader:FindFromWorkspace(Settings.GroundPath)
+        local entry = FXLoader:FindFromWorkspace(Settings.BeltPath .. ".BeltEntry")
+        if not ground or not entry then
+            return
+        end
+        local center = Vector3.new(ground.Position.X, entry.Position.Y + Settings.ClawHeight, ground.Position.Z)
+        local toCenter = Vector3.new(center.X - seat.Position.X, 0, center.Z - seat.Position.Z)
+        local beltOffset = Vector2.new(entry.Position.X - center.X, entry.Position.Z - center.Z)
+        local forward = toCenter.Unit
+        local beltRadius = beltOffset.Magnitude
+        view = {
+            Seat = seat, Camera = camera, Center = center, Forward = forward,
+            LookAt = center - forward * 16,
+            GrabRadius = beltRadius + Settings.ClawEdgeMargin,
+            FrameWidth = beltRadius + 5,
+            FrameHeight = math.max(beltRadius + 9, toCenter.Magnitude - 3),
+            CFrame = camera.CFrame, Focus = camera.Focus, FieldOfView = camera.FieldOfView,
+            CameraType = camera.CameraType,
+        }
+        self._miningView = view
+        camera.CameraType = Enum.CameraType.Scriptable
+        camera.FieldOfView = 44
+    end
+    local viewport = camera.ViewportSize
+    if viewport == view.Viewport or viewport.X <= 1 or viewport.Y <= 1 then
+        return
+    end
+    view.Viewport = viewport
+    local aspect = viewport.X / viewport.Y
+    local distance = math.max(view.FrameHeight, view.FrameWidth / aspect) / math.tan(math.rad(camera.FieldOfView / 2))
+    local tilt = math.rad(26)
+    local offset = (Vector3.yAxis * math.cos(tilt) - view.Forward * math.sin(tilt)) * distance
+    camera.CFrame = CFrame.lookAt(view.LookAt + offset, view.LookAt)
+    camera.Focus = CFrame.new(view.LookAt)
+end
+
+--- 把鼠标或触屏位置落到水平抓取面，只有盘内点击才发送请求。
+--- @param position Vector3 已计入界面 inset 的输入坐标。
+function Comp:AimMiningClaw(position)
+    local view = self._miningView
+    local now = os.clock()
+    if not view or not view.Viewport or view.Camera ~= workspace.CurrentCamera
+        or now - self._lastClawRequest < Settings.RequestCooldown then
+        return
+    end
+    local ray = view.Camera:ScreenPointToRay(position.X, position.Y)
+    if ray.Direction.Y >= 0 then
+        return
+    end
+    local point = ray.Origin + ray.Direction * ((view.Center.Y - ray.Origin.Y) / ray.Direction.Y)
+    local offset = Vector2.new(point.X - view.Center.X, point.Z - view.Center.Z)
+    if offset.Magnitude <= view.GrabRadius then
+        self._lastClawRequest = now
+        FX.Network:SendMsgToServer("C2S_CastMiningClaw", Vector2.new(point.X, point.Z))
+    end
+end
+
+--- 初始化抓取输入、矿石表现和同服刷新提示。
 function Comp:OnReady()
-    self._swingTransforms = {}
-    self:TrackConnection(RunService.PreAnimation:Connect(function()
-        self:ResetSwingPose()
-    end))
-    self:TrackConnection(RunService.PreSimulation:Connect(function()
-        self:UpdateSwingPoses()
-    end))
     self._effects = MiningEffects.New(self)
     self._countdown = FX.Loader:PlayerGui("Main.HUD.Wallet.RefreshStat.Countdown")
     self:CreateRefreshNotice()
-    self._button, self._buttonTitle, self._buttonDetail = ActionButton.New("MiningInteraction")
-    self._lastPickup, self._lastSwing = -math.huge, -math.huge
-    self:TrackConnection(self._button.Activated:Connect(function()
-        if self._button.Visible then
-            self:SwingStick()
+    self._lastClawRequest = -math.huge
+    self:TrackConnection(RunService.RenderStepped:Connect(function()
+        self:UpdateMiningCamera()
+        self._effects:UpdateBelt()
+        self._effects:UpdateClaws()
+    end))
+    self:TrackConnection(UserInputService.InputBegan:Connect(function(input, processed)
+        if not processed and (input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch) then
+            self:AimMiningClaw(input.Position)
         end
     end))
     self:TrackConnection(FC.Localization.Changed:Connect(function()
@@ -131,7 +157,7 @@ function Comp:OnReady()
         self:Refresh()
     end))
     local elapsed = 0
-    --- 限制交互扫描频率；矿石特效仍按帧更新。
+    --- 限制倒计时刷新频率；矿石外观仍按帧跟随。
     --- @param deltaTime number 本帧经过秒数。
     self:TrackConnection(RunService.Heartbeat:Connect(function(deltaTime)
         self._effects:Update()
@@ -142,41 +168,6 @@ function Comp:OnReady()
         end
     end))
     self:Refresh()
-end
-
---- 背矿时不发挥击请求；装备和命中仍由服务端判定。
-function Comp:SwingStick()
-    local character = self:GetPlayerCharacter()
-    if not character or character:GetAttribute(Settings.CarryAttribute) then
-        return
-    end
-    local now = os.clock()
-    if now - self._lastSwing < Settings.StickCooldown then
-        return
-    end
-    self._lastSwing = now
-    FX.Network:SendMsgToServer("C2S_SwingMiningStick")
-end
-
---- 自定义背包不列出场景工具，矿区按钮可装备；装备后也能用普通 Tool 输入挥棍。
---- @param character Model? 当前玩家角色。
-function Comp:RefreshStick(character)
-    local backpack = self:GetPlayerNode():FindFirstChildOfClass("Backpack")
-    local stick = character and character:FindFirstChild(Settings.StickName)
-        or backpack and backpack:FindFirstChild(Settings.StickName)
-    if stick == self._stick then
-        return
-    end
-    if self._stickActivated then
-        self._stickActivated:Disconnect()
-        self._stickActivated = nil
-    end
-    self._stick = stick
-    if stick and stick:IsA("Tool") then
-        self._stickActivated = stick.Activated:Connect(function()
-            self:SwingStick()
-        end)
-    end
 end
 
 --- 原生 Tool 名称来自配置翻译，堆叠数仅显示整数，不复制私有背包数据。
@@ -208,30 +199,7 @@ function Comp:RefreshToolNames()
     end
 end
 
---- 靠近时请求拾取最近的落地矿石，最终距离和归属由服务端重验。
---- @param position Vector3 当前角色位置。
---- @param now number 本地节流时钟。
-function Comp:TryPickUp(position, now)
-    if now - self._lastPickup < Settings.RequestCooldown then
-        return
-    end
-    local nearestId
-    local distance = Settings.InteractDistance
-    for index, rock in ipairs(CollectionService:GetTagged(Settings.RockTag)) do
-        if rock:IsA("Model") and rock.PrimaryPart then
-            local current = (rock:GetPivot().Position - position).Magnitude
-            if current <= distance then
-                nearestId, distance = rock:GetAttribute("MiningRockId"), current
-            end
-        end
-    end
-    if nearestId then
-        self._lastPickup = now
-        FX.Network:SendMsgToServer("C2S_PickUpOre", nearestId)
-    end
-end
-
---- 刷新公共倒计时和矿区操作；背矿时隐藏挥击按钮并停止拾取。
+--- 刷新公共倒计时和换批提示，并保持背包道具名称本地化。
 function Comp:Refresh()
     local now = os.clock()
     local deadline = workspace:GetAttribute(Settings.RefreshAttribute)
@@ -246,34 +214,12 @@ function Comp:Refresh()
     else
         self._countdown.Text = Text.Tr(TranslationTexts.Preparing)
     end
-    local character = self:GetPlayerCharacter()
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    local root = humanoid and humanoid.RootPart
-    local ground = FX.Loader:FindFromWorkspace(Settings.GroundPath)
-    local inQuarry = root and ground and humanoid.Health > 0 and not humanoid.PlatformStand
-        and self:GetNumber(_G.PlayerDataConfig.ForgeStation) <= 0 and Settings.IsInQuarry(ground, root.Position)
-    self:RefreshStick(character)
-    local canInteract = inQuarry == true and not character:GetAttribute(Settings.CarryAttribute)
-    self._button.Visible = canInteract and self._stick ~= nil
-    if self._button.Visible then
-        self._buttonTitle.Text = Text.Tr(self._stick.Parent == character
-            and TranslationTexts.SwingStick or TranslationTexts.EquipStick)
-        self._buttonDetail.Text = Text.Tr(TranslationTexts.StickDetail)
-    end
-    if canInteract then
-        self:TryPickUp(root.Position, now)
-    end
     self:RefreshToolNames()
 end
 
---- 清理矿场自有的按钮、提示、特效，恢复被挥击覆盖的关节。
+--- 还原镜头，并清理矿场提示、特效及监听。
 function Comp:Dtor()
-    if self._swingTransforms then
-        self:ResetSwingPose()
-    end
-    if self._stickActivated then
-        self._stickActivated:Disconnect()
-    end
+    self:RestoreMiningCamera()
     if self._effects then
         self._effects:Destroy()
     end
@@ -281,9 +227,6 @@ function Comp:Dtor()
     if self._refreshTextEffect then
         self._refreshTextEffect:Destroy()
         self._refreshNotice:Destroy()
-    end
-    if self._button then
-        self._button:Destroy()
     end
 end
 

@@ -19,9 +19,9 @@ return {
         "C2S_OfferRawSword",
         "C2S_ReplyRawSword",
         -- 拾取只提交公共矿石编号；挥棍和熔炼不接受客户端目标。
-        "C2S_PickUpOre",
-        "C2S_SwingMiningStick",
         "C2S_SmeltSword",
+        -- 单向；参数为盘面内的世界坐标 Vector2(X, Z)，身份由网络层提供。
+        "C2S_CastMiningClaw",
         -- upgradeId: smelt/forge/income；expectedLevel: 整数 0..19；服务端决定价格与新等级。
         "C2S_UpgradeWorkshop",
         -- failureId: 当前损毁进度的服务端标识；费用及恢复内容均由服务端决定。
