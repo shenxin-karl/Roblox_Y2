@@ -17,6 +17,7 @@ local TranslationTexts = Text.Define("MainItemDescription", {
     GM = "GM",
     Multiplier = "×{rate} Cash",
     MultiplierMaxed = "Max level",
+    FriendBonus = "Friend Boost: +{percent:int}%",
 })
 local Component = FX.Class("CMainUICompClass", "FCUICompClass")
 
@@ -45,6 +46,7 @@ function Component:OnReady()
     end))
     self:BindCommerceNavigation()
     self:BindMoneyMultiplierButton()
+    self:BindEarningsHUD()
     -- 侧栏只打开工坊组件，关闭及重复打开的刷新由生成 View 负责。
     self:TrackConnection(FXLoader:Here(self._rootNode, "SideNav.Upgrade").Activated:Connect(function()
         self:GetOwner():RequireComponent("CUpgradeWorkshopUICompClass"):Show()
@@ -88,6 +90,33 @@ function Component:OnReady()
         self:BindCharacterTools(character)
     end
     self:Show()
+end
+
+--- 主 HUD 显示同服好友加成，并在好友状态或语言变化时刷新。
+function Component:BindEarningsHUD()
+    local wallet = FXLoader:Here(self._rootNode, "Wallet")
+    local friendLabel = Instance.new("TextLabel")
+    friendLabel.Name = "FriendBoost"
+    friendLabel.Position = UDim2.fromOffset(0, -26)
+    friendLabel.Size = UDim2.new(1, 0, 0, 24)
+    friendLabel.BackgroundTransparency = 1
+    friendLabel.Font = Enum.Font.FredokaOne
+    friendLabel.TextSize = 18
+    friendLabel.TextColor3 = Color3.fromRGB(181, 255, 241)
+    friendLabel.TextStrokeTransparency = 0.3
+    friendLabel.TextXAlignment = Enum.TextXAlignment.Left
+    friendLabel.AutoLocalize = false
+    self._friendBoostLabel = friendLabel
+    friendLabel.Parent = wallet
+
+    local friend = self:RequireComponent("FCFriendComp")
+    local function RefreshFriendBoost()
+        local bonus = MoneyMultiplier.GetFriendBonus(friend:GetFriendCountInRoom())
+        friendLabel.Text = Text.Tr(TranslationTexts.FriendBonus, {percent = bonus * 100})
+    end
+    self:SubscribeEvent("FriendStateChanged", RefreshFriendBoost)
+    self:TrackConnection(FC.Localization.Changed:Connect(RefreshFriendBoost))
+    RefreshFriendBoost()
 end
 
 --- 复用原生 HUD 的左上商店、右上导航和侧栏福利入口。
@@ -373,8 +402,11 @@ function Component:BindCharacterTools(character)
     end
 end
 
---- 清理装备监听和自有道具说明，仅隐藏 Studio 提供的 HUD 模板副本。
+--- 清理自建界面节点和装备监听，仅隐藏 Studio 提供的 HUD 模板副本。
 function Component:Dtor()
+    if self._friendBoostLabel then
+        self._friendBoostLabel:Destroy()
+    end
     if self._gmButton then
         self._gmButton:Destroy()
     end

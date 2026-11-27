@@ -3,7 +3,8 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local FXLoader = _G.FX.Loader
 local ActionButton = {}
-local PopupNames = {"UpgradeWorkshopUI", "OfflineIncomeUI", "WelfareUI", "GMPanelUI", "AuraShopUI"}
+local PopupNames = {"UpgradeWorkshopUI", "OfflineIncomeUI", "WelfareUI", "GMPanelUI", "AuraShopUI",
+    "CurrencyShopUI", "ShopPurchaseUI"}
 local BUTTON_WIDTH, BUTTON_HEIGHT = 180, 60
 local BUTTON_GAP, EDGE_PADDING = 8, 12
 local worldLayer

@@ -184,7 +184,7 @@ function TextPrompt.CreateInstruction(owner, playerGui, tips)
     local scale = Instance.new("UIScale")
     scale.Parent = label
     local tipsScreen = tips.Parent
-    --- 沿用通用提示的安全区；只有可用视口较小时才降低字号上限，给长译文留出换行空间。
+    --- 沿用通用提示的安全区和比例坐标；小视口降低字号上限，给长译文留出换行空间。
     local function UpdateLayout()
         screen.ScreenInsets = tipsScreen.ScreenInsets
         local size = screen.AbsoluteSize
@@ -195,11 +195,14 @@ function TextPrompt.CreateInstruction(owner, playerGui, tips)
         textSizeConstraint.MaxTextSize = layoutScale < 0.6 and 16 or 32
         scale.Scale = layoutScale
         label.Size = UDim2.fromOffset(1024, math.max(48, 48 / layoutScale))
-        local y = tips.Position.Y.Offset
+        local positionY = tips.Position.Y
+        local yScale, yOffset = positionY.Scale, positionY.Offset
         if tipsScreen.Enabled and tipsScreen:FindFirstChild("ActiveTip") then
-            y += tips.Size.Y.Offset + 12 * layoutScale
+            local height = tips.Size.Y
+            yScale += height.Scale
+            yOffset += height.Offset + 12 * layoutScale
         end
-        label.Position = UDim2.new(0.5, 0, 0, y)
+        label.Position = UDim2.new(0.5, 0, yScale, yOffset)
     end
     --- 通用提示显示或淡出完毕时调整说明的位置。
     --- @param child Instance 新增或移除的直属节点。

@@ -105,7 +105,7 @@ function Comp:OnReady()
     end)
 end
 
---- 刚上台时保留剑胚的外观和变异光环，首次升品质时切换到新武器。
+--- 刚上台时展示剑胚，升品质时换成新武器，全程沿用本次锻造的变异。
 --- @param data table 服务端同步的最新锻造状态。
 --- @param previous table? 上一次同步状态；进台时不传。
 function Comp:ApplyForgeData(data, previous)
@@ -124,8 +124,8 @@ function Comp:ApplyForgeData(data, previous)
     end
     local displayQuality = data.HammerCount == 0 and 1 or data.Quality
     local upgradeFrom = upgraded and (previous.HammerCount == 0 and 1 or data.Quality - 1) or nil
-    local mutationId = data.HammerCount == 0 and data.MutationId or nil
-    self._effects:ApplyWeapon(displayQuality, data.Active == true and data.Outcome ~= "Destroyed", upgradeFrom, mutationId)
+    self._effects:ApplyWeapon(displayQuality, data.Active == true and data.Outcome ~= "Destroyed", upgradeFrom,
+        data.MutationId)
 end
 
 --- 显示当前损毁武器的恢复报价，玩家确认后才提交。

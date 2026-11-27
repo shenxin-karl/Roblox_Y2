@@ -1,10 +1,11 @@
 -- 武器出售、离线领取与同服剑胚赠送；物品和货币只经公开接口与奖励事务提交。
 local HttpService = game:GetService("HttpService")
-local FX = _G.FX
+local FX, FS = _G.FX, _G.FS
 local Fields = _G.PlayerDataConfig
 local Rules = FX.Loader:RequireShared("Scripts.Game.Shared.SwordRules")
 local Welfare = FX.Loader:RequireShared("Scripts.Game.Shared.WelfareRules")
 local Utility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
+local Mailbox = FX.Loader:Require(script.Parent.Parent, "Service.SSwordGiftMailbox")
 local Config = _G.GameConfig.CommonConfig
 local TranslationTexts = FX.Text.Define("WeaponEconomy", {
     Sold = "Weapon sold for ${value}.",
@@ -13,6 +14,7 @@ local TranslationTexts = FX.Text.Define("WeaponEconomy", {
     PaidGiftSent = "Sword blank sent to {name} for {value} diamonds.",
     GiftReceived = "Received a sword blank from {name}.",
     GiftRequested = "Gift request sent to {name}. Waiting for their reply.",
+    GiftAccepted = "{name} accepted your gift. Delivery is pending.",
     GiftBusy = "A gift request is already pending. Please wait for it to finish.",
     GiftDeclined = "{name} declined your gift.",
     GiftExpired = "The gift request expired.",
@@ -27,6 +29,14 @@ local TranslationTexts = FX.Text.Define("WeaponEconomy", {
 })
 local Comp = FX.Class("SEconomyCompClass", "FSPlayerCompClass")
 
+--- 用持久化的属性重建一件剑胚；重试不重抽幸运或变异。
+--- @param gift table 已确认的赠送属性。
+--- @return table 接收方的奖励列表。
+local function GiftRewards(gift)
+    return {{Type = "Item", ItemId = Rules.BlankItemId, Count = 1,
+        ExtraData = {MutationId = gift.MutationId, blankLuckLevel = gift.blankLuckLevel}}}
+end
+
 --- 返回协议管理器使用的协作名。
 --- @return string 经济组件名。
 function Comp:GetCompName()
@@ -36,6 +46,103 @@ end
 --- 登录后启用交互，所有待确认赠送仅属于当前在线会话。
 function Comp:OnPlayerLogin()
     self._active, self._lastRequest = true, -math.huge
+    self._giftPollAt = 0
+end
+
+--- 先保存赠送方的扣费和发件记录，再投递；失败保留记录，重登后继续。
+--- @param player table 开始本次处理时的玩家对象。
+--- @param userId number 赠送方 UserId。
+--- @param session string 开始本次处理时的档案会话。
+function Comp:SendPendingGift(player, userId, session)
+    local transfer = player:GetTable(Fields.SwordGiftTransfer)
+    local gift = transfer.Pending
+    local storage = FS.PlayerKVDataManager
+    if not gift or not storage:Save(userId, session) or not Mailbox.Publish(userId, gift) then
+        return
+    end
+    local receiver = FS.PlayerManager:GetPlayerObject(gift.ReceiverId)
+    if receiver then
+        receiver:RequireComponent("SEconomyComp")._giftPollAt = 0
+    end
+    if not storage:IsSessionActive(userId, session) then
+        return
+    end
+    -- 收件游标可能在保存等待期间变化，清理时读取最新字段。
+    local current = player:GetTable(Fields.SwordGiftTransfer)
+    if not current.Pending or current.Pending.Sequence ~= gift.Sequence then
+        return
+    end
+    current.Pending = nil
+    if player:SetTable(Fields.SwordGiftTransfer, current) then
+        player:ShowLocalizedTips(gift.Cost == 0 and TranslationTexts.GiftSent or TranslationTexts.PaidGiftSent,
+            {name = gift.ReceiverName, value = Utility.NumberToText(gift.Cost)})
+    end
+end
+
+--- 领取按收件顺序推进。游标和发奖同档提交，保存确认前不从收件箱清除。
+--- @param player table 开始本次处理时的玩家对象。
+--- @param userId number 接收方 UserId。
+--- @param session string 开始本次处理时的档案会话。
+function Comp:ReceivePendingGift(player, userId, session)
+    local success, box = Mailbox.Read(userId)
+    local storage = FS.PlayerKVDataManager
+    if not success or not box or not storage:IsSessionActive(userId, session) then
+        return
+    end
+    local transfer = player:GetTable(Fields.SwordGiftTransfer)
+    local previousCursor = transfer.InboxCursor
+    local nextCursor = previousCursor + 1
+    local gift = box.Entries[tostring(nextCursor)]
+    local received = gift and player:RunDataTransaction(function()
+        if not player:RequireComponent("FSRewardComp"):AddRewards(GiftRewards(gift)) then
+            return false
+        end
+        transfer.InboxCursor = nextCursor
+        return player:SetTable(Fields.SwordGiftTransfer, transfer)
+    end)
+    local cursor = if received then nextCursor else previousCursor
+    if cursor <= box.Ack or not storage:Save(userId, session) then
+        return
+    end
+    local acknowledged = Mailbox.Acknowledge(userId, cursor)
+    if not storage:IsSessionActive(userId, session) then
+        return
+    end
+    if received then
+        player:ShowLocalizedTips(TranslationTexts.GiftReceived, {name = gift.SenderName})
+    end
+    if acknowledged and cursor < box.Tail and received then
+        self._giftPollAt = 0
+    end
+end
+
+--- 复用玩家秒更新处理恢复；网络或存储等待不阻塞其他玩家。
+function Comp:OnUpdate()
+    if not self._active or self._giftWorker or os.clock() < self._giftPollAt then
+        return
+    end
+    local userId = self:GetPlayerId()
+    local session = FS.PlayerKVDataManager:GetSessionToken(userId)
+    if not session then
+        return
+    end
+    local player = self:GetPlayerObject()
+    self._giftWorker = true
+    self._giftPollAt = os.clock() + 30
+    task.defer(function()
+        local ok, err = xpcall(function()
+            if FS.PlayerKVDataManager:IsSessionActive(userId, session) then
+                self:SendPendingGift(player, userId, session)
+            end
+            if FS.PlayerKVDataManager:IsSessionActive(userId, session) then
+                self:ReceivePendingGift(player, userId, session)
+            end
+        end, debug.traceback)
+        self._giftWorker = nil
+        if not ok then
+            warn("[SwordGift] Transfer retry scheduled", userId, err)
+        end
+    end)
 end
 
 --- 所有经济请求共用短节流，离服或旧会话不能继续处理。
@@ -148,7 +255,7 @@ function Comp:OfferGift(targetId, expectedCost)
         senderPlayer:ShowLocalizedTips(TranslationTexts.Failed)
         return
     end
-    if self._outgoing or other._offer then
+    if self._outgoing or other._offer or self:GetTableView(Fields.SwordGiftTransfer).Pending then
         senderPlayer:ShowLocalizedTips(TranslationTexts.GiftBusy)
         return
     end
@@ -176,7 +283,7 @@ function Comp:OfferGift(targetId, expectedCost)
     senderPlayer:ShowLocalizedTips(TranslationTexts.GiftRequested, {name = other:GetPlayerNode().DisplayName})
 end
 
---- 确认时重新检查价格、余额、距离、物品和容量，只对成功交付的赠送收费并推进任务。
+--- 核验接收确认后，将扣费、任务进度与可恢复的发件记录一起提交。
 --- @param token any 服务端生成并发给本接收者的赠送令牌。
 --- @param accepted any 接收者的明确确认或拒绝。
 function Comp:ReplyGift(token, accepted)
@@ -237,46 +344,46 @@ function Comp:ReplyGift(token, accepted)
         receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftUnavailable)
         return
     end
-    local rewards = {{Type = "Item", ItemId = Rules.BlankItemId, Count = 1,
-        ExtraData = {MutationId = traits.MutationId, blankLuckLevel = traits.blankLuckLevel}}}
+    local transfer = sender:GetTable(Fields.SwordGiftTransfer)
+    if transfer.Pending then
+        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftBusy)
+        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftUnavailable)
+        return
+    end
+    local gift = {
+        Sequence = transfer.Sequence + 1,
+        Cost = cost,
+        ReceiverId = self:GetPlayerId(),
+        ReceiverName = self:GetPlayerNode().DisplayName,
+        SenderName = sender:GetPlayerNode().DisplayName,
+        MutationId = traits.MutationId,
+        blankLuckLevel = traits.blankLuckLevel,
+    }
     local reward = self:RequireComponent("FSRewardComp")
-    if not reward:CanAddRewards(rewards) then
+    if not reward:CanAddRewards(GiftRewards(gift)) then
         senderPlayer:ShowLocalizedTips(TranslationTexts.GiftBackpackFull)
         receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftBackpackFull)
         return
     end
-    local remaining = sender:GetTable(Fields.Inventory)
-    remaining[tostring(offer.Grid)] = nil
-    local progress = Welfare.AdvanceTask(sender:GetTable(Fields.WelfareTasks), day, "gift")
-    local removed = senderPlayer:RunDataTransaction(function()
-        return sender:SetTable(Fields.Inventory, remaining)
+    items[tostring(offer.Grid)] = nil
+    transfer.Sequence, transfer.Pending = gift.Sequence, gift
+    local progress = Welfare.AdvanceTask(tasks, day, "gift")
+    local acceptedForDelivery = senderPlayer:RunDataTransaction(function()
+        return sender:SetTable(Fields.Inventory, items)
             and (not progress or sender:SetTable(Fields.WelfareTasks, progress))
             and (cost == 0 or sender:RequireComponent("FSRewardComp"):ConsumeRewards({
                 {Type = "Money", Currency = "Diamonds", Count = cost},
             }))
+            and sender:SetTable(Fields.SwordGiftTransfer, transfer)
     end)
-    if not removed then
+    if not acceptedForDelivery then
         senderPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
         receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
         return
     end
-    local success = receiverPlayer:RunDataTransaction(function()
-        return reward:AddRewards(rewards)
-    end)
-    if not success then
-        -- 两方事务不让出执行权；接收失败时恢复赠送者本次修改的原值。
-        senderPlayer:RunDataTransaction(function()
-            return sender:SetTable(Fields.Inventory, items)
-                and (not progress or sender:SetTable(Fields.WelfareTasks, tasks))
-                and (cost == 0 or sender:SetNumber(Fields.Diamonds, diamonds))
-        end)
-        senderPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
-        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftFailed)
-    else
-        senderPlayer:ShowLocalizedTips(cost == 0 and TranslationTexts.GiftSent or TranslationTexts.PaidGiftSent,
-            {name = self:GetPlayerNode().DisplayName, value = Utility.NumberToText(cost)})
-        receiverPlayer:ShowLocalizedTips(TranslationTexts.GiftReceived, {name = sender:GetPlayerNode().DisplayName})
-    end
+    senderPlayer:ShowLocalizedTips(TranslationTexts.GiftAccepted, {name = gift.ReceiverName})
+    sender._giftPollAt = 0
+    sender:OnUpdate()
 end
 
 --- 离服时立即取消旧会话的赠送，并告知另一方请求失效。

@@ -22,14 +22,13 @@ local AuraOffsets = {
 }
 
 --- 复用变异矿石的粒子素材，把角色光环收窄到剑身周围。
---- @param root Part 已按目标高度缩放的武器根部件。
+--- @param aura Attachment 武器根部件下用于统一显隐的变异特效容器。
+--- @param height number 已缩放的武器高度，单位 stud。
 --- @param template Model 对应变异的光环素材。
-local function addMutationAura(root, template)
-    local heightScale = root.Size.Y / 5
+local function addMutationAura(aura, height, template)
+    local heightScale = height / 5
     local offsetScale = Vector3.new(0.35, 1, 0.35) * heightScale
     local particleScale = 0.45 * heightScale
-    local aura = Instance.new("Attachment")
-    aura.Name = "MutationAura"
     for groupIndex, group in ipairs(template:GetChildren()) do
         local anchor = Instance.new("Attachment")
         anchor.Name = group.Name
@@ -58,7 +57,6 @@ local function addMutationAura(root, template)
             node.Size = NumberSequence.new(points)
         end
     end
-    aura.Parent = root
 end
 
 --- 将任意多零件武器归一到指定高度，返回带真实包围尺寸的透明根部件。
@@ -68,7 +66,6 @@ end
 --- @return Part 包含外观模型的可定位根部件，调用方负责挂载和销毁。
 function Visual.Create(quality, height, mutationId)
     local model = Templates[quality]:Clone()
-    MutationVisual.ApplyWeapon(model, mutationId)
     for index, node in ipairs(model:GetDescendants()) do
         if node:IsA("BaseScript") or node:IsA("ModuleScript") then
             node:Destroy()
@@ -91,9 +88,22 @@ function Visual.Create(quality, height, mutationId)
         end
     end
     model.Parent = root
-    local mutationTemplate = mutationId and MutationTemplates[mutationId]
-    if mutationTemplate then
-        addMutationAura(root, mutationTemplate)
+    if mutationId and mutationId ~= "Normal" then
+        local aura = Instance.new("Attachment")
+        aura.Name = "MutationAura"
+        local mutationTemplate = MutationTemplates[mutationId]
+        if MutationVisual.ApplyWeaponFinish(model, mutationId) then
+            if mutationId == "Diamond" or mutationId == "Rainbow" then
+                MutationVisual.AddWeaponSparkles(aura, size)
+            end
+        elseif mutationTemplate then
+            addMutationAura(aura, size.Y, mutationTemplate)
+            local auraEmitter = aura:FindFirstChildWhichIsA("ParticleEmitter", true)
+            if auraEmitter then
+                MutationVisual.AddWeaponFlow(aura, size, auraEmitter.Color)
+            end
+        end
+        aura.Parent = root
     end
     return root
 end

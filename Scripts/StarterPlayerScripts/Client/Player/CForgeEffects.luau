@@ -146,7 +146,7 @@ end
 
 --- 按品质和变异重建台上的本地剑，并按实际厚度对齐锤头和火星。
 --- @param quality number 服务端同步的当前品质。
---- @param mutationId string? 剑胚的变异 ID，切换到锻造后的外观时不传。
+--- @param mutationId string? 本次锻造的变异 ID，换剑后继续沿用。
 function Effects:SetQuality(quality, mutationId)
     if self._quality == quality and self._mutationId == mutationId then
         return
@@ -170,7 +170,7 @@ function Effects:SetQuality(quality, mutationId)
     self._weaponHighlight.Adornee = self._sword:FindFirstChildOfClass("Model")
 end
 
---- 隐藏本人近景中的剑时同时关闭剑胚光环并清理已发出的粒子。
+--- 隐藏本人近景中的剑时，同时关闭变异特效并清理已发出的粒子。
 --- @param visible boolean 是否显示本地外观。
 function Effects:SetWeaponVisible(visible)
     for index, node in ipairs(self._sword:GetDescendants()) do
@@ -181,7 +181,9 @@ function Effects:SetWeaponVisible(visible)
     local aura = self._sword:FindFirstChild("MutationAura")
     if aura then
         for index, node in ipairs(aura:GetDescendants()) do
-            if node:IsA("ParticleEmitter") then
+            if node:IsA("Beam") then
+                node.Enabled = visible
+            elseif node:IsA("ParticleEmitter") then
                 node.Enabled = visible
                 if not visible then
                     node:Clear()
@@ -195,19 +197,19 @@ end
 --- @param quality number? 目标展示品质，刚放上时使用原剑胚外观。
 --- @param visible boolean 动画结束后剑是否仍留在台上。
 --- @param upgradeFrom number? 本次升品质前的展示品质；未升级时不传。
---- @param mutationId string? 台上还是剑胚时的变异 ID。
+--- @param mutationId string? 本次锻造的变异 ID。
 function Effects:ApplyWeapon(quality, visible, upgradeFrom, mutationId)
     local upgrade = self._weaponUpgrade
-    if upgrade and upgrade.Quality == quality then
+    if upgrade and upgrade.Quality == quality and upgrade.MutationId == mutationId then
         upgrade.Visible = visible
         return
     end
     self._weaponUpgrade = nil
     self._weaponHighlight.Enabled = false
     if upgradeFrom then
-        self:SetQuality(upgradeFrom, self._mutationId)
+        self:SetQuality(upgradeFrom, mutationId)
         self:SetWeaponVisible(true)
-        self._weaponUpgrade = {Quality = quality, Visible = visible, Age = 0}
+        self._weaponUpgrade = {Quality = quality, MutationId = mutationId, Visible = visible, Age = 0}
         self._weaponHighlight.FillTransparency = 1
         self._weaponHighlight.Enabled = true
     else
@@ -233,7 +235,7 @@ function Effects:UpdateWeapon(deltaTime)
         upgrade.Age += deltaTime
         if upgrade.Age >= WhitenDuration + WhiteHoldDuration then
             self._weaponHighlight.Enabled = false
-            self:SetQuality(upgrade.Quality)
+            self:SetQuality(upgrade.Quality, upgrade.MutationId)
             self:SetWeaponVisible(true)
             upgrade.RevealAge = 0
         end

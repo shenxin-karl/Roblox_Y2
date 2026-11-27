@@ -147,11 +147,11 @@ function Component:RequestGameplay(action, payload)
     return {success = false, key = TranslationTexts.Unknown}
 end
 
---- 只恢复已声明字段，保留当前基地分配与框架档案中的支付回执去重记录。
+--- 恢复玩法字段，保留当前基地、赠送交付进度与支付去重记录。
 function Component:ResetData()
     local player = self:GetPlayerObject()
     for fieldName, field in pairs(Fields) do
-        if field == Fields.BaseId then
+        if field == Fields.BaseId or field == Fields.SwordGiftTransfer then
             continue
         end
         if field.Type == "number" then

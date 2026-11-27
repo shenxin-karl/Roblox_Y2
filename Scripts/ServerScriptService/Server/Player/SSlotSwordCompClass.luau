@@ -38,6 +38,7 @@ end
 
 --- 首次赠剑由奖励框架提交；角色重生不走赠送入口。
 function Comp:OnPlayerLogin()
+    self._friendBonus = self:ReadFriendBonus()
     self._active = true
     local offline = self:GetTable(Fields.OfflineIncome)
     local now = os.time()
@@ -239,24 +240,28 @@ function Comp:Transfer(slotId)
     end
 end
 
---- 每次按完整在线秒结算；离服时 View 已失效，使用公开副本接口完成最后结算。
+--- 平时按完整在线秒结算；发现好友倍率变化时按旧倍率结清到本次观察时刻。
 function Comp:Accrue()
     if not self._active then
         return
     end
     local now = os.clock()
+    local nextFriendBonus = self:ReadFriendBonus()
+    local friendBonusChanged = nextFriendBonus ~= self._friendBonus
     local data = self:GetTable(Fields.BaseData)
-    local incomeMultiplier = WorkshopRules.GetMultiplier(self:GetTable(Fields.UpgradeWorkshop).income)
+    local incomeMultiplier = self:GetOnlineIncomeMultiplier()
     local changed = false
     for slotId, view in pairs(self._displays) do
-        local seconds = math.floor(now - view.LastIncome)
+        local elapsed = now - view.LastIncome
+        local seconds = if friendBonusChanged then elapsed else math.floor(elapsed)
         local sword = data.SlotData[tostring(slotId)]
         if seconds > 0 and sword and sword.ItemId == Rules.ItemId then
             view.LastIncome += seconds
-            sword.StoredMoney += Rules.GetIncome(sword) * incomeMultiplier * self:GetPaidMultiplier() * seconds
+            sword.StoredMoney += Rules.GetIncome(sword) * incomeMultiplier * seconds
             changed = true
         end
     end
+    self._friendBonus = nextFriendBonus
     if changed then
         self:SetTable(Fields.BaseData, data)
     end
@@ -395,6 +400,7 @@ end
 
 --- 发布公开展示值；离服结算触发数据通知时仍从公开副本读取倍率，不依赖已失效的 View。
 function Comp:Publish()
+    local incomeMultiplier = self:GetOnlineIncomeMultiplier()
     if self._collectAllDisplay then
         local total = 0
         for slotId, sword in pairs(self:GetTable(Fields.BaseData).SlotData) do
@@ -410,8 +416,7 @@ function Comp:Publish()
         display:SetAttribute("HasSword", sword ~= nil)
         if sword then
             display:SetAttribute("Level", sword.Level)
-            display:SetAttribute("Income", Rules.GetIncome(sword)
-                * WorkshopRules.GetMultiplier(self:GetTable(Fields.UpgradeWorkshop).income) * self:GetPaidMultiplier())
+            display:SetAttribute("Income", Rules.GetIncome(sword) * incomeMultiplier)
             display:SetAttribute("UpgradePrice", Rules.GetUpgradePrice(sword.Level))
             display:SetAttribute("StoredMoney", sword.StoredMoney)
             display:SetAttribute("Quality", sword.Quality)
@@ -423,6 +428,19 @@ end
 --- @return number 当前有效付费金币倍率。
 function Comp:GetPaidMultiplier()
     return MoneyMultiplier.GetMultiplier(self:GetNumber(Fields.PaidMultiplierTier))
+end
+
+--- @return number 服务端当前已验证的同服好友加成。
+function Comp:ReadFriendBonus()
+    local friendCount = FS.FriendService:GetFriendCountInRoom(self:GetPlayerId())
+    return MoneyMultiplier.GetFriendBonus(friendCount)
+end
+
+--- 跟随 Y1 把好友加成加到付费倍率上；离线快照仍使用原有倍率。
+--- @return number 最近一次结算区间的在线收益倍率。
+function Comp:GetOnlineIncomeMultiplier()
+    return WorkshopRules.GetMultiplier(self:GetTable(Fields.UpgradeWorkshop).income)
+        * (self:GetPaidMultiplier() + self._friendBonus)
 end
 
 --- 保存基地秒收益供离线结算，并将同一服务端数值用于当月最高秒收益。
@@ -449,8 +467,8 @@ end
 --- @param serverTime number 框架秒更新时戳，在线间隔使用单调时钟计算。
 function Comp:OnUpdate(serverTime)
     if self._active then
-        self:RefreshSlots()
         self:Accrue()
+        self:RefreshSlots()
         self:CollectAll()
         for slotId in pairs(self._displays) do
             self:Collect(slotId)

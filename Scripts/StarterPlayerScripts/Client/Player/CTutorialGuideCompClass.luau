@@ -17,7 +17,6 @@ local TranslationTexts = Text.Define("Y2Tutorial", {
     Carry = "Carry the ore out of the quarry and back to your base.",
     Smelt = "Use your furnace to make a sword blank ({ore:int}/{oreNeeded:int} ore).",
     Forge = "Equip your sword blank and put it on your workbench.",
-    Forging = "Strike as many times as you like, or finish the weapon now.",
     Pending = "Make room in your backpack, then collect the finished weapon at your workbench.",
     Place = "Equip your homemade weapon and place it in your base to earn cash.",
     Replace = "Remove the weapon in this slot, then place your homemade weapon here.",
@@ -67,41 +66,26 @@ function Guide:GetCompName()
     return "CTutorialGuideComp"
 end
 
---- 创建独立提示层，避免改动目标界面及其按钮。
+--- 复用框架的黄色步骤说明和通用提示避让；按钮及高亮保留在项目层。
 function Guide:OnReady()
+    local playerGui = Loader:Here(self:GetPlayerNode(), "PlayerGui", math.huge)
+    local commonUI = self:RequireComponent("CCommonUICompClass")
+    self._instructionGui, self._instruction = TextPrompt.CreateInstruction(self, playerGui, commonUI.Tips)
+    self._instruction.Visible = false
     local gui = Instance.new("ScreenGui")
     gui.Name = "TutorialHint"
     gui.DisplayOrder = 40
     gui.ResetOnSpawn = false
-    gui.Parent = self:GetPlayerNode():WaitForChild("PlayerGui")
+    gui.Parent = playerGui
     self._gui = gui
-    local panel = Instance.new("TextLabel")
-    panel.AutoLocalize = false
-    panel.AnchorPoint = Vector2.new(0.5, 0)
-    panel.Position = UDim2.new(0.5, 0, 0, 52)
-    panel.Size = UDim2.new(0.78, 0, 0, 59)
-    local limit = Instance.new("UISizeConstraint")
-    limit.MaxSize = Vector2.new(560, 59)
-    limit.Parent = panel
-    panel.BackgroundColor3 = Color3.fromRGB(30, 24, 18)
-    panel.BackgroundTransparency = 0.12
-    panel.TextColor3 = Color3.new(1, 1, 1)
-    panel.Font = Enum.Font.GothamBold
-    panel.TextSize = 15
-    panel.TextWrapped = true
-    panel.Parent = gui
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft, padding.PaddingRight = UDim.new(0, 12), UDim.new(0, 12)
-    padding.Parent = panel
-    self._panel = panel
     local toggle = Instance.new("TextButton")
     toggle.AutoLocalize = false
     toggle.AnchorPoint = Vector2.new(0.5, 0)
     toggle.Position = UDim2.new(0.5, 0, 0, 115)
     toggle.Size = UDim2.fromOffset(100, 27)
-    toggle.TextColor3 = panel.TextColor3
-    toggle.BackgroundColor3 = panel.BackgroundColor3
-    toggle.Font = panel.Font
+    toggle.TextColor3 = Color3.new(1, 1, 1)
+    toggle.BackgroundColor3 = Color3.fromRGB(30, 24, 18)
+    toggle.Font = Enum.Font.GothamBold
     toggle.TextSize = 13
     toggle.Parent = gui
     self._toggle = toggle
@@ -279,9 +263,7 @@ end
 function Guide:Format(target)
     local kind, step = target.type, target.step
     local key = kind
-    if kind == "Forge" and target.inForge then
-        key = "Forging"
-    elseif kind == "Collect" and target.waiting then
+    if kind == "Collect" and target.waiting then
         key = "Waiting"
     elseif (kind == "Upgrade" or kind == "Unlock") and target.short and target.short > 0 then
         key = kind .. "Short"
@@ -305,7 +287,7 @@ function Guide:Format(target)
     return action
 end
 
---- 刷新提示与箭头；六槽完成只通过短暂扫光提示。
+--- 刷新步骤说明与箭头；正在锻造时隐藏说明，六槽完成只显示短暂扫光。
 function Guide:Refresh()
     local target = self._guideTarget
     local character = self:GetPlayerCharacter()
@@ -313,18 +295,18 @@ function Guide:Refresh()
     local root = humanoid and humanoid.Health > 0 and humanoid.RootPart
     local visible = target and target.type ~= "None" and target.type ~= "Complete" and root ~= nil and root ~= false
     local hidden = visible and target.type == "Hidden"
-    self._panel.Visible = visible and not hidden or false
+    self._instruction.Visible = visible and not hidden and not (target.type == "Forge" and target.inForge) or false
     self._toggle.Visible = visible and target.step >= 9 and target.step <= 12 or false
     self._outline.Visible = false
     self._highlight.Adornee = nil
     if self._toggle.Visible then
         self._toggle.Text = Text.Tr(hidden and TranslationTexts.Show or TranslationTexts.Hide)
     end
-    if not self._panel.Visible then
+    if not self._instruction.Visible then
         self:HideGuideArrow()
         return
     end
-    self._panel.Text = self:Format(target)
+    self._instruction.Text = self:Format(target)
     if target.type ~= "Complete" and self._shownStep ~= target.step then
         self._shownStep = target.step
         FX.Network:SendMsgToServer("C2S_TutorialHint", "Shown", target.step)
@@ -460,7 +442,7 @@ function Guide:HideGuideArrow()
     self._arrowOverlay = nil
 end
 
---- 释放本组件的扫光、消息订阅与自建节点；箭头及引导订阅由基类释放。
+--- 释放步骤说明层、扫光、消息订阅及自建节点；箭头及引导订阅由基类释放。
 function Guide:Dtor()
     if self._noticeArea then
         FX.Network:UnRegServerMsgCallback("S2C_TutorialMilestone")
@@ -469,6 +451,9 @@ function Guide:Dtor()
     end
     if self._gui then
         self._gui:Destroy()
+    end
+    if self._instructionGui then
+        self._instructionGui:Destroy()
     end
     Guide.Super.Dtor(self)
 end

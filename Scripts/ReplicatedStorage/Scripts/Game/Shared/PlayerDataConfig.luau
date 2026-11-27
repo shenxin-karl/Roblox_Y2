@@ -53,6 +53,11 @@ return {
         DefVal = {Day = -1, Progress = {}, Claims = {}},
         KVTable = PlayerKVEnum.ePlayerData, Sync = true,
     },
+    -- 赠送扣费与发件记录一起持久化；收件游标与发放一起持久化。
+    SwordGiftTransfer = {
+        Type = "table", Key = "SwordGiftTransfer", DefVal = {Sequence = 0, InboxCursor = 0},
+        KVTable = PlayerKVEnum.ePlayerData, Sync = false,
+    },
     -- 进度随玩家保存；SlotData 以字符串槽位编号保存各槽的业务数据，不保存场景实例。
     BaseData = {
         Type = "table", Key = "BaseData",

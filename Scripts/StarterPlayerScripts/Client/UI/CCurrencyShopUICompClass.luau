@@ -166,6 +166,9 @@ end
 
 --- 仅未解锁时打开付费确认；已拥有特权直接免费领取。
 function Component:OpenCollectAll()
+    if not self.State or self.State.busy then
+        return
+    end
     local commonUI = self:GetOwner():RequireComponent("CCommonUICompClass")
     if not self:GetFlag(Fields.CollectAllIncomeUnlocked) then
         DiamondPurchase.Confirm({
