@@ -51,8 +51,8 @@ export class State extends BaseState<StateValues> {
   forgeTargetOffset = 1;
   diamonds: number;
   paidMultiplierTier: number;
-  lastDiamondRewardDay = 0;
-  autoBuyPaidMultiplier = true;
+  lastDiamondRewardDay = 1; // 第一天发放新手钻石，第二天起发放每日钻石。
+  autoBuyPaidMultiplier = false;
   autoUnlockSlots = false;
 
   constructor(
