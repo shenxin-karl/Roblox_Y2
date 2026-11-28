@@ -53,7 +53,7 @@
   },
   "miningRefreshInterval": {
     "kind": "number",
-    "value": 300,
+    "value": 180,
     "editor": {
       "displayName": "矿石整批刷新间隔（秒）",
       "folder": "矿石刷新",
@@ -171,7 +171,7 @@
       "folder": "矿石刷新",
       "display": {
         "kind": "curve",
-        "xLabel": "变异 ID（1 Normal / 2 Silver / 3 Gold / 4 Frost / 5 Inferno / 6 Astral / 7 Diamond / 8 Rainbow）",
+        "xLabel": "变异ID",
         "sampleRange": {
           "min": 1,
           "max": 8,
@@ -179,10 +179,10 @@
         },
         "columns": {
           "probability": {
-            "displayName": "单块出现概率"
+            "displayName": "概率"
           },
           "incomeMultiplier": {
-            "displayName": "武器收益倍率（暂定）"
+            "displayName": "收益倍率"
           }
         }
       }
@@ -256,7 +256,7 @@
       "rounding": "none"
     },
     "editor": {
-      "displayName": "熔炼原料幸运抽取权重（临时数值）",
+      "displayName": "熔炼原料幸运抽取权重",
       "folder": "手动打造",
       "display": {
         "kind": "curve",
@@ -282,31 +282,31 @@
       {
         "key": "upgradeCost",
         "formula": {
-          "kind": "Power",
+          "kind": "BaseExp",
           "base": 0,
           "multiplier": {
             "kind": "constant",
-            "value": 25
+            "value": 10
           },
           "power": {
             "kind": "constant",
-            "value": 1
+            "value": 1.2
           },
-          "rounding": "floor"
+          "rounding": "none"
         }
       },
       {
         "key": "levelMultiplier",
         "formula": {
-          "kind": "Power",
-          "base": 0.5,
+          "kind": "BaseExp",
+          "base": -0.08,
           "multiplier": {
             "kind": "constant",
-            "value": 0.5
+            "value": 1
           },
           "power": {
             "kind": "constant",
-            "value": 1
+            "value": 1.08
           },
           "rounding": "none"
         }
@@ -314,20 +314,21 @@
     ],
     "editor": {
       "displayName": "武器升级曲线",
+      "folder": "武器",
       "display": {
         "kind": "curve",
-        "xLabel": "武器当前等级",
+        "xLabel": "等级",
         "sampleRange": {
           "min": 1,
-          "max": 10,
+          "max": 100,
           "step": 1
         },
         "columns": {
           "upgradeCost": {
-            "displayName": "升一级费用"
+            "displayName": "升级消耗"
           },
           "levelMultiplier": {
-            "displayName": "等级倍率"
+            "displayName": "收益倍率"
           }
         }
       }
@@ -361,7 +362,7 @@
       }
     ],
     "editor": {
-      "displayName": "熔炼幸运升级价格（临时数值）",
+      "displayName": "熔炼幸运升级价格",
       "folder": "玩家升级",
       "display": {
         "kind": "curve",
@@ -407,7 +408,7 @@
       }
     ],
     "editor": {
-      "displayName": "武器锻造升级价格（临时数值）",
+      "displayName": "武器锻造升级价格",
       "folder": "玩家升级",
       "display": {
         "kind": "curve",
@@ -455,10 +456,10 @@
         "key": "effect",
         "formula": {
           "kind": "Power",
-          "base": 0.9,
+          "base": 0.5,
           "multiplier": {
             "kind": "constant",
-            "value": 0.1
+            "value": 0.5
           },
           "power": {
             "kind": "constant",
@@ -469,7 +470,7 @@
       }
     ],
     "editor": {
-      "displayName": "玩家收益倍率升级（临时数值）",
+      "displayName": "玩家收益倍率升级",
       "folder": "玩家升级",
       "display": {
         "kind": "curve",
@@ -501,20 +502,20 @@
     },
     "formula": {
       "kind": "BaseExp",
-      "base": 0,
+      "base": -240,
       "multiplier": {
         "kind": "constant",
-        "value": 1
+        "value": 200
       },
       "power": {
         "kind": "constant",
-        "value": 1.2
+        "value": 1.25
       },
-      "rounding": "none"
+      "rounding": "round"
     },
     "editor": {
-      "displayName": "武器品质基础秒收益（临时数值）",
-      "folder": "基地收益",
+      "displayName": "武器品质基础秒收益",
+      "folder": "武器",
       "display": {
         "kind": "curve",
         "xLabel": "品质",
@@ -529,9 +530,9 @@
   },
   "initialDiamonds": {
     "kind": "number",
-    "value": 0,
+    "value": 35,
     "editor": {
-      "displayName": "初始钻石（新手35钻已用于默认2倍）",
+      "displayName": "新手赠送钻石",
       "folder": "钻石与付费倍率",
       "display": {
         "kind": "number",
@@ -543,14 +544,14 @@
   },
   "initialPaidMultiplierTier": {
     "kind": "number",
-    "value": 1,
+    "value": 0,
     "editor": {
-      "displayName": "新手默认已购倍率档位",
+      "displayName": "初始付费倍率档位（0 档为 1 倍）",
       "folder": "钻石与付费倍率",
       "display": {
         "kind": "number",
         "control": "number",
-        "min": 1,
+        "min": 0,
         "max": 11,
         "step": 1
       }
@@ -558,7 +559,7 @@
   },
   "dailyDiamondReward": {
     "kind": "number",
-    "value": 28,
+    "value": 18,
     "editor": {
       "displayName": "每日赠送钻石",
       "folder": "钻石与付费倍率",
@@ -576,7 +577,7 @@
       "key": "tier",
       "valueType": "number",
       "rounding": "none",
-      "min": 1,
+      "min": 0,
       "max": 11
     },
     "columns": [
@@ -604,6 +605,12 @@
           "multiplier": {
             "kind": "linear",
             "ranges": [
+              {
+                "fromInput": 0,
+                "toInput": 0,
+                "fromValue": 0,
+                "toValue": 0
+              },
               {
                 "fromInput": 1,
                 "toInput": 1,
@@ -681,13 +688,13 @@
       }
     ],
     "editor": {
-      "displayName": "付费倍率逐档购买（钻石方案暂定数值）",
+      "displayName": "付费倍率逐档购买（钻石方案）",
       "folder": "钻石与付费倍率",
       "display": {
         "kind": "curve",
         "xLabel": "目标档位",
         "sampleRange": {
-          "min": 1,
+          "min": 0,
           "max": 11,
           "step": 1
         },

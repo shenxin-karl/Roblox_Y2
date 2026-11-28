@@ -1,7 +1,7 @@
 import { sampleCurve, sampleCurveGroupColumn } from "@game-simulator/framework";
 import type { CurveGroupValue, CurveValue } from "@game-simulator/framework";
 import type { ProjectConfig } from "./Main";
-import type { SlotState, SwordState } from "./State";
+import type { SlotState, State, SwordState } from "./State";
 
 export type PlayerUpgradeKind = "smelting" | "forging" | "income";
 
@@ -46,6 +46,24 @@ export function getNextPaidMultiplier(config: ProjectConfig, tier: number): { ti
   };
 }
 
+/** 按武器品质采样基础秒收益，作为武器升级计价基数。 */
+export function calculateSwordQualityIncome(config: ProjectConfig, quality: number): number {
+  return sampleCurve(config.swordQualityIncomeCurve, quality);
+}
+
+/** 用武器品质和变异 ID 计算基础秒收益，供置换比较及实际收益结算使用。 */
+export function calculateSwordBaseIncome(config: ProjectConfig, quality: number, mutationId: number): number {
+  return calculateSwordQualityIncome(config, quality)
+    * sampleCurveGroupColumn(config.mutationCurves, "incomeMultiplier", mutationId);
+}
+
+/** 按武器品质、变异和当前全局倍率计算乘等级倍率前的秒收益，供升级回本计算使用。 */
+export function calculateSwordIncomeBeforeLevel(config: ProjectConfig, sword: SwordState, state: Pick<State, "playerUpgradeLevels" | "paidMultiplierTier">): number {
+  return calculateSwordBaseIncome(config, sword.quality, sword.mutationId)
+    * calculateIncomeUpgradeMultiplier(config, state.playerUpgradeLevels.income)
+    * calculatePaidMultiplier(config, state.paidMultiplierTier);
+}
+
 /** 汇总已解锁槽位内武器的在线秒收益，付费倍率只作用于金币，未入槽武器不产出。 */
 export function calculateBaseIncome(config: ProjectConfig, slots: readonly SlotState[], swords: readonly SwordState[], incomeLevel: number, paidMultiplierTier: number): number {
   const playerMultiplier = calculateIncomeUpgradeMultiplier(config, incomeLevel);
@@ -58,9 +76,8 @@ export function calculateBaseIncome(config: ProjectConfig, slots: readonly SlotS
     if (!sword) {
       continue;
     }
-    income += sampleCurve(config.swordQualityIncomeCurve, sword.quality)
+    income += calculateSwordBaseIncome(config, sword.quality, sword.mutationId)
       * calculateSwordLevelMultiplier(config.swordUpgradeCurves, sword.level)
-      * sampleCurveGroupColumn(config.mutationCurves, "incomeMultiplier", sword.mutationId)
       * playerMultiplier;
   }
   return income * calculatePaidMultiplier(config, paidMultiplierTier);
@@ -71,17 +88,18 @@ export function calculateSlotUnlockPrice(curve: CurveValue, slotId: number): num
   return sampleCurve(curve, slotId);
 }
 
-/** 按成品武器当前等级采样升一级费用；目标等级边界由升级 Action 在采样前检查。 */
-export function calculateSwordUpgradePrice(curves: CurveGroupValue, level: number): number {
-  return sampleCurveGroupColumn(curves, "upgradeCost", level);
+/** 品质基础秒收益乘当前等级的消耗倍率后向下取整，每级至少 1 金币。 */
+export function calculateSwordUpgradePrice(curves: CurveGroupValue, level: number, qualityIncome: number): number {
+  return Math.max(1, Math.floor(qualityIncome * sampleCurveGroupColumn(curves, "upgradeCost", level)));
 }
 
-/** 按当前等级和金币逐档累计可购买的升级次数与总费用；不超过配置等级上限，不修改状态。 */
-export function calculateSwordUpgradePlan(curves: CurveGroupValue, level: number, money: number): { levels: number; cost: number } {
+/** 按品质基础秒收益和余额逐档规划升级，遵守配置上限和本次目标等级。 */
+export function calculateSwordUpgradePlan(curves: CurveGroupValue, level: number, money: number, qualityIncome: number, targetLevel = Infinity): { levels: number; cost: number } {
+  const maxLevel = Math.min(curves.input.max ?? Infinity, targetLevel);
   let levels = 0;
   let cost = 0;
-  while (level + levels + 1 <= (curves.input.max ?? Infinity)) {
-    const price = calculateSwordUpgradePrice(curves, level + levels);
+  while (level + levels + 1 <= maxLevel) {
+    const price = calculateSwordUpgradePrice(curves, level + levels, qualityIncome);
     if (cost + price > money) {
       break;
     }

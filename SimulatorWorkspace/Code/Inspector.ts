@@ -4,7 +4,7 @@ import type { ProjectConfig } from "./Main";
 import type { State } from "./State";
 import type { Game } from "./Game";
 import { QueueSwordReplacementAction, ReplaceSwordAction, SetForgeTargetAction, UnlockSlotAction } from "./Actions";
-import { calculateSlotUnlockPrice, calculateSwordUpgradePlan } from "./Formulas";
+import { calculateSlotUnlockPrice, calculateSwordQualityIncome, calculateSwordUpgradePlan } from "./Formulas";
 
 export class SlotInspector extends BaseInspector<ProjectConfig, State> {
   BuildEditorUI({ selection }: { selection: InspectorSelection | null }): void {
@@ -123,7 +123,8 @@ export class SlotInspector extends BaseInspector<ProjectConfig, State> {
       if (slot.unlocked) {
         details.Text = `槽位 ${slot.id}\n${sword ? `品质 ${sword.quality}，Lv.${sword.level}` : "空槽位"}\n金钱：${state.money.toFixed(2)}`;
         if (sword && !upgradeBlocker) {
-          const plan = calculateSwordUpgradePlan(this.config.swordUpgradeCurves, sword.level, state.money);
+          const qualityIncome = calculateSwordQualityIncome(this.config, sword.quality);
+          const plan = calculateSwordUpgradePlan(this.config.swordUpgradeCurves, sword.level, state.money, qualityIncome);
           details.Text += `\n可升 ${plan.levels} 级 · ${plan.cost} 金币`;
         }
       } else {

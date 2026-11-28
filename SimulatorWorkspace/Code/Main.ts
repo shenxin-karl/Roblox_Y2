@@ -1,8 +1,10 @@
 import configValues from "../Data/config.json";
 import { Config, type CurveGroupValue, type CurveValue, type NumberConfigValue, type RuntimeConfig } from "@game-simulator/framework";
+import { ProjectCharts } from "./Charts";
 import { Game } from "./Game";
 import { SlotInspector } from "./Inspector";
 import { State } from "./State";
+import { ProjectWorkbenches } from "./Workbenches";
 
 export type ConfigValues = Omit<typeof configValues, "paidMultiplierCurves" | "mutationCurves"> & {
   initialUnlockedSlotCount: NumberConfigValue;
@@ -28,7 +30,9 @@ const config = new Config(configValues as ConfigValues) as ProjectConfig;
 const state = new State(config.initialUnlockedSlotCount, config.initialDiamonds, config.initialPaidMultiplierTier);
 const game = new Game();
 const inspector = new SlotInspector();
+const charts = new ProjectCharts();
+const workbenches = new ProjectWorkbenches();
 
 export function createProject() {
-  return { config, state, game, inspector };
+  return { config, state, game, inspector, charts, workbenches };
 }

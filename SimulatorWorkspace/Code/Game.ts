@@ -1,13 +1,19 @@
 import { Game as BaseGame, UIButton, UILabel, UIPanel } from "@game-simulator/framework";
 import type { DailyScheduleContext } from "@game-simulator/framework";
-import { BuyPaidMultiplierAction, ClaimDailyDiamondsAction, ClaimOfflineIncomeAction, InitializeMiningOresAction, QueueSwordReplacementAction, RefreshMiningOresAction, ReplaceSwordAction, SetAutoBuyPaidMultiplierAction, SetAutoUnlockSlotsAction, UnlockSlotAction, UpgradePlayerAction, UpgradeSwordMaxAction } from "./Actions";
+import { BuyPaidMultiplierAction, ClaimDailyDiamondsAction, ClaimOfflineIncomeAction, InitializeMiningOresAction, QueueSwordReplacementAction, RefreshMiningOresAction, ReplaceSwordAction, SetAutoBuyPaidMultiplierAction, SetAutoUnlockSlotsAction, UnlockSlotAction, UpgradePlayerAction, UpgradeSwordMaxAction, isSwordReplacementRecommended } from "./Actions";
 import { calculateBaseIncome, calculatePaidMultiplier, calculatePlayerUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
 import type { ProjectConfig } from "./Main";
 import type { State } from "./State";
 
+const slotIncomeFormat = new Intl.NumberFormat("zh-CN", {
+  notation: "compact",
+  maximumSignificantDigits: 4,
+  useGrouping: true,
+});
+
 export class Game extends BaseGame<ProjectConfig, State> {
   readonly UIRoot = new UIPanel();
-  private readonly slotLabels: { id: UILabel; mutation: UILabel; button: UIButton; statKeys: UILabel; statValues: UILabel; levelKey: UILabel; levelValue: UILabel; income: UILabel; queue: UILabel }[] = [];
+  private readonly slotLabels: { id: UILabel; mutation: UILabel; button: UIButton; stats: UILabel; income: UILabel; queue: UILabel }[] = [];
   private readonly oreSummaryLabel: UILabel;
   private readonly paidSummaryLabel: UILabel;
   private readonly buyPaidMultiplierButton: UIButton;
@@ -40,10 +46,13 @@ export class Game extends BaseGame<ProjectConfig, State> {
       const button = new UIButton(this.UIRoot, {
         Name: `PlayerUpgrade_${kind}`, X: 12 + index * 212, Y: 60, Width: 204, Height: 30, FontSize: 11, TextWrap: false,
       });
-      button.OnClick = () => {
+      button.OnClick = ({ editor }) => {
         const action = new UpgradePlayerAction(kind);
-        if (!this.getActionBlocker(action)) {
-          this.consumeAction(action, [`玩家升级：${title}`]);
+        if (!this.getActionBlocker(action) && this.consumeAction(action, [`玩家升级：${title}`])) {
+          const { income, forging, smelting } = this.state.playerUpgradeLevels;
+          if (income === forging && income === smelting) {
+            editor.addRewindPoint(`玩家升级 L${income}`);
+          }
         }
         this.UpdateUI();
       };
@@ -87,33 +96,20 @@ export class Game extends BaseGame<ProjectConfig, State> {
         Name: "Mutation", X: 36, Y: 4, Width: 42, Height: 16,
         FontSize: 10, HorizontalAlign: "Right", VerticalAlign: "Top",
       });
-      const statKeys = new UILabel(button, {
-        Name: "StatKeys", X: 24, Y: 20, Width: 12, Height: 16,
-        FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Middle",
-      });
-      const statValues = new UILabel(button, {
-        Name: "StatValues", X: 40, Y: 20, Width: 40, Height: 16,
-        FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Middle",
-      });
-      statKeys.RichText = true;
-      statValues.RichText = true;
-      const levelKey = new UILabel(button, {
-        Name: "LevelKey", X: 24, Y: 38, Width: 12, Height: 16,
-        FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Middle", TextColor: "#285e3c",
-      });
-      const levelValue = new UILabel(button, {
-        Name: "LevelValue", X: 40, Y: 38, Width: 40, Height: 16,
-        FontSize: 12, HorizontalAlign: "Left", VerticalAlign: "Middle", TextColor: "#285e3c",
-      });
       const income = new UILabel(button, {
-        Name: "Income", X: 24, Y: 56, Width: 56, Height: 16, FontSize: 12,
-        HorizontalAlign: "Left", VerticalAlign: "Middle",
+        Name: "Income", X: 4, Y: 22, Width: 76, Height: 26, FontSize: 15,
+        TextWrap: false, TextColor: "#174635",
+      });
+      income.RichText = true;
+      const stats = new UILabel(button, {
+        Name: "Stats", X: 4, Y: 54, Width: 76, Height: 17, FontSize: 10,
+        TextWrap: false, TextColor: "#52645c",
       });
       const queue = new UILabel(button, {
         Name: "Queue", X: 4, Y: 72, Width: 76, Height: 10, FontSize: 9,
         Text: "", TextColor: "#795611",
       });
-      this.slotLabels.push({ id, mutation, button, statKeys, statValues, levelKey, levelValue, income, queue });
+      this.slotLabels.push({ id, mutation, button, stats, income, queue });
     });
 
     this.paidSummaryLabel = new UILabel(this.UIRoot, {
@@ -239,8 +235,7 @@ export class Game extends BaseGame<ProjectConfig, State> {
 
   isSlotReplacementRecommended(slotId: number): boolean {
     const slot = this.state.slots.find((item) => item.id === slotId);
-    return slot?.unlocked === true && (slot.swordId === null || this.state.swords.some((sword) =>
-      sword.id === slot.swordId && sword.quality <= this.state.playerUpgradeLevels.forging));
+    return slot !== undefined && isSwordReplacementRecommended(this.config, this.state, slot);
   }
 
   private getRecommendedReplacementSlotIds(): number[] {
@@ -282,9 +277,9 @@ export class Game extends BaseGame<ProjectConfig, State> {
     if (!this.getActionBlocker(action) &&
         this.consumeAction(action, [`尝试锻造并置换队首槽位 ${slotId}`]) &&
         this.state.lastForgeResult?.slotId === slotId) {
-      const upgrade = new UpgradeSwordMaxAction(slotId);
+      const upgrade = new UpgradeSwordMaxAction(slotId, {}, 5);
       if (!this.getActionBlocker(upgrade)) {
-        this.consumeAction(upgrade, [`一键升级槽位 ${slotId} 内的武器`]);
+        this.consumeAction(upgrade, [`自动补升槽位 ${slotId} 的新武器，最高 5 级`]);
       }
     }
   }
@@ -349,29 +344,24 @@ export class Game extends BaseGame<ProjectConfig, State> {
       const sword = this.state.swords.find((item) => item.id === slot.swordId);
       const recommendReplacement = recommendedSlotIds.includes(slot.id);
       labels.id.Text = `${slot.id}`;
-      const income = calculateBaseIncome(this.config, [slot], this.state.swords, this.state.playerUpgradeLevels.income, tier);
       const hasSword = slot.unlocked && sword !== undefined;
       labels.mutation.Visible = hasSword;
       labels.mutation.Text = hasSword ? mutationNames[sword.mutationId - 1] : "";
       labels.mutation.TextColor = hasSword ? mutationColors[sword.mutationId - 1] : "#64748b";
       labels.button.Text = slot.unlocked ? (sword ? "" : "空槽位") : "未解锁";
-      labels.statKeys.Visible = hasSword;
-      labels.statValues.Visible = hasSword;
-      labels.levelKey.Visible = hasSword;
-      labels.levelValue.Visible = hasSword;
+      labels.stats.Visible = hasSword;
       labels.income.Visible = hasSword;
-      labels.statKeys.Text = hasSword ? '<span color="#7c3db5">Q</span>' : "";
-      labels.statValues.Text = hasSword ? `<span color="#7c3db5">${sword.quality}</span>` : "";
-      labels.levelKey.Text = hasSword ? "L" : "";
-      labels.levelValue.Text = hasSword ? `${sword.level}` : "";
-      labels.statKeys.TextColor = "#285e3c";
-      labels.statValues.TextColor = "#285e3c";
-      labels.income.Text = hasSword ? `${income.toFixed(2)}/s` : "";
-      labels.income.TextColor = "#a66f00";
+      if (hasSword) {
+        const slotIncome = calculateBaseIncome(this.config, [slot], this.state.swords, this.state.playerUpgradeLevels.income, tier);
+        const formattedIncome = slotIncomeFormat.format(slotIncome);
+        const incomeText = formattedIncome.length > 8 ? slotIncome.toExponential(1) : formattedIncome;
+        labels.income.Text = `<b>${incomeText}</b><span font-size="10">/s</span>`;
+        labels.stats.Text = `品质 ${sword.quality} · Lv.${sword.level}`;
+      }
       const queued = slot.unlocked && this.state.pendingReplacements.some((request) => request.slotId === slot.id);
       labels.queue.Visible = queued || recommendReplacement;
       labels.queue.Text = queued ? "排队中" : recommendReplacement ? "推荐置换" : "";
-      labels.button.ButtonColor = recommendReplacement ? "#fff0b3" : slot.unlocked ? (sword ? "#bde5cc" : "#e0f2e5") : "#e1ecfb";
+      labels.button.ButtonColor = recommendReplacement ? "#fff0b3" : slot.unlocked ? (sword ? "#edf7ef" : "#e0f2e5") : "#e1ecfb";
       labels.button.TextColor = recommendReplacement ? "#795611" : slot.unlocked ? "#285e3c" : "#36577f";
       labels.button.BorderColor = slot.id === this.selectedSlotId ? "#f79009" : recommendReplacement ? "#d9b64c" : slot.unlocked ? "#91c7a3" : "#a6c1e5";
     });

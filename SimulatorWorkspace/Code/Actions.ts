@@ -1,8 +1,8 @@
 import { BaseAction } from "@game-simulator/framework";
 import type { BaseActionOptions, CurveValue, MacroActionBlocker } from "@game-simulator/framework";
-import { calculateBaseIncome, calculateForgeProbabilities, calculatePlayerUpgradePrice, calculateSlotUnlockPrice, calculateSmeltingLuckDistribution, calculateSwordUpgradePlan, calculateSwordUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
+import { calculateBaseIncome, calculateForgeProbabilities, calculatePlayerUpgradePrice, calculateSlotUnlockPrice, calculateSmeltingLuckDistribution, calculateSwordBaseIncome, calculateSwordIncomeBeforeLevel, calculateSwordLevelMultiplier, calculateSwordQualityIncome, calculateSwordUpgradePlan, calculateSwordUpgradePrice, getNextPaidMultiplier, getPlayerUpgradeCurves, type PlayerUpgradeKind } from "./Formulas";
 import type { ProjectConfig } from "./Main";
-import type { ForgeResultState, MiningOreState, State, SwordState } from "./State";
+import type { ForgeResultState, MiningOreState, SlotState, State, SwordState } from "./State";
 
 type UnlockSlotPayload = { slotId: number };
 
@@ -71,6 +71,27 @@ BaseAction.register("unlockSlot", (value) => new UnlockSlotAction(value.payload?
 
 type ForgeSwordPayload = { slotId?: number };
 
+function getBestForgeOre(ores: readonly MiningOreState[]): MiningOreState | undefined {
+  return ores.reduce<MiningOreState | undefined>((best, ore) =>
+    !best || ore.mutationId > best.mutationId || (ore.mutationId === best.mutationId && ore.id < best.id)
+      ? ore : best, undefined);
+}
+
+/** 按默认 +1 品质预估置换收益；当前无矿时按普通矿石预估。 */
+export function isSwordReplacementRecommended(config: ProjectConfig, state: State, slot: SlotState): boolean {
+  if (!slot.unlocked || slot.swordId === null) {
+    return slot.unlocked;
+  }
+  const equipped = state.swords.find((sword) => sword.id === slot.swordId);
+  if (!equipped) {
+    return false;
+  }
+  const targetQuality = state.playerUpgradeLevels.forging + 1;
+  const mutationId = getBestForgeOre(state.miningOres)?.mutationId ?? 1;
+  return calculateSwordBaseIncome(config, targetQuality, mutationId)
+    > calculateSwordBaseIncome(config, equipped.quality, equipped.mutationId);
+}
+
 export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, ProjectConfig> {
   constructor(
     options: Omit<BaseActionOptions<ForgeSwordPayload>, "type" | "payload"> = {},
@@ -81,12 +102,6 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
       type: slotId !== undefined ? "replaceSword" : "forgeSword",
       payload: slotId !== undefined ? { slotId } : undefined,
     });
-  }
-
-  private getBestOre(): MiningOreState | undefined {
-    return this.state.miningOres.reduce<MiningOreState | undefined>((best, ore) =>
-      !best || ore.mutationId > best.mutationId || (ore.mutationId === best.mutationId && ore.id < best.id)
-        ? ore : best, undefined);
   }
 
   private getTargetOffset(): number {
@@ -115,7 +130,7 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
     if (this.state.oreCollectElapsedSeconds < this.config.oreCollectInterval) {
       return { kind: "collectCooldown", reason: "尚未到取矿时间" };
     }
-    const ore = this.getBestOre();
+    const ore = getBestForgeOre(this.state.miningOres);
     if (!ore) {
       return { kind: "oreNotFound", reason: "没有可获取的矿石" };
     }
@@ -137,7 +152,7 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
     if (this.GetBlocker()) {
       return false;
     }
-    const ore = this.getBestOre()!;
+    const ore = getBestForgeOre(this.state.miningOres)!;
     const distribution = calculateSmeltingLuckDistribution(this.config.smeltingLuckWeightCurve, this.state.playerUpgradeLevels.smelting);
     let rollWeight = this.rng.randomFloat01() * distribution.reduce((total, item) => total + item.weight, 0);
     let materialLuck = distribution[distribution.length - 1].luck;
@@ -188,7 +203,8 @@ export class ForgeSwordAction extends BaseAction<ForgeSwordPayload, State, Proje
       if (this.payload?.slotId !== undefined) {
         const target = this.state.slots.find((item) => item.id === this.payload!.slotId)!;
         const equipped = this.state.swords.find((item) => item.id === target.swordId);
-        if (!equipped || sword.quality > equipped.quality) {
+        if (!equipped || calculateSwordBaseIncome(this.config, sword.quality, sword.mutationId)
+            > calculateSwordBaseIncome(this.config, equipped.quality, equipped.mutationId)) {
           target.swordId = sword.id;
           slotId = target.id;
           if (equipped) {
@@ -278,6 +294,9 @@ export class QueueSwordReplacementAction extends BaseAction<QueueSwordReplacemen
     if (!Number.isInteger(targetOffset) || targetOffset < 1 || targetOffset > 4) {
       return { kind: "invalidForgeTarget", reason: "置换目标须为 +1～+4" };
     }
+    if (!isSwordReplacementRecommended(this.config, this.state, slot)) {
+      return { kind: "swordBaseIncomeNotHigher", reason: "默认打造的基础收益未超过当前武器" };
+    }
     return null;
   }
 
@@ -340,15 +359,16 @@ export class PlaceSwordAction extends BaseAction<PlaceSwordPayload, State, Proje
 BaseAction.register("placeSword", (value) =>
   new PlaceSwordAction(value.payload?.swordId as number, value.payload?.slotId as number, value));
 
-type UpgradeSwordPayload = { slotId: number };
+type UpgradeSwordPayload = { slotId: number; targetLevel?: number };
 
 export class UpgradeSwordAction extends BaseAction<UpgradeSwordPayload, State, ProjectConfig> {
   constructor(
     slotId: number,
     options: Omit<BaseActionOptions<UpgradeSwordPayload>, "type" | "payload"> = {},
     private readonly upgradeMax = false,
+    targetLevel?: number,
   ) {
-    super({ ...options, type: upgradeMax ? "upgradeSwordMax" : "upgradeSword", payload: { slotId } });
+    super({ ...options, type: upgradeMax ? "upgradeSwordMax" : "upgradeSword", payload: targetLevel === undefined ? { slotId } : { slotId, targetLevel } });
   }
 
   GetBlocker(): MacroActionBlocker | null {
@@ -367,10 +387,11 @@ export class UpgradeSwordAction extends BaseAction<UpgradeSwordPayload, State, P
     if (!Number.isInteger(sword.level) || sword.level < (input.min ?? 1)) {
       return { kind: "invalidSwordLevel", reason: "武器等级不在升级曲线范围内" };
     }
-    if (sword.level + 1 > (input.max ?? Infinity)) {
+    if (sword.level + 1 > Math.min(input.max ?? Infinity, this.payload?.targetLevel ?? Infinity)) {
       return { kind: "swordMaxLevel", reason: "武器已满级" };
     }
-    const price = calculateSwordUpgradePrice(this.config.swordUpgradeCurves, sword.level);
+    const qualityIncome = calculateSwordQualityIncome(this.config, sword.quality);
+    const price = calculateSwordUpgradePrice(this.config.swordUpgradeCurves, sword.level, qualityIncome);
     if (this.state.money < price) {
       return { kind: "moneyNotEnough", reason: "金钱不足" };
     }
@@ -383,9 +404,9 @@ export class UpgradeSwordAction extends BaseAction<UpgradeSwordPayload, State, P
     }
     const slot = this.state.slots.find((item) => item.id === this.payload?.slotId)!;
     const sword = this.state.swords.find((item) => item.id === slot.swordId)!;
-    const plan = this.upgradeMax
-      ? calculateSwordUpgradePlan(this.config.swordUpgradeCurves, sword.level, this.state.money)
-      : { levels: 1, cost: calculateSwordUpgradePrice(this.config.swordUpgradeCurves, sword.level) };
+    const qualityIncome = calculateSwordQualityIncome(this.config, sword.quality);
+    const targetLevel = this.upgradeMax ? this.payload?.targetLevel : sword.level + 1;
+    const plan = calculateSwordUpgradePlan(this.config.swordUpgradeCurves, sword.level, this.state.money, qualityIncome, targetLevel);
     this.state.money -= plan.cost;
     sword.level += plan.levels;
     return true;
@@ -395,12 +416,78 @@ export class UpgradeSwordAction extends BaseAction<UpgradeSwordPayload, State, P
 BaseAction.register("upgradeSword", (value) => new UpgradeSwordAction(value.payload?.slotId as number, value));
 
 export class UpgradeSwordMaxAction extends UpgradeSwordAction {
-  constructor(slotId: number, options: Omit<BaseActionOptions<UpgradeSwordPayload>, "type" | "payload"> = {}) {
-    super(slotId, options, true);
+  constructor(slotId: number, options: Omit<BaseActionOptions<UpgradeSwordPayload>, "type" | "payload"> = {}, targetLevel?: number) {
+    super(slotId, options, true, targetLevel);
   }
 }
 
-BaseAction.register("upgradeSwordMax", (value) => new UpgradeSwordMaxAction(value.payload?.slotId as number, value));
+BaseAction.register("upgradeSwordMax", (value) =>
+  new UpgradeSwordMaxAction(value.payload?.slotId as number, value, value.payload?.targetLevel as number | undefined));
+
+type SwordUpgradeCandidate = { slotId: number; sword: SwordState; qualityIncome: number; incomeBeforeLevel: number };
+
+export class UpgradeAllSwordsAction extends BaseAction<Record<string, never>, State, ProjectConfig> {
+  constructor(options: Omit<BaseActionOptions<Record<string, never>>, "type" | "payload"> = {}) {
+    super({ ...options, type: "upgradeAllSwords" });
+  }
+
+  private getCandidates(): SwordUpgradeCandidate[] {
+    return this.state.slots.flatMap((slot) => {
+      if (!slot.unlocked || slot.swordId === null) {
+        return [];
+      }
+      const sword = this.state.swords.find((item) => item.id === slot.swordId);
+      return sword ? [{
+        slotId: slot.id,
+        sword,
+        qualityIncome: calculateSwordQualityIncome(this.config, sword.quality),
+        incomeBeforeLevel: calculateSwordIncomeBeforeLevel(this.config, sword, this.state),
+      }] : [];
+    });
+  }
+
+  private getNextUpgrade(candidates: readonly SwordUpgradeCandidate[]): { candidate: SwordUpgradeCandidate; price: number; payback: number } | undefined {
+    const curves = this.config.swordUpgradeCurves;
+    const { min = 1, max = Infinity } = curves.input;
+    let best: { candidate: SwordUpgradeCandidate; price: number; payback: number } | undefined;
+    for (const candidate of candidates) {
+      const { sword, qualityIncome, incomeBeforeLevel, slotId } = candidate;
+      if (!Number.isInteger(sword.level) || sword.level < min || sword.level + 1 > max) {
+        continue;
+      }
+      const price = calculateSwordUpgradePrice(curves, sword.level, qualityIncome);
+      if (price > this.state.money) {
+        continue;
+      }
+      const gain = incomeBeforeLevel * (calculateSwordLevelMultiplier(curves, sword.level + 1) - calculateSwordLevelMultiplier(curves, sword.level));
+      const payback = gain > 0 ? price / gain : Infinity;
+      if (!best || payback < best.payback || (payback === best.payback && slotId < best.candidate.slotId)) {
+        best = { candidate, price, payback };
+      }
+    }
+    return best;
+  }
+
+  GetBlocker(): MacroActionBlocker | null {
+    return this.getNextUpgrade(this.getCandidates()) ? null : { kind: "noAffordableSwordUpgrade", reason: "没有可负担的武器升级" };
+  }
+
+  Apply(): boolean {
+    const candidates = this.getCandidates();
+    let upgrade = this.getNextUpgrade(candidates);
+    if (!upgrade) {
+      return false;
+    }
+    do {
+      this.state.money -= upgrade.price;
+      upgrade.candidate.sword.level += 1;
+      upgrade = this.getNextUpgrade(candidates);
+    } while (upgrade);
+    return true;
+  }
+}
+
+BaseAction.register("upgradeAllSwords", (value) => new UpgradeAllSwordsAction(value));
 
 type UpgradePlayerPayload = { kind: PlayerUpgradeKind };
 
