@@ -1,6 +1,7 @@
 local FX = _G.FX
 local FXLoader = FX.Loader
 FXLoader:RequireFromParent(script, "CConveyorCompClass")
+FXLoader:RequireFromParent(script, "CSurfaceSwimCompClass")
 FXLoader:RequireFromParent(script, "CLuckyShopCompClass")
 FXLoader:RequireFromParent(script, "CMutationForgeCompClass")
 FXLoader:RequireFromParent(script, "CSoundCompClass")
@@ -14,6 +15,7 @@ function Player:Ctor(playerId)
     Player.Super.Ctor(self, playerId)
     self:AddComponent("FCFriendCompClass")
     self:AddComponent("CConveyorCompClass")
+    self:AddComponent("CSurfaceSwimCompClass")
     self:AddComponent("CLuckyShopCompClass")
     self:AddComponent("CMutationForgeCompClass")
     self:AddComponent("CSoundCompClass")

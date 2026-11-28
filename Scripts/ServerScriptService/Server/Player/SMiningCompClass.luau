@@ -24,7 +24,7 @@ function Comp:TeleportToMine()
     end
     local forge = self:RequireComponent("SForgeComp")
     local character, humanoid = forge:GetLivingCharacter()
-    if not character or humanoid.PlatformStand then
+    if not character or humanoid.PlatformStand or character:GetAttribute(Settings.CarryAttribute) then
         return
     end
     self._lastRequest = os.clock()

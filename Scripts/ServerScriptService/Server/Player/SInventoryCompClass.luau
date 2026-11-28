@@ -67,7 +67,7 @@ function Comp:OnPlayerLogin()
     self:SyncTools()
 end
 
---- 创建手持外观；卡片和变异石复用道具图标，只有收益卡可点击使用。
+--- 创建手持外观；矿石放大显示但不减速，只有收益卡可点击使用。
 --- @param itemId number 已配置的道具 ID。
 --- @param extra table? 武器变异用于光环；成品品质用于选择模型和图标。
 --- @return Tool 不包含业务脚本的手持道具。
@@ -102,7 +102,7 @@ function Comp:CreateTool(itemId, extra)
     else
         local model = self._oreModels[itemId]:Clone()
         local size = model:GetExtentsSize()
-        model:ScaleTo(model:GetScale() * 1.6 / math.max(size.X, size.Y, size.Z))
+        model:ScaleTo(model:GetScale() * 3.2 / math.max(size.X, size.Y, size.Z))
         model:PivotTo(CFrame.identity)
         handle = model.PrimaryPart
         handle.Transparency = 1

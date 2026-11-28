@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "968de7fd7a2047e7aa5d6e3c09a05156",
+  "kind": "Audio",
+  "tags": [],
+  "uploads": [
+    {
+      "ownerType": "user",
+      "ownerId": "2563885143",
+      "sha256": "433b084f6fc19e7d4b66988f4cf94b816c3ebb77a2ac6b428005b4b6fa665a45",
+      "assetType": "Audio",
+      "assetId": "121796441231976",
+      "uploadedAt": "2026-11-28T03:20:56.914454+00:00",
+      "grantedUniverseId": "10773636924"
+    }
+  ]
+}

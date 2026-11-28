@@ -161,16 +161,15 @@ function View:Close()
     self._resultScale.Scale = 1
 end
 
---- 挥锤期间禁用重复敲击，退出按钮始终可用。
---- @param busy boolean 当前锤击动画是否尚未完成。
+--- 锻造忙碌时只禁用出炉；敲击按钮仍可接收下一锤的输入。
+--- @param busy boolean 当前锤击是否仍在结算、播放动画或冷却。
 function View:SetBusy(busy)
     if self._busy == busy then
         return
     end
     self._busy = busy
-    self.StrikeButton.Active, self.GreatStrikeButton.Active = not busy, not busy
-    self.StrikeButton.AutoButtonColor, self.GreatStrikeButton.AutoButtonColor = not busy, not busy
-    self.StrikeButton.TextTransparency = busy and 0.4 or 0
+    self.GreatStrikeButton.Active = not busy
+    self.GreatStrikeButton.AutoButtonColor = not busy
     self.GreatStrikeButton.TextTransparency = busy and 0.4 or 0
     self:RefreshText()
 end

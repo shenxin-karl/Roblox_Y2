@@ -8,6 +8,7 @@ local Settings = {
     SeatVacantAttribute = "MiningClawSeatVacant",
     ClawHeight = 2,
     ClawEdgeMargin = 5,
+    ClawRockHitScale = 1.2,
     ClawTag = "MiningClawVisual",
     ClawOutSpeed = 82,
     ClawReturnSpeed = 72,

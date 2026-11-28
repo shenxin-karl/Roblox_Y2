@@ -1,5 +1,6 @@
 -- 槽位剑展示：复用服务端的显示面与公开属性，客户端不计算金币或推测升级结果。
 local CollectionService = game:GetService("CollectionService")
+local RunService = game:GetService("RunService")
 local FX, FC = _G.FX, _G.FC
 local FXLoader = FX.Loader
 local Text = FX.Text
@@ -27,6 +28,9 @@ end
 function Comp:OnReady()
     self._views = {}
     self._prompts = {}
+    self._buttonRayParams = RaycastParams.new()
+    self._buttonRayParams.FilterType = Enum.RaycastFilterType.Exclude
+    self._buttonRayParams.RespectCanCollide = true
     self._uiRoot = Instance.new("Folder")
     self._uiRoot.Name = "SlotSwordUI"
     self._uiRoot.Parent = UIRoot.Get()
@@ -66,6 +70,9 @@ function Comp:OnReady()
     for index, display in ipairs(CollectionService:GetTagged("SlotSwordDisplay")) do
         self:TrackDisplay(display)
     end
+    self:TrackConnection(RunService.PreRender:Connect(function(deltaTime)
+        self:UpdateAnimations(deltaTime)
+    end))
 end
 
 --- 只显示本人已解锁槽位的放置或卸下提示；隐藏不替代服务端鉴权。
@@ -82,7 +89,7 @@ function Comp:RefreshPrompts()
     end
 end
 
---- 跟踪动态实例；服务器确认领取后保留按钮动画，只给领取者播放金币雨。
+--- 跟踪动态实例；服务器确认领取后让对应武器跳起，只给领取者播放金币雨。
 --- @param display Model 服务端创建的槽位剑展示容器。
 function Comp:TrackDisplay(display)
     if self._views[display] then
@@ -98,17 +105,86 @@ function Comp:TrackDisplay(display)
     end)
     --- 服务端仅在奖励提交成功后递增序号。
     view.Connections[3] = display:GetAttributeChangedSignal("CollectSequence"):Connect(function()
-        local collect = display:FindFirstChild("CollectArea")
-        local target = collect and collect:FindFirstChild("AnimationTarget")
-        if target and target.Value then
-            view.AnimationTarget = target.Value
-            ModelAnimation.PlayPress(target.Value)
+        local now = os.clock()
+        local ownerId = display:GetAttribute("OwnerUserId")
+        if display:GetAttribute("CollectAll") then
+            for otherDisplay, otherView in pairs(self._views) do
+                if otherView.Sword and otherDisplay:GetAttribute("OwnerUserId") == ownerId then
+                    otherView.JumpStartedAt = now
+                end
+            end
+        else
+            view.JumpStartedAt = now
         end
-        if display:GetAttribute("OwnerUserId") == self:GetPlayerId() then
+        if ownerId == self:GetPlayerId() then
             MoneyRain.Play()
         end
     end)
     self:BuildView(display)
+end
+
+--- 只认角色正踩住的实际碰撞面，不把领钱范围或空中经过当成踩住。
+--- @return BasePart? 脚下的碰撞部件。
+function Comp:GetButtonContact()
+    local character = self:GetPlayerCharacter()
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local root = humanoid and humanoid.RootPart
+    if not root or humanoid.Health <= 0 or humanoid.Sit or humanoid.FloorMaterial == Enum.Material.Air then
+        return nil
+    end
+    if self._buttonCharacter ~= character then
+        self._buttonCharacter = character
+        self._buttonRayParams.FilterDescendantsInstances = {character}
+    end
+    local rayLength = humanoid.HipHeight + root.Size.Y / 2 + 1
+    if humanoid.RigType == Enum.HumanoidRigType.R6 then
+        rayLength += 2
+    end
+    local hit = workspace:Raycast(root.Position, Vector3.new(0, -rayLength, 0), self._buttonRayParams)
+    return hit and hit.Instance
+end
+
+--- 每帧更新按钮踩压和附近武器的漂浮；到账跳动叠加在漂浮高度上，不打断循环。
+--- @param deltaTime number 距离上一渲染帧的秒数。
+function Comp:UpdateAnimations(deltaTime)
+    local hit = self:GetButtonContact()
+    local now = os.clock()
+    local camera = workspace.CurrentCamera
+    local playerId = self:GetPlayerId()
+    for display, view in pairs(self._views) do
+        if view.CollectArea and (view.AnimationTarget or (hit and display:GetAttribute("OwnerUserId") == playerId)) then
+            local target = view.CollectArea:FindFirstChild("AnimationTarget")
+            local button = target and target.Value
+            if view.AnimationTarget and view.AnimationTarget ~= button then
+                ModelAnimation.Stop(view.AnimationTarget)
+                view.AnimationTarget = nil
+                view.Collect.Adornee = view.CollectArea
+            end
+            if button and (button == hit or view.AnimationTarget) then
+                local visual = ModelAnimation.UpdatePress(button, display, button == hit, deltaTime)
+                view.AnimationTarget = visual and button
+                local adornee = visual or view.CollectArea
+                if view.Collect.Adornee ~= adornee then
+                    view.Collect.Adornee = adornee
+                end
+            end
+        end
+        if camera and view.Sword and (camera.CFrame.Position - view.SwordOrigin.Position).Magnitude < 100 then
+            local phase = (now - view.FloatStartedAt) * (2 * math.pi / 2.8)
+            local lift = 0.12 + 0.32 * (1 - math.cos(phase)) / 2
+            if view.JumpStartedAt then
+                local progress = (now - view.JumpStartedAt) / 0.45
+                if progress < 1 then
+                    lift += 0.85 * math.sin(math.pi * progress)
+                else
+                    view.JumpStartedAt = nil
+                end
+            end
+            local offset = Vector3.new(0, lift, 0)
+            view.Sword.CFrame = view.SwordOrigin + offset
+            view.IncomeAnchor.CFrame = view.IncomeOrigin + offset
+        end
+    end
 end
 
 --- 按展示面的实际比例创建画布；顶面文字转向牌子正面，避免金额沿地面短边排列。
@@ -176,6 +252,7 @@ function Comp:BuildView(display)
             label.Parent = billboard
             billboard.Parent = self._uiRoot
             view.Collect, view.Amount = billboard, label
+            view.CollectArea = collect
             self:Render(display)
         end
         return
@@ -185,6 +262,7 @@ function Comp:BuildView(display)
     end
     view.Sign, view.Upgrade = self:CreateSurface(sign, Enum.NormalId.Front, true)
     view.Collect, view.Amount = self:CreateSurface(collect, Enum.NormalId.Top, false)
+    view.CollectArea = collect
     local anchor = Instance.new("Part")
     anchor.Name = "IncomeUIAnchor"
     anchor.Size = Vector3.new(4.6, 1.5, 0.01)
@@ -199,6 +277,8 @@ function Comp:BuildView(display)
     anchor.CFrame = CFrame.lookAt(position, position + forward)
     view.IncomeGui, view.Income = self:CreateSurface(anchor, Enum.NormalId.Front, false)
     view.IncomeAnchor = anchor
+    view.Sword, view.SwordOrigin, view.IncomeOrigin = sword, sword.CFrame, anchor.CFrame
+    view.FloatStartedAt = os.clock()
     -- 先登记界面再挂入展示容器，避免 ChildAdded 回调重复创建。
     anchor.Parent = display
     view.Income.Name = "Income"
@@ -256,7 +336,7 @@ function Comp:Render(display)
     end
 end
 
---- 基地释放或流出时清理自身界面，不修改服务端锚点和地图模板。
+--- 基地释放或流出时清理本地动画与界面，恢复展示武器的原位。
 --- @param display Model 不再展示的槽位剑容器。
 function Comp:RemoveDisplay(display)
     local view = self._views[display]
@@ -268,6 +348,9 @@ function Comp:RemoveDisplay(display)
     end
     if view.AnimationTarget then
         ModelAnimation.Stop(view.AnimationTarget)
+    end
+    if view.Sword and view.Sword.Parent then
+        view.Sword.CFrame = view.SwordOrigin
     end
     if view.IncomeGui then
         view.IncomeGui:Destroy()

@@ -66,9 +66,9 @@ function Comp:PlaceEquippedBlank()
     return success
 end
 
---- 只敲台上已有的武器，放剑胚不计作敲击或抽取结果。
-function Comp:ForgeSword()
-    local station = self._station
+--- 只敲台上已有的武器，返回本锤的结果，自动出炉不会覆盖它。
+--- @return table? 本锤提交的武器快照；未敲击则不返回结果。
+function Comp:ResolveStrike()
     if os.clock() - self._lastForge < Settings.RequestCooldown then
         return
     end
@@ -104,7 +104,22 @@ function Comp:ForgeSword()
         if data.Finished and data.Active then
             self:FinishSword()
         end
-        FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, true)
+        return data
+    end
+end
+
+--- 回执仅提交给发起者，附上武器轮次及锤序以排除旧结果。
+function Comp:ForgeSword()
+    local station = self._station
+    if not station then
+        return
+    end
+    local data = self:ResolveStrike()
+    if data then
+        FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, true,
+            data.Outcome, data.RoundId, data.HammerCount)
+    else
+        FX.Network:SendMsgToClient(self:GetPlayerId(), "S2C_ForgeSwordResult", station.Id, false, "Rejected")
     end
 end
 

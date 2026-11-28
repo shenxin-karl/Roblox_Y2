@@ -6,12 +6,17 @@ local WorkshopVisuals = FXLoader:RequireShared("Scripts.Game.Shared.WorkshopVisu
 local Effects = {}
 Effects.__index = Effects
 
-local ImpactTime = 0.29
-local SwingDuration = 0.68
-local WhitenDuration = 0.48
-local WhiteHoldDuration = 0.08
-local RevealDuration = 0.55
+local ImpactTime = 0.20
+local SwingDuration = 0.52
+local WhitenDuration = 0.11
+local WhiteHoldDuration = 0.03
+local RevealDuration = 0.10
 local SparkGravity = Vector3.new(0, -22, 0)
+local SteelHeat = Color3.fromRGB(255, 126, 50)
+local SteelWhite = Color3.fromRGB(255, 250, 217)
+local ColdCrack = Color3.fromRGB(68, 43, 32)
+local CrackPath = {Vector2.new(-0.14, 0.03), Vector2.new(0.04, 0.07),
+    Vector2.new(-0.03, 0.11), Vector2.new(0.15, 0.16)}
 
 --- 建立本地锻造近景和升品质用的白色填充，原模型只对本人隐藏。
 --- @param station Model 服务端分配且已复制的场景台位。
@@ -174,6 +179,8 @@ end
 --- 隐藏本人近景中的剑时，同时关闭变异特效并清理已发出的粒子。
 --- @param visible boolean 是否显示本地外观。
 function Effects:SetWeaponVisible(visible)
+    self._weaponVisible = visible
+    visible = visible or self._damageAge ~= nil
     for index, node in ipairs(self._sword:GetDescendants()) do
         if node:IsA("BasePart") then
             node.LocalTransparencyModifier = visible and 0 or 1
@@ -206,14 +213,22 @@ function Effects:ApplyWeapon(quality, visible, upgradeFrom, mutationId)
         return
     end
     self._weaponUpgrade = nil
-    self._weaponHighlight.Enabled = false
+    if self._previousSteel then
+        self._previousSteel:Destroy()
+        self._previousSteel = nil
+    end
     if upgradeFrom then
         self:SetQuality(upgradeFrom, mutationId)
         self:SetWeaponVisible(true)
         self._weaponUpgrade = {Quality = quality, MutationId = mutationId, Visible = visible, Age = 0}
         self._weaponHighlight.FillTransparency = 1
+        self._weaponHighlight.FillColor = SteelHeat
+        self._weaponHighlight.OutlineColor = SteelWhite
         self._weaponHighlight.Enabled = true
     else
+        if visible and not self._weaponVisible then
+            self._heat = 0.65
+        end
         if quality then
             self:SetQuality(quality, mutationId)
         end
@@ -221,29 +236,132 @@ function Effects:ApplyWeapon(quality, visible, upgradeFrom, mutationId)
     end
 end
 
+--- 仅在权威回执到达后表现受损；停锻留下细裂纹，彻底损毁才抛出钢片。
+--- @param outcome string 已确认的本次锻造结果。
+function Effects:ShowStrikeResult(outcome)
+    if outcome == "Broken" then
+        self._damageAge = 0
+        self:SetWeaponVisible(self._weaponVisible)
+        local size = self._sword.Size
+        self._cracks = {}
+        for index = 1, #CrackPath - 1 do
+            local from, to = CrackPath[index], CrackPath[index + 1]
+            local a = Vector3.new(from.X * size.X, from.Y * size.Y, -size.Z / 2 - 0.02)
+            local b = Vector3.new(to.X * size.X, to.Y * size.Y, a.Z)
+            local line = Instance.new("Part")
+            line.Name = "HairlineFracture"
+            line.Anchored, line.CanCollide, line.CanTouch, line.CanQuery = true, false, false, false
+            line.CastShadow, line.Material, line.Color = false, Enum.Material.Neon, SteelHeat
+            line.Size = Vector3.new(0.045, 0.025, (b - a).Magnitude)
+            line.CFrame = self._sword.CFrame * CFrame.lookAt((a + b) / 2, b, Vector3.zAxis)
+            line.Parent = self._root
+            table.insert(self._cracks, line)
+        end
+    elseif outcome == "Destroyed" then
+        self._heat = 0
+        self._shardAge = 0
+        self._shards = {}
+        for index = 1, 6 do
+            local shard = Instance.new("WedgePart")
+            shard.Name = "FracturedSteel"
+            shard.Anchored, shard.CanCollide, shard.CanTouch, shard.CanQuery = true, false, false, false
+            shard.CastShadow, shard.Material = false, Enum.Material.Metal
+            shard.Color = Color3.fromRGB(137, 146, 155)
+            shard.Size = Vector3.new(0.12, 0.2, self._random:NextNumber(0.32, 0.66))
+            local along = (index - 3.5) / 9
+            local origin = self._sword.CFrame * CFrame.new(0, self._sword.Size.Y * along, -self._sword.Size.Z / 2)
+            shard.CFrame, shard.Parent = origin, self._root
+            local velocity = self._base.RightVector * along * 9 + self._base.UpVector * self._random:NextNumber(3, 5)
+                + self._base.LookVector * self._random:NextNumber(-2, 2)
+            table.insert(self._shards, {Part = shard, Origin = origin, Velocity = velocity})
+        end
+    end
+end
+
 --- 让旧剑完整变白再换模型，自动出炉的成品也保留短暂展示时间。
 --- @param deltaTime number 当前渲染帧经过的秒数。
 function Effects:UpdateWeapon(deltaTime)
+    if self._damageAge then
+        self._damageAge += deltaTime
+        local fade = math.min(self._damageAge / 0.32, 1)
+        for index, line in ipairs(self._cracks) do
+            line.Color = SteelHeat:Lerp(ColdCrack, fade)
+            if fade == 1 then
+                line:Destroy()
+            end
+        end
+        if fade == 1 then
+            self._damageAge, self._cracks = nil, nil
+            self:SetWeaponVisible(self._weaponVisible)
+        end
+    end
+    if self._shardAge then
+        self._shardAge += deltaTime
+        local age = self._shardAge
+        for index, shard in ipairs(self._shards) do
+            if age >= 0.38 then
+                shard.Part:Destroy()
+            else
+                shard.Part.CFrame = (shard.Origin + shard.Velocity * age + SparkGravity * (age * age / 2))
+                    * CFrame.Angles(age * index, age * 7, 0)
+                shard.Part.Transparency = math.clamp((age - 0.17) / 0.21, 0, 1)
+            end
+        end
+        if age >= 0.38 then
+            self._shardAge, self._shards = nil, nil
+        end
+    end
     local upgrade = self._weaponUpgrade
     if not upgrade then
+        local heat = math.max(0, (self._heat or 0) - deltaTime / 0.8)
+        self._heat = heat
+        self._weaponHighlight.Enabled = heat > 0 and (self._weaponVisible or self._damageAge ~= nil)
+        if self._weaponHighlight.Enabled then
+            self._weaponHighlight.FillColor = SteelHeat
+            self._weaponHighlight.FillTransparency = 1 - heat * 0.48
+            self._weaponHighlight.OutlineTransparency = 1
+        end
         return
     end
     if upgrade.Age < WhitenDuration then
         upgrade.Age = math.min(upgrade.Age + deltaTime, WhitenDuration)
         local progress = upgrade.Age / WhitenDuration
+        self._weaponHighlight.FillColor = SteelHeat:Lerp(SteelWhite, progress)
+        self._weaponHighlight.OutlineTransparency = 1 - progress * 0.7
         self._weaponHighlight.FillTransparency = 1 - progress * progress
     elseif not upgrade.RevealAge then
         upgrade.Age += deltaTime
         if upgrade.Age >= WhitenDuration + WhiteHoldDuration then
-            self._weaponHighlight.Enabled = false
+            if self._quality ~= upgrade.Quality then
+                -- 留下不带变异光环的旧剑虚影，让轮廓变化在短揭晓窗口内仍然可辨。
+                self:SetWeaponVisible(false)
+                self._previousSteel = self._sword
+                self._previousSteel.Name = "PreviousSteelSilhouette"
+                self._sword = nil
+                for index, part in ipairs(self._previousSteel:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.LocalTransparencyModifier = 0.82
+                    end
+                end
+                self._previousSteel.CFrame += self._base.UpVector * 0.1
+            end
             self:SetQuality(upgrade.Quality, upgrade.MutationId)
             self:SetWeaponVisible(true)
             upgrade.RevealAge = 0
         end
     else
         upgrade.RevealAge += deltaTime
+        local reveal = math.min(upgrade.RevealAge / RevealDuration, 1)
+        self._weaponHighlight.FillTransparency = reveal
+        self._weaponHighlight.OutlineTransparency = 0.3 + reveal * 0.7
+        self._weaponHighlight.FillColor = SteelWhite:Lerp(SteelHeat, reveal)
         if upgrade.RevealAge >= RevealDuration then
+            if self._previousSteel then
+                self._previousSteel:Destroy()
+                self._previousSteel = nil
+            end
             self._weaponUpgrade = nil
+            self._heat = 0.5
             self:SetWeaponVisible(upgrade.Visible)
         end
     end
@@ -307,6 +425,7 @@ end
 --- 落锤沿用现有火星池，叠加当前档位的短粒子反馈。
 function Effects:EmitImpact()
     self:RefreshImpactStyle()
+    self._heat = 1
     self._pulseAge = 0
     self._sparkAge = 0
     self._activeSparks = self._powerful and 40 or 22
@@ -391,19 +510,19 @@ function Effects:Update(deltaTime)
             end
         end
         local angle, rightOffset
-        if age < 0.18 then
-            local progress = age / 0.18
+        if age < 0.12 then
+            local progress = age / 0.12
             angle = -70 - 8 * math.sin(progress * math.pi / 2)
             rightOffset = 3.8
         elseif age < ImpactTime then
-            local progress = (age - 0.18) / (ImpactTime - 0.18)
+            local progress = (age - 0.12) / (ImpactTime - 0.12)
             angle = -78 * (1 - progress * progress * progress)
             rightOffset = 3.8 * (1 - progress * progress * progress)
-        elseif age < 0.37 then
-            angle = -13 * math.sin((age - ImpactTime) / 0.08 * math.pi / 2)
+        elseif age < 0.26 then
+            angle = -13 * math.sin((age - ImpactTime) / (0.26 - ImpactTime) * math.pi / 2)
             rightOffset = 0
         else
-            local progress = math.clamp((age - 0.37) / (SwingDuration - 0.37), 0, 1)
+            local progress = math.clamp((age - 0.26) / (SwingDuration - 0.26), 0, 1)
             local eased = progress * progress * (3 - 2 * progress)
             angle = -13 - 57 * eased
             rightOffset = 3.8 * eased

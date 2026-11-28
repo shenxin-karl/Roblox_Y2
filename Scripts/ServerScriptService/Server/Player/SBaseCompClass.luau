@@ -7,6 +7,7 @@ local GameConfig = _G.GameConfig
 local Rules = GameConfig.CommonConfig
 local GameUtility = FX.Loader:RequireShared("Scripts.Game.Shared.GameUtility")
 local ForgeSettings = FX.Loader:RequireShared("Scripts.Game.Shared.ForgeSettings")
+local MiningSettings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local WorkshopRules = FX.Loader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local WorkshopVisuals = FX.Loader:RequireShared("Scripts.Game.Shared.WorkshopVisuals")
 local TranslationTexts = FX.Text.Define("BaseInteraction", {
@@ -242,6 +243,13 @@ function Comp:RefreshFurnaceAppearance(workshop, tier)
     local origin = Instance.new("Attachment")
     origin.Name = "SmeltBurstOrigin"
     origin.Parent = source
+    self._smeltHiss = Instance.new("Sound")
+    self._smeltHiss.Name = "SteelHeating"
+    self._smeltHiss.SoundId = "rbxassetid://122412603733067"
+    self._smeltHiss.PlaybackSpeed = 1 / 0.65
+    self._smeltHiss.Volume = 0.48
+    self._smeltHiss.RollOffMaxDistance = 32
+    self._smeltHiss.Parent = origin
     self._smeltBurst = WorkshopVisuals.CreateBurst(origin)
     self._smeltBurstCount = WorkshopVisuals.SetBurstStyle(self._smeltBurst, tier)
     self._furnaceTier = tier
@@ -251,6 +259,7 @@ end
 function Comp:PlaySmeltEffect()
     if self._smeltBurst then
         self._smeltBurst:Emit(self._smeltBurstCount)
+        self._smeltHiss:Play()
     end
 end
 
@@ -263,6 +272,7 @@ function Comp:ClearFurnaceAppearance()
     if self._smeltBurst then
         self._smeltBurst.Parent:Destroy()
         self._smeltBurst = nil
+        self._smeltHiss = nil
     end
     if self._furnaceColors then
         WorkshopVisuals.RestoreColors(self._furnaceColors)
@@ -312,7 +322,7 @@ function Comp:ReturnHome()
     local player = self:GetPlayerNode()
     local character = player and player.Character
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    if not self._active or not humanoid or humanoid.Health <= 0
+    if not self._active or not humanoid or humanoid.Health <= 0 or character:GetAttribute(MiningSettings.CarryAttribute)
         or not humanoid.RootPart or os.clock() - self._lastTeleport < 1.5 then
         return
     end

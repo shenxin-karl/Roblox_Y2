@@ -133,6 +133,16 @@ function Manager:RegMiningMsg()
             mining:RequestClaw(target)
         end
     end)
+    FX.Network:RegClientMsgCallback("C2S_ChooseMiningOre", function(userId, catchId, keep)
+        local player = self:GetPlayerObject(userId)
+        local mining = player and player:GetComponent("SMiningComp")
+        if mining and mining:IsMiningActive() and type(keep) == "boolean" and type(catchId) == "string" then
+            local character, humanoid = player:RequireComponent("SForgeComp"):GetLivingCharacter()
+            if character and not humanoid.PlatformStand then
+                _G.SMiningManager:ChooseOre(mining, humanoid, catchId, keep)
+            end
+        end
+    end)
 end
 
 --- 槽位剑请求按认证身份转发，不允许客户端提交升级价格或剑的等级。

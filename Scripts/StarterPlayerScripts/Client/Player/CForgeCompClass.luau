@@ -1,4 +1,4 @@
--- 锻造交互与本地表现：台位与材料兑换由服务端裁定，命中动画只发起一次请求。
+-- 锻造交互与本地表现：起锤请求服务端结算，落锤揭晓结果。
 local ContentProvider = game:GetService("ContentProvider")
 local ContextActionService = game:GetService("ContextActionService")
 local RunService = game:GetService("RunService")
@@ -9,11 +9,13 @@ local Text = FX.Text
 local Fields = _G.PlayerDataConfig
 local Settings = FXLoader:RequireShared("Scripts.Game.Shared.ForgeSettings")
 local Rules = FXLoader:RequireShared("Scripts.Game.Shared.SwordRules")
+local WorkshopRules = FXLoader:RequireShared("Scripts.Game.Shared.UpgradeWorkshopRules")
 local Effects = FXLoader:RequireFromParent(script, "CForgeEffects")
 local ForgeView = FXLoader:Require(script.Parent.Parent, "UI.CForgeView")
 local ActionButton = FXLoader:Require(script.Parent.Parent, "UI.CActionButton")
 local DiamondPurchase = FXLoader:Require(script.Parent.Parent, "UI.CDiamondPurchase")
 local RecoveryOfferId = "forge_recovery"
+local StrikeReplyTimeout = 5
 local TranslationTexts = Text.Define("ForgeInteraction", {
     Leave = "Leave Forge",
     PersonalForge = "Forge Sword",
@@ -50,8 +52,18 @@ function Comp:GetCompName()
     return "CForgeComp"
 end
 
---- 数据就绪后绑定锻造界面，并用服务端同步的品质变化触发换剑。
+--- 数据就绪后绑定锻造界面、连锤输入和服务端结算。
 function Comp:OnReady()
+    -- 连锤间隔短于网格的首次下载时间，在进台前请求剑胚和本级锻炉能展示的品质。
+    local function preloadForgeRange()
+        local level = WorkshopRules.GetLevel(self:GetTable(Fields.UpgradeWorkshop).forge)
+        PreloadWeapon(1)
+        for quality = math.max(1, level - 4), level + 4 do
+            PreloadWeapon(quality)
+        end
+    end
+    preloadForgeRange()
+    self:WatchDataChanged(Fields.UpgradeWorkshop, preloadForgeRange)
     self._view = ForgeView.New(FXLoader:PlayerGui("Forge"))
     self._mainHUD = FXLoader:PlayerGui("Main.HUD")
     self._renderName = "ForgeCamera_" .. self:GetPlayerId()
@@ -63,6 +75,7 @@ function Comp:OnReady()
     self._rootNode = button
     self._lastRequest = -math.huge
     self._lastRecoveryRequest = -math.huge
+    self._nextStrikeAt = 0
     self:TrackConnection(button.Activated:Connect(function()
         if not button.Visible or os.clock() - self._lastRequest < Settings.RequestCooldown then
             return
@@ -96,16 +109,37 @@ function Comp:OnReady()
         end
     end)
     self:WatchDataChanged(Fields.ForgeData, function(data, previous)
+        -- 首次放胚可能比台位界面更早同步；重进、读档和恢复沿用原轮次。
+        if previous and data.Active and data.RoundId and data.RoundId ~= previous.RoundId and data.HammerCount == 0 then
+            self:RequireComponent("CSoundComp"):PlayForgeContact("Set")
+        end
+        local strike = self._pendingStrike
+        if strike and not strike.impacted then
+            strike.displayData = data
+            return
+        end
         self:ApplyForgeData(data, previous)
+        if strike then
+            self:RevealStrike()
+        end
     end)
-    FX.Network:RegServerMsgCallback("S2C_ForgeSwordResult", function(stationId, success)
-        if self._effects and self._stationId == stationId then
-            if success then
-                self._strikeCount += 1
-                self._view:Impact(false, self._strikeCount)
+    FX.Network:RegServerMsgCallback("S2C_ForgeSwordResult", function(stationId, success, outcome, roundId, hammerCount)
+        if not self._effects or self._stationId ~= stationId then
+            return
+        end
+        local strike = self._pendingStrike
+        if not success then
+            if outcome == "Rejected" then
+                if strike then
+                    strike.rejected = true
+                    self:RevealStrike()
+                end
             else
                 self._view:ShowFailure()
             end
+        elseif strike and roundId == strike.before.RoundId and hammerCount == strike.before.HammerCount + 1 then
+            strike.outcome = outcome
+            self:RevealStrike()
         end
     end)
     self:TrackConnection(self._view.LeaveButton.Activated:Connect(function()
@@ -150,6 +184,10 @@ function Comp:ApplyForgeData(data, previous)
         PreloadWeapon(data.Quality + 1)
     end
     self._effects:ApplyWeapon(displayQuality, visible, upgradeFrom, data.MutationId)
+    if previous and previous.Active and previous.RoundId == data.RoundId and not data.Active
+        and (data.Outcome == "Finished" or data.Outcome == "Broken") then
+        self:RequireComponent("CSoundComp"):PlayForgeContact("Lift")
+    end
 end
 
 --- 显示当前损毁武器的恢复报价，玩家确认后才提交。
@@ -315,23 +353,55 @@ function Comp:HandlePreviewInput(actionName, inputState, inputObject)
     return Enum.ContextActionResult.Sink
 end
 
---- 台上有剑即可主动出炉，挥锤期间等待当前结果。
+--- 台上有剑即可主动出炉；提交时取消已缓冲的下一锤。
 function Comp:FinishSword()
-    if self._effects and not self._effects:IsBusy() then
+    if self._effects and not self._pendingStrike and not self._effects:IsBusy() then
         local data = self:GetTable(Fields.ForgeData)
         if data.Active then
+            self._queuedStrikeRound = nil
             FX.Network:SendMsgToServer("C2S_FinishSword")
         end
     end
 end
 
---- 台上有剑才挥锤；仍在台位上时可先放入手持的新剑胚。
---- @param powerful boolean 沿用动画接口，实际锻造固定使用普通敲击。
-function Comp:Strike(powerful)
-    if not self._effects or self._effects:IsBusy() then
+--- 命中后等待回执和对应锤序同步，避免连锤使用上一锤的数据。
+function Comp:RevealStrike()
+    local strike = self._pendingStrike
+    if not strike.impacted or (not strike.outcome and not strike.rejected) then
         return
     end
-    if not self:GetTable(Fields.ForgeData).Active then
+    if strike.outcome then
+        local data = self:GetTable(Fields.ForgeData)
+        if data.RoundId ~= strike.before.RoundId or data.HammerCount <= strike.before.HammerCount then
+            return
+        end
+    end
+    self._pendingStrike = nil
+    if strike.rejected then
+        self._queuedStrikeRound = nil
+    else
+        self:RequireComponent("CSoundComp"):PlayForgeResult(strike.outcome, strike.before.HammerCount == 0)
+        self._effects:ShowStrikeResult(strike.outcome)
+        self._strikeCount += 1
+        self._view:Impact(false, self._strikeCount)
+    end
+end
+
+--- 台上有剑才挥锤；忙碌时只为当前未结束的剑缓冲一次输入。
+--- @param powerful boolean 沿用动画接口，实际锻造固定使用普通敲击。
+function Comp:Strike(powerful)
+    if not self._effects then
+        return
+    end
+    local data = self:GetTable(Fields.ForgeData)
+    local now = os.clock()
+    if self._pendingStrike or self._effects:IsBusy() or now < self._nextStrikeAt then
+        if data.Active and not data.Finished then
+            self._queuedStrikeRound = data.RoundId
+        end
+        return
+    end
+    if not data.Active then
         local character = self:GetPlayerCharacter()
         local tool = character and character:FindFirstChildOfClass("Tool")
         if not tool or tool:GetAttribute("FrameworkItemId") ~= Rules.BlankItemId then
@@ -341,23 +411,38 @@ function Comp:Strike(powerful)
         FX.Network:SendMsgToServer("C2S_EnterForge")
         return
     end
+    if data.Finished then
+        self:FinishSword()
+        return
+    end
+    local strike = {before = data, impacted = false, started = now}
     if self._effects:Strike(powerful, function()
-        FX.Network:SendMsgToServer("C2S_ForgeSword")
+        strike.impacted = true
+        self:RequireComponent("CSoundComp"):PlayForgeHit(strike.outcome)
+        self:RevealStrike()
+        if strike.displayData then
+            self:ApplyForgeData(strike.displayData, strike.before)
+        end
     end) then
+        self._pendingStrike = strike
+        self._queuedStrikeRound = nil
+        self._nextStrikeAt = now + Settings.RequestCooldown
         self._view:SetBusy(true)
+        FX.Network:SendMsgToServer("C2S_ForgeSword")
     end
 end
 
---- 离开仍由服务端执行与释放台位，挥锤期间也允许退出。
+--- 挥锤期间也允许退出，提交离开时丢弃缓冲输入。
 function Comp:RequestLeave()
     if not self._effects or os.clock() - self._lastRequest < Settings.RequestCooldown then
         return
     end
     self._lastRequest = os.clock()
+    self._queuedStrikeRound = nil
     FX.Network:SendMsgToServer("C2S_LeaveForge")
 end
 
---- 在默认相机之后更新近景，横竖屏都保留完整木板宽度。
+--- 更新锻造近景，并在本锤结算和冷却完成后消费一次同轮输入。
 --- @param deltaTime number 本渲染帧经过的秒数。
 function Comp:UpdateView(deltaTime)
     if not self._effects then
@@ -386,7 +471,24 @@ function Comp:UpdateView(deltaTime)
         end
     end
     self._effects:Update(deltaTime)
-    self._view:SetBusy(self._effects:IsBusy())
+    -- 网络层限流时不会派发回包；不让已经落下的一锤永久锁住操作。
+    local strike = self._pendingStrike
+    local now = os.clock()
+    if strike and strike.impacted and now - strike.started >= StrikeReplyTimeout then
+        self._pendingStrike = nil
+        self._queuedStrikeRound = nil
+    end
+    local busy = self._pendingStrike ~= nil or self._effects:IsBusy() or now < self._nextStrikeAt
+    local queuedRound = self._queuedStrikeRound
+    if queuedRound and not busy then
+        self._queuedStrikeRound = nil
+        local data = self:GetTable(Fields.ForgeData)
+        if data.RoundId == queuedRound and data.Active and not data.Finished then
+            self:Strike(false)
+            busy = self._pendingStrike ~= nil
+        end
+    end
+    self._view:SetBusy(busy)
     local size = camera.ViewportSize
     local aspect = size.X / math.max(1, size.Y)
     local fieldOfView = math.deg(2 * math.atan(12.8 / (2 * 9 * aspect)))
@@ -404,13 +506,15 @@ function Comp:UpdateView(deltaTime)
     self._mainHUD.Visible = false
 end
 
---- 退出、死亡与组件销毁统一关闭恢复报价，并还原镜头、角色显示和主 HUD。
+--- 离开台位时清除缓冲输入和恢复报价，并还原镜头、角色显示及 HUD。
 function Comp:CloseView()
     if not self._effects then
         return
     end
     ContextActionService:UnbindAction(self._actionName)
     self._effects:Destroy()
+    self._pendingStrike = nil
+    self._queuedStrikeRound = nil
     self._effects, self._stationId, self._station = nil, nil, nil
     DiamondPurchase.CloseConfirmation(RecoveryOfferId)
     self._view:Close()

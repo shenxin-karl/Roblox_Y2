@@ -22,6 +22,7 @@ return {
         "C2S_SmeltSword",
         -- 单向；参数为盘面内的世界坐标 Vector2(X, Z)，身份由网络层提供。
         "C2S_CastMiningClaw",
+        "C2S_ChooseMiningOre",
         -- upgradeId: smelt/forge/income；expectedLevel: 整数 0..19；服务端决定价格与新等级。
         "C2S_UpgradeWorkshop",
         -- failureId: 当前损毁进度的服务端标识；费用及恢复内容均由服务端决定。

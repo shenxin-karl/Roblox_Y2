@@ -9,6 +9,9 @@ local Effects = {}
 Effects.__index = Effects
 local BeltTreadCount = 48
 local BeltTreadAngle = math.pi * 2 / BeltTreadCount
+local ClawCableSegmentCount = 10
+local ClawCableDiameter = 0.16
+local ClawCableAxis = CFrame.Angles(0, math.pi / 2, 0)
 -- 原光环按 R6 身体分组；以身体包围盒为基准映射到矿石表面。
 local AuraReferenceSize = Vector3.new(4, 5, 2)
 local AuraOffsets = {
@@ -41,11 +44,13 @@ function Effects.New(owner)
     end
     self._rocks = {}
     self._claws = {}
+    self._clawCables = {}
     self._clawAdded = CollectionService:GetInstanceAddedSignal(Settings.ClawTag):Connect(function(claw)
         self._claws[claw] = false
     end)
     self._clawRemoved = CollectionService:GetInstanceRemovedSignal(Settings.ClawTag):Connect(function(claw)
         self._claws[claw] = nil
+        self:RemoveClawCable(claw)
     end)
     for index, claw in ipairs(CollectionService:GetTagged(Settings.ClawTag)) do
         self._claws[claw] = false
@@ -459,7 +464,56 @@ local function SetClawGrip(claw, pose, grip)
     end
 end
 
---- 按服务端时间播放钩爪；抓到矿时先合爪，再保持夹紧回收。
+--- 收回或卸载钩爪时移除本地绳索，避免残留在盘面。
+--- @param claw Model 钩头模型。
+function Effects:RemoveClawCable(claw)
+    local cable = self._clawCables[claw]
+    if cable then
+        cable.Folder:Destroy()
+        self._clawCables[claw] = nil
+    end
+end
+
+--- 用细圆柱绘制黄棕色麻绳，以轻微下垂表现重量，不参与物理和命中。
+--- @param claw Model 钩头模型。
+--- @param startPosition Vector3 座椅端的世界坐标。
+--- @param endPosition Vector3 钩头接头的世界坐标。
+function Effects:DrawClawCable(claw, startPosition, endPosition)
+    local cable = self._clawCables[claw]
+    if not cable then
+        local folder = Instance.new("Folder")
+        folder.Name = "ClawCable"
+        cable = {Folder = folder, Parts = {}}
+        self._clawCables[claw] = cable
+        for index = 1, ClawCableSegmentCount do
+            local part = Instance.new("Part")
+            part.Shape = Enum.PartType.Cylinder
+            part.Material = Enum.Material.Fabric
+            part.Color = Color3.fromRGB(195, 148, 72)
+            part.Anchored, part.CanCollide, part.CanTouch, part.CanQuery = true, false, false, false
+            part.CastShadow = false
+            part.Parent = folder
+            cable.Parts[index] = part
+        end
+    end
+
+    local sag = math.min((endPosition - startPosition).Magnitude * 0.016, 0.65)
+    local previous = startPosition
+    for index, part in ipairs(cable.Parts) do
+        local t = index / ClawCableSegmentCount
+        local point = startPosition:Lerp(endPosition, t) - Vector3.yAxis * (4 * sag * t * (1 - t))
+        local length = (point - previous).Magnitude
+        -- 轻微重叠，避免弧线转折处露出接缝。
+        part.Size = Vector3.new(length + 0.025, ClawCableDiameter, ClawCableDiameter)
+        part.CFrame = CFrame.lookAt((previous + point) / 2, point) * ClawCableAxis
+        previous = point
+    end
+    if not cable.Folder.Parent then
+        cable.Folder.Parent = self._folder
+    end
+end
+
+--- 按服务端时间播放钩爪和绳索；抓到矿时先合爪，再保持夹紧回收。
 function Effects:UpdateClaws()
     local now = workspace:GetServerTimeNow()
     for claw, moving in pairs(self._claws) do
@@ -468,15 +522,15 @@ function Effects:UpdateClaws()
             continue
         end
         local rest = claw:GetAttribute("RestPose")
-        local cable = claw:FindFirstChild("Cable")
         local carried = claw:FindFirstChild("CarriedRock")
-        if not rest or not claw.PrimaryPart or not cable or not carried then
+        if not rest or not claw.PrimaryPart or not carried then
+            self:RemoveClawCable(claw)
             continue
         end
         if not started then
             claw:PivotTo(rest)
             SetClawGrip(claw, rest, 0)
-            cable.Enabled = false
+            self:RemoveClawCable(claw)
             self._claws[claw] = false
             continue
         end
@@ -486,28 +540,27 @@ function Effects:UpdateClaws()
         end
         local offset = target - rest.Position
         local distance = offset.Magnitude
-        if distance < 0.05 then
-            continue
-        end
         local elapsed = math.max(0, now - started)
-        local outTime = distance / Settings.ClawOutSpeed
+        local outTime = math.max(distance, 0.001) / Settings.ClawOutSpeed
         local returnSpeed = claw:GetAttribute("ShotReturnSpeed")
         local returnAt = claw:GetAttribute("ShotReturnAt")
         local fraction = math.min(1, elapsed / outTime)
         if returnAt and returnSpeed and now >= returnAt then
-            fraction = math.max(0, 1 - (now - returnAt) * returnSpeed / distance)
+            fraction = math.max(0, 1 - (now - returnAt) * returnSpeed / math.max(distance, 0.001))
         end
         local position = rest.Position:Lerp(target, fraction)
-        local direction = offset.Unit
+        local direction = if distance > 0.001 then offset.Unit else rest.LookVector
         local pose = CFrame.lookAt(position, position + direction)
         local rock = carried.Value
         local grip = if rock and returnAt then math.clamp(1 - (returnAt - now) / Settings.ClawGripTime, 0, 1) else 0
         claw:PivotTo(pose)
         SetClawGrip(claw, pose, grip)
-        local cableEnd = cable.Attachment1
-        local visible = cableEnd ~= nil and fraction * distance > cableEnd.Position.Z + 0.05
-        if cable.Enabled ~= visible then
-            cable.Enabled = visible
+        local cableStart = claw.Parent and claw.Parent:FindFirstChild("ClawCableStart")
+        local cableEnd = claw.PrimaryPart:FindFirstChild("ClawCableEnd")
+        if cableStart and cableEnd and fraction * distance > cableEnd.Position.Z + 0.25 then
+            self:DrawClawCable(claw, cableStart.WorldPosition, cableEnd.WorldPosition)
+        else
+            self:RemoveClawCable(claw)
         end
         self._claws[claw] = true
         local entry = rock and self._rocks[rock]
@@ -573,17 +626,15 @@ function Effects:Update()
     end
 end
 
---- 断开标签和次数监听，恢复服务器石头显示并销毁本地特效与碎片池。
+--- 断开监听，复位钩爪并随特效目录清除绳索，最后销毁碎片池。
 function Effects:Destroy()
     self._clawAdded:Disconnect()
     self._clawRemoved:Disconnect()
     for claw, moving in pairs(self._claws) do
-        local cable = claw:FindFirstChild("Cable")
         local rest = claw:GetAttribute("RestPose")
-        if moving and cable and rest then
+        if moving and rest then
             claw:PivotTo(rest)
             SetClawGrip(claw, rest, 0)
-            cable.Enabled = false
         end
     end
     self._added:Disconnect()
