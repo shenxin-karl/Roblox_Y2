@@ -314,6 +314,7 @@
     ],
     "editor": {
       "displayName": "武器升级曲线",
+      "folder": "武器",
       "display": {
         "kind": "curve",
         "xLabel": "武器当前等级",
@@ -408,7 +409,7 @@
     ],
     "editor": {
       "displayName": "武器锻造升级价格（临时数值）",
-      "folder": "玩家升级",
+      "folder": "武器",
       "display": {
         "kind": "curve",
         "xLabel": "当前等级",
@@ -514,7 +515,7 @@
     },
     "editor": {
       "displayName": "武器品质基础秒收益（临时数值）",
-      "folder": "基地收益",
+      "folder": "武器",
       "display": {
         "kind": "curve",
         "xLabel": "品质",
