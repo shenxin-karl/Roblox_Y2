@@ -55,7 +55,7 @@ local function MakeArm(model, character, side)
     local source = character:FindFirstChild(side .. "Hand") or character:FindFirstChild(side .. " Arm")
         or character:FindFirstChild(side .. "LowerArm")
     if source and source:IsA("BasePart") then
-        local size = Vector3.new(0.48, 1.55, 0.48)
+        local size = Vector3.new(0.62, 1.24, 0.62)
         local rotation = CFrame.Angles(0, math.rad(sign * 28), 0) * CFrame.Angles(math.rad(117), 0, 0)
         AddPart(group, "BlockArm", size, rotation * CFrame.new(0, size.Y / 2, 0), source.Color, rubber)
     end
@@ -77,6 +77,19 @@ function Rig.New(camera, character)
     self._leftArm = MakeArm(model, character, "Left")
     self._rightArm = MakeArm(model, character, "Right")
     self._steer, self._press = 0, 0
+    self._avatarParts = {}
+    --- 记住原透明度，离座时恢复；也处理入座后加载的配件。
+    --- @param part Instance 玩家角色中的节点。
+    local function hidePart(part)
+        if part:IsA("BasePart") and self._avatarParts[part] == nil then
+            self._avatarParts[part] = part.LocalTransparencyModifier
+            part.LocalTransparencyModifier = 1
+        end
+    end
+    self._avatarAdded = character.DescendantAdded:Connect(hidePart)
+    for index, part in ipairs(character:GetDescendants()) do
+        hidePart(part)
+    end
 
     AddPart(self._frame, "Housing", Vector3.new(3.22, 0.27, 1.00), CFrame.new(0, -0.14, 0), graphite, metal)
     AddPart(self._frame, "Faceplate", Vector3.new(3.14, 0.06, 0.96), CFrame.identity, steel, metal)
@@ -102,6 +115,11 @@ end
 --- @param firing boolean 当前是否按下发射按钮。
 --- @param dt number 本帧间隔秒数。
 function Rig:Update(steer, firing, dt)
+    for part in pairs(self._avatarParts) do
+        if part.Parent and part.LocalTransparencyModifier ~= 1 then
+            part.LocalTransparencyModifier = 1
+        end
+    end
     local blend = 1 - math.exp(-18 * dt)
     self._steer += (steer - self._steer) * blend
     self._press += ((if firing then 1 else 0) - self._press) * blend
@@ -134,6 +152,12 @@ end
 
 --- 离座时随操作台一起移除手臂副本。
 function Rig:Destroy()
+    self._avatarAdded:Disconnect()
+    for part, opacity in pairs(self._avatarParts) do
+        if part.Parent then
+            part.LocalTransparencyModifier = opacity
+        end
+    end
     self._model:Destroy()
 end
 

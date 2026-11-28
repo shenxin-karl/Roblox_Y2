@@ -1,4 +1,4 @@
--- 公共矿场：显示矿石与倒计时，入座后切换到钩爪俯视操作。
+-- 公共矿场：显示矿石与倒计时，入座后切换到钩爪第一人称操作。
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local FX, FC = _G.FX, _G.FC
@@ -6,6 +6,7 @@ local FXLoader = FX.Loader
 local Text = FX.Text
 local Settings = FX.Loader:RequireShared("Scripts.Game.Shared.MiningSettings")
 local MiningEffects = FX.Loader:RequireFromParent(script, "CMiningEffects")
+local ConsoleRig = FX.Loader:RequireFromParent(script, "CMiningConsoleRig")
 local UIRoot = FX.Loader:RequireShared("Scripts.Framework.Client.FCUIRoot")
 local TextPrompt = FX.Loader:RequireShared("Scripts.Framework.Client.FCTextPrompt")
 local TranslationTexts = Text.Define("MiningInteraction", {
@@ -52,6 +53,7 @@ function Comp:RestoreMiningCamera()
         return
     end
     self._miningView = nil
+    view.Rig:Destroy()
     local camera = view.Camera
     if camera == workspace.CurrentCamera and camera.CameraType == Enum.CameraType.Scriptable then
         camera.CFrame, camera.Focus, camera.FieldOfView = view.CFrame, view.Focus, view.FieldOfView
@@ -59,8 +61,9 @@ function Comp:RestoreMiningCamera()
     end
 end
 
---- 从座椅后方略微斜看转盘，保留出爪位置，并按屏幕比例取景。
-function Comp:UpdateMiningCamera()
+--- 从本人座椅看向矿盘，按当前视口摆放方块手。
+--- @param deltaTime number 本帧经过的秒数。
+function Comp:UpdateMiningCamera(deltaTime)
     local camera = workspace.CurrentCamera
     local character = self:GetPlayerCharacter()
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -80,7 +83,8 @@ function Comp:UpdateMiningCamera()
         end
         local ground = FXLoader:FindFromWorkspace(Settings.GroundPath)
         local entry = FXLoader:FindFromWorkspace(Settings.BeltPath .. ".BeltEntry")
-        if not ground or not entry then
+        local head = character:FindFirstChild("Head")
+        if not ground or not entry or not head then
             return
         end
         local center = Vector3.new(ground.Position.X, entry.Position.Y + Settings.ClawHeight, ground.Position.Z)
@@ -90,28 +94,24 @@ function Comp:UpdateMiningCamera()
         local beltRadius = beltOffset.Magnitude
         view = {
             Seat = seat, Camera = camera, Center = center, Forward = forward,
-            LookAt = center - forward * 16,
             GrabRadius = beltRadius + Settings.ClawEdgeMargin,
-            FrameWidth = beltRadius + 5,
-            FrameHeight = math.max(beltRadius + 9, toCenter.Magnitude - 3),
             CFrame = camera.CFrame, Focus = camera.Focus, FieldOfView = camera.FieldOfView,
             CameraType = camera.CameraType,
         }
         self._miningView = view
         camera.CameraType = Enum.CameraType.Scriptable
-        camera.FieldOfView = 44
+        local eye = head.Position + forward * (head.Size.Z * 0.24)
+        camera.FieldOfView = 68
+        camera.CFrame = CFrame.lookAt(eye, eye + forward * 20 - Vector3.yAxis * 5.5) * ConsoleRig.CameraOffset
+        camera.Focus = CFrame.new(center)
+        view.Rig = ConsoleRig.New(camera, character)
     end
     local viewport = camera.ViewportSize
-    if viewport == view.Viewport or viewport.X <= 1 or viewport.Y <= 1 then
+    if viewport.X <= 1 or viewport.Y <= 1 then
         return
     end
     view.Viewport = viewport
-    local aspect = viewport.X / viewport.Y
-    local distance = math.max(view.FrameHeight, view.FrameWidth / aspect) / math.tan(math.rad(camera.FieldOfView / 2))
-    local tilt = math.rad(26)
-    local offset = (Vector3.yAxis * math.cos(tilt) - view.Forward * math.sin(tilt)) * distance
-    camera.CFrame = CFrame.lookAt(view.LookAt + offset, view.LookAt)
-    camera.Focus = CFrame.new(view.LookAt)
+    view.Rig:Update(view.Steer or 0, os.clock() - self._lastClawRequest < 0.18, deltaTime)
 end
 
 --- 把鼠标或触屏位置落到水平抓取面，只有盘内点击才发送请求。
@@ -130,6 +130,7 @@ function Comp:AimMiningClaw(position)
     local point = ray.Origin + ray.Direction * ((view.Center.Y - ray.Origin.Y) / ray.Direction.Y)
     local offset = Vector2.new(point.X - view.Center.X, point.Z - view.Center.Z)
     if offset.Magnitude <= view.GrabRadius then
+        view.Steer = math.clamp((point - view.Center):Dot(view.Forward:Cross(Vector3.yAxis)) / view.GrabRadius, -1, 1)
         self._lastClawRequest = now
         FX.Network:SendMsgToServer("C2S_CastMiningClaw", Vector2.new(point.X, point.Z))
     end
@@ -141,8 +142,8 @@ function Comp:OnReady()
     self._countdown = FX.Loader:PlayerGui("Main.HUD.Wallet.RefreshStat.Countdown")
     self:CreateRefreshNotice()
     self._lastClawRequest = -math.huge
-    self:TrackConnection(RunService.RenderStepped:Connect(function()
-        self:UpdateMiningCamera()
+    self:TrackConnection(RunService.RenderStepped:Connect(function(deltaTime)
+        self:UpdateMiningCamera(deltaTime)
         self._effects:UpdateBelt()
         self._effects:UpdateClaws()
     end))
